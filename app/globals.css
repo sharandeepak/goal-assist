@@ -1,0 +1,438 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 142.1 76.2% 36.3%;
+    --chart-3: 346.8 77.2% 49.8%;
+    --chart-4: 43.3 96.4% 56.3%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  .dark-modern {
+    /* Base */
+    --background: 0 0% 7%;
+    /* maps to #121212 */
+    --foreground: 0 0% 100%;
+    /* maps to #ffffff */
+
+    /* Cards, Popovers */
+    --card: 0 0% 15.7%;
+    /* maps to #282828 */
+    --card-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+    --popover: 0 0% 15.7%;
+    /* maps to #282828 */
+    --popover-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+
+    /* Primary */
+    --primary: 275 60% 57%;
+    /* maps to #924fd2 */
+    --primary-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+
+    /* Secondary */
+    --secondary: 0 0% 24.7%;
+    /* maps to #3f3f3f */
+    --secondary-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+
+    /* Muted */
+    --muted: 0 0% 15.7%;
+    /* maps to #282828 */
+    --muted-foreground: 0 0% 54.5%;
+    /* maps to #8b8b8b */
+
+    /* Accent */
+    --accent: 278 11% 20%;
+    /* maps to #332e38 (surface-tonal-a10) */
+    --accent-foreground: 272 61% 68%;
+    /* maps to #a063d8 (primary-a10) */
+
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    /* Using a standard accessible red */
+    --destructive-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+
+    /* Border, Input, Ring */
+    --border: 0 0% 24.7%;
+    /* maps to #3f3f3f */
+    --input: 0 0% 24.7%;
+    /* maps to #3f3f3f */
+    --ring: 272 61% 68%;
+    /* maps to #a063d8 */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Chart colors (using existing dark theme colors for consistency) */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
+    /* Sidebar specific colors */
+    --sidebar-background: 0 0% 7%;
+    /* maps to #121212 */
+    --sidebar-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+    --sidebar-primary: 275 60% 57%;
+    /* maps to #924fd2 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* maps to #ffffff */
+    --sidebar-accent: 0 0% 24.7%;
+    /* maps to #3f3f3f */
+    --sidebar-accent-foreground: 272 61% 68%;
+    /* maps to #a063d8 */
+    --sidebar-border: 0 0% 34%;
+    /* maps to #575757 */
+    --sidebar-ring: 272 61% 68%;
+    /* maps to #a063d8 */
+  }
+
+  .dark-elegant {
+    /* Base - Deep charcoal with warm undertones */
+    --background: 210 15% 8%;
+    /* maps to #141414 - deep charcoal */
+    --foreground: 0 0% 95%;
+    /* maps to #f2f2f2 - soft white */
+
+    /* Cards, Popovers - Slightly lighter charcoal */
+    --card: 210 12% 12%;
+    /* maps to #1e1e1e - slightly lighter charcoal */
+    --card-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+    --popover: 210 12% 12%;
+    /* maps to #1e1e1e */
+    --popover-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+
+    /* Primary - Warm sage green */
+    --primary: 120 25% 50%;
+    /* maps to #5a8f69 - warm sage */
+    --primary-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+
+    /* Secondary - Muted olive */
+    --secondary: 80 8% 25%;
+    /* maps to #3d4037 - muted olive */
+    --secondary-foreground: 0 0% 88%;
+    /* maps to #e0e0e0 */
+
+    /* Muted - Dark slate gray */
+    --muted: 210 10% 18%;
+    /* maps to #2b2b2b - dark slate gray */
+    --muted-foreground: 0 0% 65%;
+    /* maps to #a5a5a5 - soft gray */
+
+    /* Accent - Warm amber */
+    --accent: 35 45% 35%;
+    /* maps to #6b5b3d - warm amber */
+    --accent-foreground: 45 85% 85%;
+    /* maps to #f5e6a3 - warm cream */
+
+    /* Destructive - Muted coral */
+    --destructive: 10 65% 55%;
+    /* maps to #d76b5a - muted coral */
+    --destructive-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+
+    /* Border, Input, Ring - Subtle gray */
+    --border: 210 8% 22%;
+    /* maps to #363636 - subtle gray */
+    --input: 210 8% 22%;
+    /* maps to #363636 */
+    --ring: 120 25% 50%;
+    /* maps to #5a8f69 - matches primary */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Chart colors - Warm, harmonious palette */
+    --chart-1: 120 25% 50%;
+    /* sage green */
+    --chart-2: 35 45% 45%;
+    /* warm amber */
+    --chart-3: 210 20% 60%;
+    /* soft blue */
+    --chart-4: 280 30% 55%;
+    /* muted purple */
+    --chart-5: 15 40% 50%;
+    /* warm orange */
+
+    /* Sidebar specific colors - Matching the elegant theme */
+    --sidebar-background: 210 15% 8%;
+    /* maps to #141414 */
+    --sidebar-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+    --sidebar-primary: 120 25% 50%;
+    /* maps to #5a8f69 */
+    --sidebar-primary-foreground: 0 0% 95%;
+    /* maps to #f2f2f2 */
+    --sidebar-accent: 210 12% 12%;
+    /* maps to #1e1e1e */
+    --sidebar-accent-foreground: 0 0% 88%;
+    /* maps to #e0e0e0 */
+    --sidebar-border: 210 8% 22%;
+    /* maps to #363636 */
+    --sidebar-ring: 120 25% 50%;
+    /* maps to #5a8f69 */
+  }
+
+
+  .dark-cool {
+    /* Base - Cool dark slate */
+    --background: 220 15% 8%;
+    /* maps to #131620 - cool dark slate */
+    --foreground: 210 15% 95%;
+    /* maps to #eff2f7 - cool white */
+
+    /* Cards, Popovers - Slightly lighter cool slate */
+    --card: 220 12% 14%;
+    /* maps to #232b3a - cool slate */
+    --card-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+    --popover: 220 12% 14%;
+    /* maps to #232b3a */
+    --popover-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+
+    /* Primary - Cool blue */
+    --primary: 200 80% 55%;
+    /* maps to #3b9ce6 - cool blue */
+    --primary-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+
+    /* Secondary - Muted slate blue */
+    --secondary: 210 20% 25%;
+    /* maps to #37404c - slate blue */
+    --secondary-foreground: 210 20% 88%;
+    /* maps to #c8d1e0 */
+
+    /* Muted - Dark cool gray */
+    --muted: 220 10% 20%;
+    /* maps to #323846 - cool gray */
+    --muted-foreground: 210 8% 68%;
+    /* maps to #9ba3b5 */
+
+    /* Accent - Soft teal */
+    --accent: 180 25% 45%;
+    /* maps to #4a9b94 - soft teal */
+    --accent-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+
+    /* Destructive - Cool red */
+    --destructive: 0 65% 55%;
+    /* maps to #d4554d - cool red */
+    --destructive-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+
+    /* Border, Input, Ring - Cool gray */
+    --border: 220 12% 28%;
+    /* maps to #454f63 */
+    --input: 220 12% 28%;
+    /* maps to #454f63 */
+    --ring: 200 80% 55%;
+    /* maps to #3b9ce6 */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Chart colors - Cool, professional palette */
+    --chart-1: 200 80% 55%;
+    /* blue */
+    --chart-2: 180 25% 45%;
+    /* teal */
+    --chart-3: 210 20% 35%;
+    /* slate */
+    --chart-4: 220 15% 45%;
+    /* cool gray */
+    --chart-5: 160 30% 50%;
+    /* aqua */
+
+    /* Sidebar specific colors */
+    --sidebar-background: 220 15% 8%;
+    /* maps to #131620 */
+    --sidebar-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+    --sidebar-primary: 200 80% 55%;
+    /* maps to #3b9ce6 */
+    --sidebar-primary-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+    --sidebar-accent: 220 12% 14%;
+    /* maps to #232b3a */
+    --sidebar-accent-foreground: 210 20% 88%;
+    /* maps to #c8d1e0 */
+    --sidebar-border: 220 12% 28%;
+    /* maps to #454f63 */
+    --sidebar-ring: 200 80% 55%;
+    /* maps to #3b9ce6 */
+  }
+
+
+  .dark-blue {
+    /* Base - Cool dark slate (from Cool Dark) */
+    --background: 220 15% 8%;
+    /* maps to #131620 - cool dark slate */
+    --foreground: 210 15% 95%;
+    /* maps to #eff2f7 - cool white */
+
+    /* Cards, Popovers - Slightly lighter cool slate (from Cool Dark) */
+    --card: 220 12% 14%;
+    /* maps to #232b3a - cool slate */
+    --card-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+    --popover: 220 12% 14%;
+    /* maps to #232b3a */
+    --popover-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+
+    /* Primary - Bright blue from standard Dark theme */
+    --primary: 217.2 91.2% 59.8%;
+    /* maps to #3b82f6 - bright blue */
+    --primary-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+
+    /* Secondary - Muted slate blue (from Cool Dark) */
+    --secondary: 210 20% 25%;
+    /* maps to #37404c - slate blue */
+    --secondary-foreground: 210 20% 88%;
+    /* maps to #c8d1e0 */
+
+    /* Muted - Dark cool gray (from Cool Dark) */
+    --muted: 220 10% 20%;
+    /* maps to #323846 - cool gray */
+    --muted-foreground: 210 8% 68%;
+    /* maps to #9ba3b5 */
+
+    /* Accent - Soft teal (from Cool Dark) */
+    --accent: 180 25% 45%;
+    /* maps to #4a9b94 - soft teal */
+    --accent-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+
+    /* Destructive - Cool red (from Cool Dark) */
+    --destructive: 0 65% 55%;
+    /* maps to #d4554d - cool red */
+    --destructive-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+
+    /* Border, Input - Cool gray (from Cool Dark) */
+    --border: 220 12% 28%;
+    /* maps to #454f63 */
+    --input: 220 12% 28%;
+    /* maps to #454f63 */
+
+    /* Ring - Bright blue ring from standard Dark theme */
+    --ring: 224.3 76.3% 48%;
+    /* maps to #60a5fa - bright blue ring */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Chart colors - Blue-focused palette */
+    --chart-1: 217.2 91.2% 59.8%;
+    /* bright blue */
+    --chart-2: 200 80% 55%;
+    /* cool blue */
+    --chart-3: 180 25% 45%;
+    /* teal */
+    --chart-4: 210 20% 35%;
+    /* slate */
+    --chart-5: 220 15% 45%;
+    /* cool gray */
+
+    /* Sidebar specific colors */
+    --sidebar-background: 220 15% 8%;
+    /* maps to #131620 */
+    --sidebar-foreground: 210 15% 95%;
+    /* maps to #eff2f7 */
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    /* maps to #3b82f6 */
+    --sidebar-primary-foreground: 220 20% 10%;
+    /* maps to #141b26 */
+    --sidebar-accent: 220 12% 14%;
+    /* maps to #232b3a */
+    --sidebar-accent-foreground: 210 20% 88%;
+    /* maps to #c8d1e0 */
+    --sidebar-border: 220 12% 28%;
+    /* maps to #454f63 */
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* maps to #3b82f6 */
+  }
+
+  @layer base {
+    * {
+      @apply border-border;
+    }
+
+    body {
+      @apply bg-background text-foreground;
+    }
+  }
+
+  .task-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  .satisfaction-indicator {
+    transition: all 0.3s ease;
+  }
+
+  .spotlight-overlay {
+    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+}
