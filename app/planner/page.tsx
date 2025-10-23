@@ -79,6 +79,7 @@ function DayPlannerContent() {
 	const [loadingUpcoming, setLoadingUpcoming] = useState(true);
 	const [loadingAll, setLoadingAll] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [searchQuery, setSearchQuery] = useState<string>("");
 
 	// --- State for Dialogs ---
 	const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
@@ -242,6 +243,8 @@ function DayPlannerContent() {
 	};
 
 	const renderTaskList = (tasks: Task[], isLoading: boolean) => {
+		const trimmedQuery = searchQuery.trim().toLowerCase();
+		const filteredTasks = trimmedQuery ? tasks.filter((t) => t.title.toLowerCase().includes(trimmedQuery)) : tasks;
 		if (isLoading) {
 			return (
 				<div className="space-y-4">
@@ -262,18 +265,18 @@ function DayPlannerContent() {
 				</div>
 			);
 		}
-		if (tasks.length === 0) {
+		if (filteredTasks.length === 0) {
 			return (
 				<div className="flex flex-col items-center justify-center py-8 text-center">
 					<CheckCircle2 className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 					<h3 className="font-medium text-lg">No tasks</h3>
-					<p className="text-sm text-muted-foreground">No tasks scheduled for this period.</p>
+					<p className="text-sm text-muted-foreground">{trimmedQuery ? "No matching tasks for your search." : "No tasks scheduled for this period."}</p>
 				</div>
 			);
 		}
 		return (
 			<div className="space-y-4">
-				{tasks.map((task) => (
+				{filteredTasks.map((task) => (
 					<div key={task.id} className="flex items-center justify-between space-x-2 task-card p-3 rounded-lg border group">
 						<div className="flex items-center space-x-3 flex-1 min-w-0">
 							<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id, task.completed)} aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} className="mt-1 self-start" />
@@ -327,10 +330,13 @@ function DayPlannerContent() {
 					<h1 className="text-3xl font-bold tracking-tight">Day Planner</h1>
 					<p className="text-muted-foreground">Manage your daily tasks and priorities</p>
 				</div>
-				<Button onClick={openAddTaskDialog}>
-					<Plus className="mr-2 h-4 w-4" />
-					Add Task
-				</Button>
+				<div className="flex items-center gap-2 w-full sm:w-auto">
+					<Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks by title..." aria-label="Search tasks by title" className="w-full sm:w-[240px] md:w-[320px]" />
+					<Button onClick={openAddTaskDialog}>
+						<Plus className="mr-2 h-4 w-4" />
+						Add Task
+					</Button>
+				</div>
 			</div>
 
 			<TaskFormDialog isOpen={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} onSubmit={handleAddTaskSubmit} dialogTitle="Add New Task" dialogDescription="Enter details for the new task. Priority is required." />

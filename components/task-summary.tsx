@@ -92,7 +92,7 @@ export default function TaskSummary() {
 			))}
 			{tasks.length > 5 && (
 				<Link href="/planner?tab=all" className="text-xs text-muted-foreground hover:text-primary text-center block pt-2">
-					+{tasks.length - 7} more tasks
+					View more
 				</Link>
 			)}
 		</div>

@@ -39,6 +39,13 @@ export default function DashboardPage() {
 			const [tasks, milestones, satisfaction] = await Promise.all([getTodaysTaskSummary(), getPageMilestoneSummary(), getSatisfactionSummary()]);
 			return { tasks, milestones, satisfaction };
 		},
+		// Ensure this query doesn't block navigation
+		staleTime: 30000, // 30 seconds
+		refetchOnMount: true, // Refetch when component mounts
+		refetchOnWindowFocus: false, // Don't refetch on window focus
+		retry: 1, // Only retry once on failure
+		// Use background fetching to prevent blocking
+		networkMode: "online",
 	});
 
 	return (

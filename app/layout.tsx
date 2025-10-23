@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Spotlight from "@/components/spotlight";
+import NavigationProgress from "@/components/navigation-progress";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { StagewiseToolbar } from "@stagewise/toolbar-next";
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<QueryProvider>
 					<ThemeProvider attribute="class" defaultTheme="system" enableSystem themes={["light", "dark", "dark-modern", "dark-elegant", "dark-cozy", "dark-cool", "dark-nature", "dark-blue", "system"]}>
 						<StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
+						<NavigationProgress />
 						<div className="min-h-screen flex flex-col">
 							<Navbar />
 							<main className="flex-1 container mx-auto px-4 py-6">{children}</main>
@@ -35,5 +37,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 		</html>
 	);
 }
-
-import "./globals.css";
