@@ -449,6 +449,7 @@ function MilestonesPageContent() {
 	const [newMilestoneOpen, setNewMilestoneOpen] = useState(false);
 	const [addMilestoneError, setAddMilestoneError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("active");
+	const [searchQuery, setSearchQuery] = useState<string>("");
 
 	const searchParams = useSearchParams();
 	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">>>({
@@ -462,7 +463,7 @@ function MilestonesPageContent() {
 
 	useEffect(() => {
 		if (searchParams?.get("action") === "add") {
-			setIsAddMilestoneSheetOpen(true);
+			setNewMilestoneOpen(true);
 		}
 	}, [searchParams]);
 
@@ -557,6 +558,8 @@ function MilestonesPageContent() {
 	};
 
 	const renderMilestoneList = (milestones: Milestone[], isLoading: boolean, isActiveTab: boolean) => {
+		const trimmedQuery = searchQuery.trim().toLowerCase();
+		const filteredMilestones = trimmedQuery ? milestones.filter((m) => m.title.toLowerCase().includes(trimmedQuery)) : milestones;
 		if (isLoading) {
 			return (
 				<div className="space-y-4">
@@ -583,20 +586,20 @@ function MilestonesPageContent() {
 				</div>
 			);
 		}
-		if (milestones.length === 0) {
-			const type = isLoading ? "..." : isActiveTab ? "active" : "completed";
+		if (filteredMilestones.length === 0) {
+			const type = isActiveTab ? "active" : "completed";
 			return (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
 					<Target className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
-					<h3 className="font-medium text-lg">No {type} milestones</h3>
-					{type === "active" && <p className="text-sm text-muted-foreground">Add a new milestone to get started.</p>}
+					<h3 className="font-medium text-lg">{trimmedQuery ? "No matching milestones" : `No ${type} milestones`}</h3>
+					{!trimmedQuery && type === "active" && <p className="text-sm text-muted-foreground">Add a new milestone to get started.</p>}
 				</div>
 			);
 		}
 
 		return (
 			<div className="space-y-4">
-				{milestones.map((milestone) => (
+				{filteredMilestones.map((milestone) => (
 					<MilestoneCard key={milestone.id} milestone={milestone} onDelete={handleDeleteMilestoneWrapper} />
 				))}
 			</div>
@@ -610,62 +613,65 @@ function MilestonesPageContent() {
 					<h1 className="text-3xl font-bold tracking-tight">Milestones</h1>
 					<p className="text-muted-foreground">Track your progress towards important goals</p>
 				</div>
-				<Sheet open={newMilestoneOpen} onOpenChange={setNewMilestoneOpen}>
-					<SheetTrigger asChild>
-						<Button>
-							<Plus className="mr-2 h-4 w-4" />
-							Add Milestone
-						</Button>
-					</SheetTrigger>
-					<SheetContent className="sm:max-w-[425px] flex flex-col h-full">
-						<SheetHeader>
-							<SheetTitle>Add New Milestone</SheetTitle>
-							<SheetDescription>Create a new milestone to track your progress</SheetDescription>
-						</SheetHeader>
-						<div className="flex-grow overflow-y-auto py-4 space-y-4">
-							<div className="grid gap-1.5">
-								<Label htmlFor="milestone-title">Title</Label>
-								<Input id="milestone-title" placeholder="e.g., Launch Version 2.0" value={newMilestoneData.title} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, title: e.target.value })} />
-							</div>
-							<div className="grid gap-1.5">
-								<Label htmlFor="milestone-description">Description (Optional)</Label>
-								<Textarea id="milestone-description" placeholder="Describe the goal of this milestone" value={newMilestoneData.description} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, description: e.target.value })} />
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="grid gap-1.5">
-									<Label htmlFor="milestone-urgency">Urgency</Label>
-									<Select value={newMilestoneData.urgency} onValueChange={(value) => setNewMilestoneData({ ...newMilestoneData, urgency: value as Milestone["urgency"] })}>
-										<SelectTrigger id="milestone-urgency">
-											<SelectValue placeholder="Select urgency" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="high">High</SelectItem>
-											<SelectItem value="medium">Medium</SelectItem>
-											<SelectItem value="low">Low</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="grid gap-1.5">
-									<Label htmlFor="milestone-days">Days to Complete</Label>
-									<Input id="milestone-days" type="number" min="1" placeholder="e.g., 14" value={daysToComplete} onChange={(e) => setDaysToComplete(Number.parseInt(e.target.value) || 1)} />
-								</div>
-							</div>
-							{error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
-						</div>
-						<SheetFooter className="mt-auto pt-4 border-t">
-							<Button
-								variant="outline"
-								onClick={() => {
-									setNewMilestoneOpen(false);
-									setError(null);
-								}}
-							>
-								Cancel
+				<div className="flex items-center gap-2 w-full sm:w-auto">
+					<Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search milestones by title..." aria-label="Search milestones by title" className="w-full sm:w-[240px] md:w-[320px]" />
+					<Sheet open={newMilestoneOpen} onOpenChange={setNewMilestoneOpen}>
+						<SheetTrigger asChild>
+							<Button>
+								<Plus className="mr-2 h-4 w-4" />
+								Add Milestone
 							</Button>
-							<Button onClick={handleAddMilestone}>Add Milestone</Button>
-						</SheetFooter>
-					</SheetContent>
-				</Sheet>
+						</SheetTrigger>
+						<SheetContent className="sm:max-w-[425px] flex flex-col h-full">
+							<SheetHeader>
+								<SheetTitle>Add New Milestone</SheetTitle>
+								<SheetDescription>Create a new milestone to track your progress</SheetDescription>
+							</SheetHeader>
+							<div className="flex-grow overflow-y-auto py-4 space-y-4">
+								<div className="grid gap-1.5">
+									<Label htmlFor="milestone-title">Title</Label>
+									<Input id="milestone-title" placeholder="e.g., Launch Version 2.0" value={newMilestoneData.title} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, title: e.target.value })} />
+								</div>
+								<div className="grid gap-1.5">
+									<Label htmlFor="milestone-description">Description (Optional)</Label>
+									<Textarea id="milestone-description" placeholder="Describe the goal of this milestone" value={newMilestoneData.description} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, description: e.target.value })} />
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div className="grid gap-1.5">
+										<Label htmlFor="milestone-urgency">Urgency</Label>
+										<Select value={newMilestoneData.urgency} onValueChange={(value) => setNewMilestoneData({ ...newMilestoneData, urgency: value as Milestone["urgency"] })}>
+											<SelectTrigger id="milestone-urgency">
+												<SelectValue placeholder="Select urgency" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="high">High</SelectItem>
+												<SelectItem value="medium">Medium</SelectItem>
+												<SelectItem value="low">Low</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="grid gap-1.5">
+										<Label htmlFor="milestone-days">Days to Complete</Label>
+										<Input id="milestone-days" type="number" min="1" placeholder="e.g., 14" value={daysToComplete} onChange={(e) => setDaysToComplete(Number.parseInt(e.target.value) || 1)} />
+									</div>
+								</div>
+								{error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
+							</div>
+							<SheetFooter className="mt-auto pt-4 border-t">
+								<Button
+									variant="outline"
+									onClick={() => {
+										setNewMilestoneOpen(false);
+										setError(null);
+									}}
+								>
+									Cancel
+								</Button>
+								<Button onClick={handleAddMilestone}>Add Milestone</Button>
+							</SheetFooter>
+						</SheetContent>
+					</Sheet>
+				</div>
 			</div>
 
 			{error && !newMilestoneOpen && (
