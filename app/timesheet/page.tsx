@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from "date-fns";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay, startOfDay } from "date-fns";
 import { TimeEntry } from "@/types";
 import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/services/timeService";
 import WeekSelector from "@/components/timesheet/week-selector";
@@ -10,8 +10,11 @@ import AddEntryDialog from "@/components/timesheet/add-entry-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import TimesheetLoading from "@/app/timesheet/loading";
 
+export type DateFilter = "today" | "week" | "month";
+
 export default function TimesheetPage() {
 	const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
+	const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 	const [entries, setEntries] = useState<TimeEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -20,14 +23,36 @@ export default function TimesheetPage() {
 	const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const todayColumnRef = useRef<HTMLDivElement>(null);
+
+	// Calculate date range based on filter - memoized to prevent infinite loops
+	const dateRange = useMemo(() => {
+		switch (dateFilter) {
+			case "today":
+				const today = startOfDay(new Date());
+				return { start: today, end: today };
+			case "week":
+				return {
+					start: currentWeekStart,
+					end: endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+				};
+			case "month":
+				return {
+					start: startOfMonth(currentWeekStart),
+					end: endOfMonth(currentWeekStart),
+				};
+		}
+	}, [dateFilter, currentWeekStart]);
+
+	const { start: dateRangeStart, end: dateRangeEnd } = dateRange;
 
 	useEffect(() => {
 		setLoading(true);
 		setError(null);
 
-		const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
-		const startDay = format(currentWeekStart, "yyyy-MM-dd");
-		const endDay = format(weekEnd, "yyyy-MM-dd");
+		const startDay = format(dateRangeStart, "yyyy-MM-dd");
+		const endDay = format(dateRangeEnd, "yyyy-MM-dd");
 
 		try {
 			const unsubscribe = subscribeToEntriesByDateRange(MOCK_USER_ID, startDay, endDay, (fetchedEntries) => {
@@ -41,11 +66,25 @@ export default function TimesheetPage() {
 			setError("Failed to load time entries. Please refresh the page.");
 			setLoading(false);
 		}
-	}, [currentWeekStart]);
+	}, [dateRangeStart, dateRangeEnd]);
 
-	const weekDays = eachDayOfInterval({
-		start: currentWeekStart,
-		end: endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+	// Auto-scroll to today when filter changes
+	useEffect(() => {
+		if (!loading && (dateFilter === "week" || dateFilter === "month") && scrollContainerRef.current && todayColumnRef.current) {
+			// Small delay to ensure DOM is ready
+			setTimeout(() => {
+				todayColumnRef.current?.scrollIntoView({
+					behavior: "smooth",
+					block: "nearest",
+					inline: "center",
+				});
+			}, 100);
+		}
+	}, [loading, dateFilter]);
+
+	const displayDays = eachDayOfInterval({
+		start: dateRangeStart,
+		end: dateRangeEnd,
 	});
 
 	const handleAddEntry = (day: Date) => {
@@ -101,28 +140,42 @@ export default function TimesheetPage() {
 		);
 	}
 
+	const getFilterLabel = () => {
+		switch (dateFilter) {
+			case "today":
+				return "Today";
+			case "week":
+				return "Week";
+			case "month":
+				return "Month";
+		}
+	};
+
 	return (
 		<div className="container mx-auto p-4 space-y-6">
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-3xl font-bold">Timesheet</h1>
-					<p className="text-muted-foreground mt-1">Track your time across the week</p>
+					<p className="text-muted-foreground mt-1">Track your time across the {getFilterLabel().toLowerCase()}</p>
 				</div>
 				<div className="text-right">
-					<p className="text-sm text-muted-foreground">Week Total</p>
+					<p className="text-sm text-muted-foreground">{getFilterLabel()} Total</p>
 					<p className="text-2xl font-bold">{formatWeekTotal(weekTotal)}</p>
 				</div>
 			</div>
 
-			<WeekSelector currentWeekStart={currentWeekStart} onWeekChange={setCurrentWeekStart} />
+			<WeekSelector currentWeekStart={currentWeekStart} onWeekChange={setCurrentWeekStart} dateFilter={dateFilter} onFilterChange={setDateFilter} />
 
-			<div className="overflow-x-auto pb-4">
-				<div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4 min-w-max md:min-w-0">
-					{weekDays.map((day) => (
-						<div key={day.toISOString()} className="w-80 md:w-auto flex-shrink-0">
-							<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} />
-						</div>
-					))}
+			<div ref={scrollContainerRef} className="overflow-x-auto overflow-y-hidden pb-4">
+				<div className="flex gap-4">
+					{displayDays.map((day) => {
+						const isToday = isSameDay(day, new Date());
+						return (
+							<div key={day.toISOString()} ref={isToday ? todayColumnRef : null} className="flex-shrink-0" style={{ width: "320px" }}>
+								<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} />
+							</div>
+						);
+					})}
 				</div>
 			</div>
 

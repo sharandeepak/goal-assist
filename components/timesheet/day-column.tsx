@@ -99,11 +99,12 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 	const isToday = isSameDay(day, new Date());
 
 	return (
-		<Card className={isToday ? "border-primary" : ""}>
-			<CardHeader className="pb-3">
+		<Card className={`flex flex-col ${isToday ? "border-primary border-2" : ""}`} style={{ height: "600px" }}>
+			<CardHeader className="pb-3 flex-shrink-0">
 				<div className="flex items-center justify-between">
 					<div className="flex-1 min-w-0">
-						<CardTitle className="text-sm font-medium">{format(day, "EEE, MMM d")}</CardTitle>
+						<CardTitle className="text-sm font-medium">{format(day, "EEE,")}</CardTitle>
+						<CardTitle className="text-sm font-medium">{format(day, "MMM d")}</CardTitle>
 						<p className="text-xs text-muted-foreground mt-1">Total: {formatTotal(totalSeconds)}</p>
 					</div>
 					<div className="flex items-center gap-1">
@@ -116,7 +117,7 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className="space-y-2">
+			<CardContent className="flex-1 overflow-y-auto space-y-2 min-h-0">
 				{dayEntries.length === 0 ? (
 					<div className="text-center py-8 text-sm text-muted-foreground">
 						No entries
