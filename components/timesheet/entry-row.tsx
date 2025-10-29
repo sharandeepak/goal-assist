@@ -30,7 +30,8 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 		return `${minutes}m`;
 	};
 
-	const isRunning = !entry.endedAt;
+	const isRunning = entry.startedAt && !entry.endedAt;
+	const isDurationOnly = !entry.startedAt && !entry.endedAt;
 
 	return (
 		<div className="group p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onView?.(entry)}>
@@ -38,7 +39,7 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
 						<h4 className="text-sm font-medium truncate">{entry.taskTitleSnapshot}</h4>
-						{entry.source === "timer" && (
+						{/* {entry.source === "timer" && (
 							<Badge variant="outline" className="text-xs">
 								Timer
 							</Badge>
@@ -47,14 +48,20 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 							<Badge variant="default" className="text-xs">
 								Running
 							</Badge>
-						)}
+						)} */}
 					</div>
 					<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
 						<Clock className="h-3 w-3" />
-						<span>
-							{formatTime(entry.startedAt)} - {isRunning ? "Running" : formatTime(entry.endedAt)}
-						</span>
-						<span className="font-medium">{formatDuration(entry.durationSec)}</span>
+						{isDurationOnly ? (
+							<span className="font-medium">{formatDuration(entry.durationSec)}</span>
+						) : (
+							<>
+								<span>
+									{formatTime(entry.startedAt)} - {isRunning ? "Running" : formatTime(entry.endedAt)}
+								</span>
+								<span className="font-medium">{formatDuration(entry.durationSec)}</span>
+							</>
+						)}
 					</div>
 					{entry.note && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{entry.note}</p>}
 				</div>

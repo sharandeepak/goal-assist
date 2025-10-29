@@ -1,7 +1,10 @@
 "use client";
 
 import { TimeEntry } from "@/types";
-import { format } from "date-fns";
+import { format as formatDate } from "date-fns";
+
+// Alias to avoid conflict with variable name
+const format = formatDate;
 import { Clock, Calendar, Edit2, Copy, Check, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -48,13 +51,23 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 	const isRunning = !entry.endedAt;
 
 	const handleCopy = async () => {
-		const entryDate = formatFullDate(entry.startedAt);
-		const startTime = formatTime(entry.startedAt);
-		const endTime = isRunning ? "Running" : formatTime(entry.endedAt);
+		const entryDate = entry.startedAt ? formatFullDate(entry.startedAt) : format(new Date(entry.day), "EEEE, MMMM d, yyyy");
 		const duration = formatDuration(entry.durationSec);
 		const note = entry.note ? `\n\nNotes:\n${entry.note}` : "";
 
-		const clipboardText = `${entry.taskTitleSnapshot}\n${entryDate}\n${startTime} - ${endTime} (${duration})${note}`;
+		let timeInfo = "";
+		if (entry.startedAt && entry.endedAt) {
+			const startTime = formatTime(entry.startedAt);
+			const endTime = formatTime(entry.endedAt);
+			timeInfo = `${startTime} - ${endTime} (${duration})`;
+		} else if (entry.startedAt && !entry.endedAt) {
+			const startTime = formatTime(entry.startedAt);
+			timeInfo = `${startTime} - Running (${duration})`;
+		} else {
+			timeInfo = `Duration: ${duration}`;
+		}
+
+		const clipboardText = `${entry.taskTitleSnapshot}\n${entryDate}\n${timeInfo}${note}`;
 
 		try {
 			await navigator.clipboard.writeText(clipboardText);
@@ -91,7 +104,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 								Timer
 							</Badge>
 						)}
-						{isRunning && (
+						{isRunning && entry.startedAt && (
 							<Badge variant="default" className="text-xs animate-pulse">
 								Running
 							</Badge>
@@ -99,33 +112,55 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					</SheetTitle>
 					<SheetDescription className="flex items-center gap-2 text-base">
 						<Calendar className="h-4 w-4" />
-						{formatFullDate(entry.startedAt)}
+						{entry.startedAt ? formatFullDate(entry.startedAt) : format(new Date(entry.day), "EEEE, MMMM d, yyyy")}
 					</SheetDescription>
 				</SheetHeader>
 
 				<div className="space-y-6 py-6">
-					{/* Time Section */}
-					<div className="space-y-3">
-						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<Clock className="h-4 w-4" />
-							Time Details
+					{/* Time Section - Only show if times are available */}
+					{(entry.startedAt || entry.endedAt) && (
+						<div className="space-y-3">
+							<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+								<Clock className="h-4 w-4" />
+								Time Details
+							</div>
+							<div className="pl-6 space-y-2">
+								{entry.startedAt && (
+									<div className="flex justify-between items-center">
+										<span className="text-sm text-muted-foreground">Start Time:</span>
+										<span className="text-base font-semibold">{formatTime(entry.startedAt)}</span>
+									</div>
+								)}
+								{entry.startedAt && (
+									<div className="flex justify-between items-center">
+										<span className="text-sm text-muted-foreground">End Time:</span>
+										<span className="text-base font-semibold">{isRunning ? <Badge variant="default">Running</Badge> : entry.endedAt ? formatTime(entry.endedAt) : "N/A"}</span>
+									</div>
+								)}
+								<Separator />
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-muted-foreground">Total Duration:</span>
+									<span className="text-lg font-bold text-primary">{formatDuration(entry.durationSec)}</span>
+								</div>
+							</div>
 						</div>
-						<div className="pl-6 space-y-2">
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-muted-foreground">Start Time:</span>
-								<span className="text-base font-semibold">{formatTime(entry.startedAt)}</span>
+					)}
+
+					{/* Duration Only Section - Show if no times */}
+					{!entry.startedAt && !entry.endedAt && (
+						<div className="space-y-3">
+							<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+								<Clock className="h-4 w-4" />
+								Duration
 							</div>
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-muted-foreground">End Time:</span>
-								<span className="text-base font-semibold">{isRunning ? <Badge variant="default">Running</Badge> : formatTime(entry.endedAt)}</span>
-							</div>
-							<Separator />
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-muted-foreground">Total Duration:</span>
-								<span className="text-lg font-bold text-primary">{formatDuration(entry.durationSec)}</span>
+							<div className="pl-6">
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-muted-foreground">Total Time:</span>
+									<span className="text-lg font-bold text-primary">{formatDuration(entry.durationSec)}</span>
+								</div>
 							</div>
 						</div>
-					</div>
+					)}
 
 					{/* Notes Section */}
 					{entry.note && (
@@ -145,16 +180,6 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 							</div>
 						</div>
 					)}
-
-					{/* Entry Source */}
-					<div className="space-y-3">
-						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">Entry Source</div>
-						<div className="pl-6">
-							<Badge variant="outline" className="text-sm">
-								{entry.source === "timer" ? "Timer" : "Manual Entry"}
-							</Badge>
-						</div>
-					</div>
 				</div>
 
 				<SheetFooter className="flex-col sm:flex-row gap-2">

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { logManualEntry, updateEntry, MOCK_USER_ID } from "@/services/timeService";
 import { Timestamp } from "firebase/firestore";
 
@@ -30,6 +31,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [entryMode, setEntryMode] = useState<"duration" | "time">("duration");
+	const [addMoreEntries, setAddMoreEntries] = useState(false);
 
 	useEffect(() => {
 		if (isOpen && editingEntry) {
@@ -254,15 +256,21 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						<Label htmlFor="note">Note (optional)</Label>
 						<Textarea id="note" placeholder="Add details..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
 					</div>
+					{!editingEntry && (
+						<div className="flex items-center justify-between py-2 border-t">
+							<div className="space-y-0.5">
+								<Label htmlFor="add-more-entries" className="text-sm font-medium">
+									Add More Entries
+								</Label>
+								<p className="text-xs text-muted-foreground">Keep dialog open after adding</p>
+							</div>
+							<Switch id="add-more-entries" checked={addMoreEntries} onCheckedChange={setAddMoreEntries} disabled={loading} />
+						</div>
+					)}
 					{error && <p className="text-sm text-destructive">{error}</p>}
 				</div>
-				<SheetFooter className="flex-col sm:flex-row gap-2">
-					{!editingEntry && (
-						<Button variant="outline" onClick={() => handleSubmit(false)} disabled={loading} type="button">
-							Add More Entry
-						</Button>
-					)}
-					<Button onClick={() => handleSubmit(true)} disabled={loading}>
+				<SheetFooter className="pt-4 border-t">
+					<Button onClick={() => handleSubmit(!addMoreEntries)} disabled={loading}>
 						{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{editingEntry ? "Save Changes" : "Add Entry"}
 					</Button>

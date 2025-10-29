@@ -51,7 +51,7 @@ export async function stopRunningTimer(userId: string): Promise<TimeEntry | null
 	if (!running) return null;
 
 	const now = new Date();
-	const startDate = running.startedAt.toDate();
+	const startDate = running.createdAt.toDate();
 	const durationSec = Math.floor((now.getTime() - startDate.getTime()) / 1000);
 
 	await updateDoc(doc(db, TIME_ENTRIES_COLLECTION, running.id), {
@@ -85,7 +85,7 @@ export async function getRunningEntry(userId: string): Promise<TimeEntry | null>
  * Subscribe to the running timer entry for real-time updates.
  */
 export function subscribeToRunningEntry(userId: string, callback: (entry: TimeEntry | null) => void): () => void {
-	const q = query(collection(db, TIME_ENTRIES_COLLECTION), where("userId", "==", userId), where("endedAt", "==", null));
+	const q = query(collection(db, TIME_ENTRIES_COLLECTION), where("userId", "==", userId), where("source", "==", "timer"), where("endedAt", "==", null));
 
 	return onSnapshot(q, (snapshot) => {
 		if (snapshot.empty) {
@@ -122,20 +122,19 @@ export async function logManualEntry(params: {
 		throw new Error("Either adHocTitle or taskId must be provided");
 	}
 
-	let finalStartedAt: Date;
-	let finalEndedAt: Date;
+	let finalStartedAt: Timestamp | null;
+	let finalEndedAt: Timestamp | null;
 	let finalDurationSec: number;
 
 	if (startedAt && endedAt) {
 		// Time-based entry
-		finalStartedAt = startedAt;
-		finalEndedAt = endedAt;
+		finalStartedAt = Timestamp.fromDate(startedAt);
+		finalEndedAt = Timestamp.fromDate(endedAt);
 		finalDurationSec = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
 	} else if (durationSec !== undefined) {
-		// Duration-based entry - set start to beginning of day, end = start + duration
-		const dayDate = new Date(day + "T00:00:00");
-		finalStartedAt = dayDate;
-		finalEndedAt = new Date(dayDate.getTime() + durationSec * 1000);
+		// Duration-based entry - don't store start/end times, only duration
+		finalStartedAt = null;
+		finalEndedAt = null;
 		finalDurationSec = durationSec;
 	} else {
 		throw new Error("Either durationSec or (startedAt and endedAt) must be provided");
@@ -149,8 +148,8 @@ export async function logManualEntry(params: {
 		tagsSnapshot: tags || [],
 		note: note || null,
 		source: "manual",
-		startedAt: Timestamp.fromDate(finalStartedAt),
-		endedAt: Timestamp.fromDate(finalEndedAt),
+		startedAt: finalStartedAt,
+		endedAt: finalEndedAt,
 		durationSec: finalDurationSec,
 		day,
 		createdAt: Timestamp.now(),

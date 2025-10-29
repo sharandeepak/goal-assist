@@ -36,7 +36,7 @@ export default function GlobalTimer() {
 
 		const interval = setInterval(() => {
 			const now = new Date();
-			const startDate = runningEntry.startedAt.toDate();
+			const startDate = runningEntry?.createdAt?.toDate();
 			const elapsed = Math.floor((now.getTime() - startDate.getTime()) / 1000);
 			setElapsedSeconds(elapsed);
 		}, 1000);

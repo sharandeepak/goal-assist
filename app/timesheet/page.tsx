@@ -24,6 +24,9 @@ export default function TimesheetPage() {
 	const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+	const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
+	const [entriesToDelete, setEntriesToDelete] = useState<string[]>([]);
+	const [deleteDayName, setDeleteDayName] = useState<string>("");
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 	const [viewingEntry, setViewingEntry] = useState<TimeEntry | null>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -33,8 +36,9 @@ export default function TimesheetPage() {
 	const dateRange = useMemo(() => {
 		switch (dateFilter) {
 			case "today":
-				const today = startOfDay(new Date());
-				return { start: today, end: today };
+				// Use currentWeekStart as the selected day (not always "new Date()")
+				const selectedDay = startOfDay(currentWeekStart);
+				return { start: selectedDay, end: selectedDay };
 			case "week":
 				return {
 					start: currentWeekStart,
@@ -97,7 +101,9 @@ export default function TimesheetPage() {
 	};
 
 	const handleEditEntry = (entry: TimeEntry) => {
-		setSelectedDay(entry.startedAt.toDate());
+		// For duration-based entries without startedAt, use the day field
+		const selectedDate = entry.startedAt ? entry.startedAt.toDate() : new Date(entry.day);
+		setSelectedDay(selectedDate);
 		setEditingEntry(entry);
 		setIsAddDialogOpen(true);
 	};
@@ -113,7 +119,9 @@ export default function TimesheetPage() {
 	};
 
 	const handleEditFromView = (entry: TimeEntry) => {
-		setSelectedDay(entry.startedAt.toDate());
+		// For duration-based entries without startedAt, use the day field
+		const selectedDate = entry.startedAt ? entry.startedAt.toDate() : new Date(entry.day);
+		setSelectedDay(selectedDate);
 		setEditingEntry(entry);
 		setIsAddDialogOpen(true);
 	};
@@ -131,6 +139,24 @@ export default function TimesheetPage() {
 		}
 	};
 
+	const handleDeleteAllEntries = (day: Date, entryIds: string[]) => {
+		setEntriesToDelete(entryIds);
+		setDeleteDayName(format(day, "EEEE, MMMM d, yyyy"));
+		setDeleteAllConfirmOpen(true);
+	};
+
+	const confirmDeleteAll = async () => {
+		try {
+			await Promise.all(entriesToDelete.map((id) => deleteEntry(id)));
+			setEntriesToDelete([]);
+			setDeleteDayName("");
+			setDeleteAllConfirmOpen(false);
+		} catch (err) {
+			console.error("Error deleting entries:", err);
+			setError("Failed to delete entries. Please try again.");
+		}
+	};
+
 	const formatWeekTotal = (seconds: number): string => {
 		const hours = Math.floor(seconds / 3600);
 		const minutes = Math.floor((seconds % 3600) / 60);
@@ -142,18 +168,6 @@ export default function TimesheetPage() {
 
 	const weekTotal = entries.reduce((sum, entry) => sum + entry.durationSec, 0);
 
-	if (loading) {
-		return <TimesheetLoading />;
-	}
-
-	if (error) {
-		return (
-			<div className="container mx-auto p-4">
-				<div className="text-center text-red-600 py-8">{error}</div>
-			</div>
-		);
-	}
-
 	const getFilterLabel = () => {
 		switch (dateFilter) {
 			case "today":
@@ -164,6 +178,14 @@ export default function TimesheetPage() {
 				return "Month";
 		}
 	};
+
+	if (error) {
+		return (
+			<div className="container mx-auto p-4">
+				<div className="text-center text-red-600 py-8">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="container mx-auto p-4 space-y-6">
@@ -180,18 +202,30 @@ export default function TimesheetPage() {
 
 			<WeekSelector currentWeekStart={currentWeekStart} onWeekChange={setCurrentWeekStart} dateFilter={dateFilter} onFilterChange={setDateFilter} />
 
-			<div ref={scrollContainerRef} className="overflow-x-auto overflow-y-hidden pb-4">
-				<div className={dateFilter === "today" ? "w-full" : "flex gap-4"}>
-					{displayDays.map((day) => {
-						const isToday = isSameDay(day, new Date());
-						return (
-							<div key={day.toISOString()} ref={isToday ? todayColumnRef : null} className="flex-shrink-0" style={{ width: dateFilter === "today" ? "100%" : "320px" }}>
-								<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} onViewEntry={handleViewEntry} />
+			{loading ? (
+				<div ref={scrollContainerRef} className="overflow-x-auto overflow-y-hidden pb-4">
+					<div className={dateFilter === "today" ? "w-full" : "flex gap-4"}>
+						{displayDays.map((day) => (
+							<div key={day.toISOString()} className="flex-shrink-0" style={{ width: dateFilter === "today" ? "100%" : "320px" }}>
+								<TimesheetLoading />
 							</div>
-						);
-					})}
+						))}
+					</div>
 				</div>
-			</div>
+			) : (
+				<div ref={scrollContainerRef} className="overflow-x-auto overflow-y-hidden pb-4">
+					<div className={dateFilter === "today" ? "w-full" : "flex gap-4"}>
+						{displayDays.map((day) => {
+							const isToday = isSameDay(day, new Date());
+							return (
+								<div key={day.toISOString()} ref={isToday ? todayColumnRef : null} className="flex-shrink-0" style={{ width: dateFilter === "today" ? "100%" : "320px" }}>
+									<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} onViewEntry={handleViewEntry} onDeleteAllEntries={handleDeleteAllEntries} />
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
 
 			<AddEntryDialog isOpen={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} selectedDay={selectedDay} editingEntry={editingEntry} />
 
@@ -206,6 +240,23 @@ export default function TimesheetPage() {
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog open={deleteAllConfirmOpen} onOpenChange={setDeleteAllConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete All Entries for {deleteDayName}</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete all {entriesToDelete.length} {entriesToDelete.length === 1 ? "entry" : "entries"} for this day? This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+							Delete All
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

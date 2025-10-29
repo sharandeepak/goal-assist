@@ -2,7 +2,7 @@
 
 import { TimeEntry } from "@/types";
 import { format, isSameDay } from "date-fns";
-import { Plus, Copy, Check } from "lucide-react";
+import { Plus, Copy, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EntryRow from "./entry-row";
@@ -16,13 +16,18 @@ interface DayColumnProps {
 	onEditEntry: (entry: TimeEntry) => void;
 	onDeleteEntry: (entryId: string) => void;
 	onViewEntry?: (entry: TimeEntry) => void;
+	onDeleteAllEntries?: (day: Date, entryIds: string[]) => void;
 }
 
-export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDeleteEntry, onViewEntry }: DayColumnProps) {
+export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDeleteEntry, onViewEntry, onDeleteAllEntries }: DayColumnProps) {
 	const [copied, setCopied] = useState(false);
 	const { toast } = useToast();
 
 	const dayEntries = entries.filter((entry) => {
+		// For duration-based entries without startedAt, use the day field
+		if (!entry.startedAt) {
+			return entry.day === format(day, "yyyy-MM-dd");
+		}
 		const entryDate = entry.startedAt.toDate();
 		return isSameDay(entryDate, day);
 	});
@@ -69,11 +74,19 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 		const dayText = format(day, "EEEE, MMMM d, yyyy");
 		const entriesText = dayEntries
 			.map((entry) => {
-				const startTime = formatTime(entry.startedAt);
-				const endTime = entry.endedAt ? formatTime(entry.endedAt) : "Running";
 				const duration = formatDuration(entry.durationSec);
 				const note = entry.note ? ` - ${entry.note}` : "";
-				return `• ${entry.taskTitleSnapshot} (${startTime} - ${endTime}, ${duration})${note}`;
+				if (entry.startedAt && entry.endedAt) {
+					const startTime = formatTime(entry.startedAt);
+					const endTime = formatTime(entry.endedAt);
+					return `• ${entry.taskTitleSnapshot} (${startTime} - ${endTime}, ${duration})${note}`;
+				} else if (entry.startedAt && !entry.endedAt) {
+					const startTime = formatTime(entry.startedAt);
+					return `• ${entry.taskTitleSnapshot} (${startTime} - Running, ${duration})${note}`;
+				} else {
+					// Duration-only entry
+					return `• ${entry.taskTitleSnapshot} (${duration})${note}`;
+				}
 			})
 			.join("\n");
 
@@ -97,6 +110,12 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 		}
 	};
 
+	const handleDeleteAll = () => {
+		if (dayEntries.length === 0) return;
+		const entryIds = dayEntries.map((entry) => entry.id);
+		onDeleteAllEntries?.(day, entryIds);
+	};
+
 	const isToday = isSameDay(day, new Date());
 
 	return (
@@ -109,6 +128,9 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 						<p className="text-xs text-muted-foreground mt-1">Total: {formatTotal(totalSeconds)}</p>
 					</div>
 					<div className="flex items-center gap-1">
+						<Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDeleteAll} disabled={dayEntries.length === 0} title="Delete all entries">
+							<Trash2 className="h-3 w-3 text-destructive" />
+						</Button>
 						<Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy} disabled={dayEntries.length === 0} title="Copy day entries">
 							{copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
 						</Button>

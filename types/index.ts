@@ -70,10 +70,10 @@ export interface TimeEntry {
 	tagsSnapshot?: string[]; // Optional snapshot
 	note?: string | null; // Optional note
 	source: "manual" | "timer";
-	startedAt: Timestamp; // Start time
-	endedAt: Timestamp | null; // Null while timer is running
+	startedAt: Timestamp | null; // Start time (null for duration-based entries)
+	endedAt: Timestamp | null; // Null while timer is running or for duration-based entries
 	durationSec: number; // Denormalized duration; 0 while running
-	day: string; // YYYY-MM-DD of startedAt (for fast queries)
+	day: string; // YYYY-MM-DD (for fast queries)
 	createdAt: Timestamp;
 	updatedAt: Timestamp;
 }
