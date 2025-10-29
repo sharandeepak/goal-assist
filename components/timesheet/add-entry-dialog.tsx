@@ -62,7 +62,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 		setError(null);
 	}, [isOpen, editingEntry]);
 
-	const handleSubmit = async () => {
+	const handleSubmit = async (closeAfterSave: boolean = true) => {
 		if (!taskTitle.trim()) {
 			setError("Task title is required");
 			return;
@@ -160,7 +160,19 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					});
 				}
 			}
-			onOpenChange(false);
+
+			// Clear form if not closing (Add More functionality)
+			if (!closeAfterSave && !editingEntry) {
+				setTaskTitle("");
+				setHours("");
+				setMinutes("");
+				setStartTime("");
+				setEndTime("");
+				setNote("");
+				setError(null);
+			} else {
+				onOpenChange(false);
+			}
 		} catch (err) {
 			console.error("Error saving entry:", err);
 			setError("Failed to save entry. Please try again.");
@@ -244,8 +256,13 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					</div>
 					{error && <p className="text-sm text-destructive">{error}</p>}
 				</div>
-				<SheetFooter>
-					<Button onClick={handleSubmit} disabled={loading}>
+				<SheetFooter className="flex-col sm:flex-row gap-2">
+					{!editingEntry && (
+						<Button variant="outline" onClick={() => handleSubmit(false)} disabled={loading} type="button">
+							Add More Entry
+						</Button>
+					)}
+					<Button onClick={() => handleSubmit(true)} disabled={loading}>
 						{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{editingEntry ? "Save Changes" : "Add Entry"}
 					</Button>

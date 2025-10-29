@@ -15,9 +15,10 @@ interface DayColumnProps {
 	onAddEntry: (day: Date) => void;
 	onEditEntry: (entry: TimeEntry) => void;
 	onDeleteEntry: (entryId: string) => void;
+	onViewEntry?: (entry: TimeEntry) => void;
 }
 
-export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDeleteEntry }: DayColumnProps) {
+export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDeleteEntry, onViewEntry }: DayColumnProps) {
 	const [copied, setCopied] = useState(false);
 	const { toast } = useToast();
 
@@ -126,7 +127,7 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 						</Button>
 					</div>
 				) : (
-					dayEntries.map((entry) => <EntryRow key={entry.id} entry={entry} onEdit={onEditEntry} onDelete={onDeleteEntry} />)
+					dayEntries.map((entry) => <EntryRow key={entry.id} entry={entry} onEdit={onEditEntry} onDelete={onDeleteEntry} onView={onViewEntry} />)
 				)}
 			</CardContent>
 		</Card>

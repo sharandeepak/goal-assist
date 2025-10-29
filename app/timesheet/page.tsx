@@ -7,6 +7,7 @@ import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/serv
 import WeekSelector from "@/components/timesheet/week-selector";
 import DayColumn from "@/components/timesheet/day-column";
 import AddEntryDialog from "@/components/timesheet/add-entry-dialog";
+import ViewEntryDialog from "@/components/timesheet/view-entry-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import TimesheetLoading from "@/app/timesheet/loading";
 
@@ -23,6 +24,8 @@ export default function TimesheetPage() {
 	const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+	const [viewingEntry, setViewingEntry] = useState<TimeEntry | null>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const todayColumnRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +107,17 @@ export default function TimesheetPage() {
 		setDeleteConfirmOpen(true);
 	};
 
+	const handleViewEntry = (entry: TimeEntry) => {
+		setViewingEntry(entry);
+		setIsViewDialogOpen(true);
+	};
+
+	const handleEditFromView = (entry: TimeEntry) => {
+		setSelectedDay(entry.startedAt.toDate());
+		setEditingEntry(entry);
+		setIsAddDialogOpen(true);
+	};
+
 	const confirmDelete = async () => {
 		if (entryToDelete) {
 			try {
@@ -167,12 +181,12 @@ export default function TimesheetPage() {
 			<WeekSelector currentWeekStart={currentWeekStart} onWeekChange={setCurrentWeekStart} dateFilter={dateFilter} onFilterChange={setDateFilter} />
 
 			<div ref={scrollContainerRef} className="overflow-x-auto overflow-y-hidden pb-4">
-				<div className="flex gap-4">
+				<div className={dateFilter === "today" ? "w-full" : "flex gap-4"}>
 					{displayDays.map((day) => {
 						const isToday = isSameDay(day, new Date());
 						return (
-							<div key={day.toISOString()} ref={isToday ? todayColumnRef : null} className="flex-shrink-0" style={{ width: "320px" }}>
-								<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} />
+							<div key={day.toISOString()} ref={isToday ? todayColumnRef : null} className="flex-shrink-0" style={{ width: dateFilter === "today" ? "100%" : "320px" }}>
+								<DayColumn day={day} entries={entries} onAddEntry={handleAddEntry} onEditEntry={handleEditEntry} onDeleteEntry={handleDeleteEntry} onViewEntry={handleViewEntry} />
 							</div>
 						);
 					})}
@@ -180,6 +194,8 @@ export default function TimesheetPage() {
 			</div>
 
 			<AddEntryDialog isOpen={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} selectedDay={selectedDay} editingEntry={editingEntry} />
+
+			<ViewEntryDialog isOpen={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} entry={viewingEntry} onEdit={handleEditFromView} />
 
 			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
 				<AlertDialogContent>

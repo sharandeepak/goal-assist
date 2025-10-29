@@ -10,9 +10,10 @@ interface EntryRowProps {
 	entry: TimeEntry;
 	onEdit: (entry: TimeEntry) => void;
 	onDelete: (entryId: string) => void;
+	onView?: (entry: TimeEntry) => void;
 }
 
-export default function EntryRow({ entry, onEdit, onDelete }: EntryRowProps) {
+export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowProps) {
 	const formatTime = (timestamp: any): string => {
 		if (!timestamp) return "";
 		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -32,7 +33,7 @@ export default function EntryRow({ entry, onEdit, onDelete }: EntryRowProps) {
 	const isRunning = !entry.endedAt;
 
 	return (
-		<div className="group p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+		<div className="group p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onView?.(entry)}>
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
@@ -58,10 +59,26 @@ export default function EntryRow({ entry, onEdit, onDelete }: EntryRowProps) {
 					{entry.note && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{entry.note}</p>}
 				</div>
 				<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-					<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(entry)}>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7"
+						onClick={(e) => {
+							e.stopPropagation();
+							onEdit(entry);
+						}}
+					>
 						<Edit2 className="h-3 w-3" />
 					</Button>
-					<Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(entry.id)}>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7 text-destructive"
+						onClick={(e) => {
+							e.stopPropagation();
+							onDelete(entry.id);
+						}}
+					>
 						<Trash2 className="h-3 w-3" />
 					</Button>
 				</div>
