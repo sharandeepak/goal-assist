@@ -60,3 +60,20 @@ export interface SatisfactionSummary {
 	currentScore: number | null;
 	change: number | null;
 }
+
+export interface TimeEntry {
+	id: string; // Firestore document ID
+	userId: string; // Owner of the entry
+	taskId: string | null; // Linked task or null for ad-hoc
+	taskTitleSnapshot: string; // Title at the time of logging (or ad-hoc title)
+	milestoneIdSnapshot?: string | null; // Optional snapshot
+	tagsSnapshot?: string[]; // Optional snapshot
+	note?: string | null; // Optional note
+	source: "manual" | "timer";
+	startedAt: Timestamp; // Start time
+	endedAt: Timestamp | null; // Null while timer is running
+	durationSec: number; // Denormalized duration; 0 while running
+	day: string; // YYYY-MM-DD of startedAt (for fast queries)
+	createdAt: Timestamp;
+	updatedAt: Timestamp;
+}

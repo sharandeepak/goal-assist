@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, ChevronDown, Home, LineChart, Mic, Settings, Target } from "lucide-react";
+import { Calendar, ChevronDown, Home, LineChart, Mic, Settings, Target, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./mode-toggle";
+import GlobalTimer from "./global-timer";
 
 const routes = [
 	{
@@ -28,6 +29,11 @@ const routes = [
 		name: "Milestones",
 		path: "/milestones",
 		icon: Target,
+	},
+	{
+		name: "Timesheet",
+		path: "/timesheet",
+		icon: Clock,
 	},
 	// {
 	//   name: "Analytics",
@@ -68,6 +74,8 @@ export default function Navbar() {
 				</div>
 
 				<div className="flex items-center gap-4">
+					<GlobalTimer />
+
 					<Button
 						variant="outline"
 						size="sm"
