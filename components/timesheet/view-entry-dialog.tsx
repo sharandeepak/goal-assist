@@ -97,7 +97,10 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 			<SheetContent className="sm:max-w-[500px]">
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
-						<span className="flex-1 text-xl">{entry.taskTitleSnapshot}</span>
+						<span className="flex-1 text-xl">
+							{entry.emoji && <span className="mr-2 text-2xl">{entry.emoji}</span>}
+							{entry.taskTitleSnapshot}
+						</span>
 						{entry.source === "timer" && (
 							<Badge variant="outline" className="text-xs">
 								<Timer className="h-3 w-3 mr-1" />
