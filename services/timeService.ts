@@ -14,8 +14,8 @@ const MOCK_USER_ID = "demo-user"; // Replace with actual auth
  * Start a timer for a task or ad-hoc entry.
  * Only one timer can run at a time per user.
  */
-export async function startTimer(params: { userId: string; taskId?: string; taskTitle: string; milestoneId?: string; tags?: string[]; note?: string }): Promise<string> {
-	const { userId, taskId, taskTitle, milestoneId, tags, note } = params;
+export async function startTimer(params: { userId: string; taskId?: string; taskTitle: string; emoji?: string; milestoneId?: string; tags?: string[]; note?: string }): Promise<string> {
+	const { userId, taskId, taskTitle, emoji, milestoneId, tags, note } = params;
 
 	// Stop any running timer first
 	await stopRunningTimer(userId);
@@ -27,6 +27,7 @@ export async function startTimer(params: { userId: string; taskId?: string; task
 		userId,
 		taskId: taskId || null,
 		taskTitleSnapshot: taskTitle,
+		emoji: emoji || null,
 		milestoneIdSnapshot: milestoneId || null,
 		tagsSnapshot: tags || [],
 		note: note || null,
@@ -109,6 +110,7 @@ export async function logManualEntry(params: {
 	day: string; // YYYY-MM-DD
 	taskId?: string;
 	adHocTitle?: string;
+	emoji?: string;
 	milestoneId?: string;
 	tags?: string[];
 	note?: string;
@@ -116,7 +118,7 @@ export async function logManualEntry(params: {
 	startedAt?: Date; // For time-based entry
 	endedAt?: Date; // For time-based entry
 }): Promise<string> {
-	const { userId, day, taskId, adHocTitle, milestoneId, tags, note, durationSec, startedAt, endedAt } = params;
+	const { userId, day, taskId, adHocTitle, emoji, milestoneId, tags, note, durationSec, startedAt, endedAt } = params;
 
 	if (!adHocTitle && !taskId) {
 		throw new Error("Either adHocTitle or taskId must be provided");
@@ -144,6 +146,7 @@ export async function logManualEntry(params: {
 		userId,
 		taskId: taskId || null,
 		taskTitleSnapshot: adHocTitle || "Untitled Task",
+		emoji: emoji || null,
 		milestoneIdSnapshot: milestoneId || null,
 		tagsSnapshot: tags || [],
 		note: note || null,

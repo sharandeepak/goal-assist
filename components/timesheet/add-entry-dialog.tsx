@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { TimeEntry } from "@/types";
 import { format } from "date-fns";
-import { Loader2, Clock } from "lucide-react";
+import { Loader2, Clock, Smile } from "lucide-react";
+import { useTheme } from "next-themes";
+import EmojiPicker from "emoji-picker-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +34,16 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 	const [error, setError] = useState<string | null>(null);
 	const [entryMode, setEntryMode] = useState<"duration" | "time">("duration");
 	const [addMoreEntries, setAddMoreEntries] = useState(false);
+	const [emoji, setEmoji] = useState<string>("");
+	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+	const { theme } = useTheme();
+	const isDarkTheme = theme !== "light";
 
 	useEffect(() => {
 		if (isOpen && editingEntry) {
 			// Populate form for editing
 			setTaskTitle(editingEntry.taskTitleSnapshot);
+			setEmoji(editingEntry.emoji || "");
 			const totalMinutes = Math.floor(editingEntry.durationSec / 60);
 			setHours(Math.floor(totalMinutes / 60).toString());
 			setMinutes((totalMinutes % 60).toString());
@@ -54,6 +61,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 		} else if (isOpen) {
 			// Reset form for new entry
 			setTaskTitle("");
+			setEmoji("");
 			setHours("");
 			setMinutes("");
 			setStartTime("");
@@ -111,6 +119,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						entryId: editingEntry.id,
 						fields: {
 							taskTitleSnapshot: taskTitle.trim(),
+							emoji: emoji || null,
 							note: note.trim() || null,
 							startedAt: Timestamp.fromDate(startDate),
 							endedAt: Timestamp.fromDate(endDate),
@@ -123,6 +132,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						userId: MOCK_USER_ID,
 						day: dayStr,
 						adHocTitle: taskTitle.trim(),
+						emoji: emoji || undefined,
 						note: note.trim() || undefined,
 						startedAt: startDate,
 						endedAt: endDate,
@@ -146,6 +156,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						entryId: editingEntry.id,
 						fields: {
 							taskTitleSnapshot: taskTitle.trim(),
+							emoji: emoji || null,
 							note: note.trim() || null,
 							durationSec,
 						},
@@ -157,6 +168,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						userId: MOCK_USER_ID,
 						day: dayStr,
 						adHocTitle: taskTitle.trim(),
+						emoji: emoji || undefined,
 						note: note.trim() || undefined,
 						durationSec,
 					});
@@ -166,6 +178,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 			// Clear form if not closing (Add More functionality)
 			if (!closeAfterSave && !editingEntry) {
 				setTaskTitle("");
+				setEmoji("");
 				setHours("");
 				setMinutes("");
 				setStartTime("");
@@ -201,7 +214,27 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 				<div className="space-y-4 py-4">
 					<div>
 						<Label htmlFor="task-title">Task Title *</Label>
-						<Input id="task-title" placeholder="What did you work on?" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} autoFocus />
+						<div className="relative">
+							<div className="flex gap-2">
+								<div className="flex-1 flex items-center gap-2">
+									<Button type="button" variant="outline" size="sm" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={emoji ? "text-primary" : ""}>
+										{emoji || <Smile className="h-4 w-4" />}
+									</Button>
+									<Input id="task-title" placeholder="What did you work on?" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} autoFocus className={emoji ? "pl-8" : ""} />
+								</div>
+							</div>
+							{showEmojiPicker && (
+								<div className="absolute top-full left-0 z-50 mt-1">
+									<EmojiPicker
+										onEmojiClick={(emojiData) => {
+											setEmoji(emojiData.emoji);
+											setShowEmojiPicker(false);
+										}}
+										theme={isDarkTheme ? "dark" : ("light" as any)}
+									/>
+								</div>
+							)}
+						</div>
 					</div>
 
 					<Tabs value={entryMode} onValueChange={(v) => setEntryMode(v as "duration" | "time")}>

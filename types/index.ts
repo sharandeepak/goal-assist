@@ -66,6 +66,7 @@ export interface TimeEntry {
 	userId: string; // Owner of the entry
 	taskId: string | null; // Linked task or null for ad-hoc
 	taskTitleSnapshot: string; // Title at the time of logging (or ad-hoc title)
+	emoji?: string | null; // Optional emoji for the entry
 	milestoneIdSnapshot?: string | null; // Optional snapshot
 	tagsSnapshot?: string[]; // Optional snapshot
 	note?: string | null; // Optional note

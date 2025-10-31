@@ -16,6 +16,11 @@ export const metadata: Metadata = {
 	title: "Goal Assist",
 	description: "AI-powered productivity tracking for software engineers",
 	generator: "v0.dev",
+	icons: {
+		icon: "/target.svg",
+		shortcut: "/target.svg",
+		apple: "/target.svg",
+	},
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

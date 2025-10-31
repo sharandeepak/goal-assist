@@ -38,7 +38,10 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
-						<h4 className="text-sm font-medium truncate">{entry.taskTitleSnapshot}</h4>
+						<h4 className="text-sm font-medium truncate">
+							{entry.emoji && <span className="mr-1">{entry.emoji}</span>}
+							{entry.taskTitleSnapshot}
+						</h4>
 						{/* {entry.source === "timer" && (
 							<Badge variant="outline" className="text-xs">
 								Timer
@@ -63,7 +66,6 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 							</>
 						)}
 					</div>
-					{entry.note && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{entry.note}</p>}
 				</div>
 				<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 					<Button
