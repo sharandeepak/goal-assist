@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay, startOfDay } from "date-fns";
 import { TimeEntry } from "@/types";
 import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/services/timeService";
@@ -88,6 +89,22 @@ export default function TimesheetPage() {
 			}, 100);
 		}
 	}, [loading, dateFilter]);
+
+	// Handle action parameter from URL (e.g., from spotlight)
+	useEffect(() => {
+		const searchParams = new URLSearchParams(window.location.search);
+		const action = searchParams.get("action");
+
+		if (action === "add") {
+			setSelectedDay(new Date());
+			setEditingEntry(null);
+			setIsAddDialogOpen(true);
+			// Clean up the URL by removing the action parameter
+			const url = new URL(window.location.href);
+			url.searchParams.delete("action");
+			window.history.replaceState({}, "", url.toString());
+		}
+	}, []);
 
 	const displayDays = eachDayOfInterval({
 		start: dateRangeStart,
