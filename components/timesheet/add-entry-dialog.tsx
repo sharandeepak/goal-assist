@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TimeEntry } from "@/types";
 import { format } from "date-fns";
 import { Loader2, Clock, Smile } from "lucide-react";
@@ -72,129 +72,150 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 		setError(null);
 	}, [isOpen, editingEntry]);
 
-	const handleSubmit = async (closeAfterSave: boolean = true) => {
-		if (!taskTitle.trim()) {
-			setError("Task title is required");
-			return;
-		}
+	const handleSubmit = useCallback(
+		async (closeAfterSave: boolean = true) => {
+			if (!taskTitle.trim()) {
+				setError("Task title is required");
+				return;
+			}
 
-		setLoading(true);
-		setError(null);
+			setLoading(true);
+			setError(null);
 
-		try {
-			if (entryMode === "time") {
-				// Time-based entry
-				if (!startTime || !endTime) {
-					setError("Both start and end times are required");
-					setLoading(false);
-					return;
-				}
+			try {
+				if (entryMode === "time") {
+					// Time-based entry
+					if (!startTime || !endTime) {
+						setError("Both start and end times are required");
+						setLoading(false);
+						return;
+					}
 
-				if (!selectedDay) {
-					setError("Selected day is required");
-					setLoading(false);
-					return;
-				}
+					if (!selectedDay) {
+						setError("Selected day is required");
+						setLoading(false);
+						return;
+					}
 
-				// Parse times
-				const [startHour, startMin] = startTime.split(":").map(Number);
-				const [endHour, endMin] = endTime.split(":").map(Number);
+					// Parse times
+					const [startHour, startMin] = startTime.split(":").map(Number);
+					const [endHour, endMin] = endTime.split(":").map(Number);
 
-				const startDate = new Date(selectedDay);
-				startDate.setHours(startHour, startMin, 0, 0);
+					const startDate = new Date(selectedDay);
+					startDate.setHours(startHour, startMin, 0, 0);
 
-				const endDate = new Date(selectedDay);
-				endDate.setHours(endHour, endMin, 0, 0);
+					const endDate = new Date(selectedDay);
+					endDate.setHours(endHour, endMin, 0, 0);
 
-				// Validate end is after start
-				if (endDate <= startDate) {
-					setError("End time must be after start time");
-					setLoading(false);
-					return;
-				}
+					// Validate end is after start
+					if (endDate <= startDate) {
+						setError("End time must be after start time");
+						setLoading(false);
+						return;
+					}
 
-				if (editingEntry) {
-					// Update with times
-					await updateEntry({
-						entryId: editingEntry.id,
-						fields: {
-							taskTitleSnapshot: taskTitle.trim(),
-							emoji: emoji || null,
-							note: note.trim() || null,
-							startedAt: Timestamp.fromDate(startDate),
-							endedAt: Timestamp.fromDate(endDate),
-						},
-					});
+					if (editingEntry) {
+						// Update with times
+						await updateEntry({
+							entryId: editingEntry.id,
+							fields: {
+								taskTitleSnapshot: taskTitle.trim(),
+								emoji: emoji || null,
+								note: note.trim() || null,
+								startedAt: Timestamp.fromDate(startDate),
+								endedAt: Timestamp.fromDate(endDate),
+							},
+						});
+					} else {
+						// Create with times
+						const dayStr = format(selectedDay, "yyyy-MM-dd");
+						await logManualEntry({
+							userId: MOCK_USER_ID,
+							day: dayStr,
+							adHocTitle: taskTitle.trim(),
+							emoji: emoji || undefined,
+							note: note.trim() || undefined,
+							startedAt: startDate,
+							endedAt: endDate,
+						});
+					}
 				} else {
-					// Create with times
-					const dayStr = format(selectedDay, "yyyy-MM-dd");
-					await logManualEntry({
-						userId: MOCK_USER_ID,
-						day: dayStr,
-						adHocTitle: taskTitle.trim(),
-						emoji: emoji || undefined,
-						note: note.trim() || undefined,
-						startedAt: startDate,
-						endedAt: endDate,
-					});
-				}
-			} else {
-				// Duration-based entry
-				const h = parseInt(hours) || 0;
-				const m = parseInt(minutes) || 0;
-				const durationSec = h * 3600 + m * 60;
+					// Duration-based entry
+					const h = parseInt(hours) || 0;
+					const m = parseInt(minutes) || 0;
+					const durationSec = h * 3600 + m * 60;
 
-				if (durationSec <= 0) {
-					setError("Duration must be greater than 0");
-					setLoading(false);
-					return;
-				}
+					if (durationSec <= 0) {
+						setError("Duration must be greater than 0");
+						setLoading(false);
+						return;
+					}
 
-				if (editingEntry) {
-					// Update existing entry
-					await updateEntry({
-						entryId: editingEntry.id,
-						fields: {
-							taskTitleSnapshot: taskTitle.trim(),
-							emoji: emoji || null,
-							note: note.trim() || null,
+					if (editingEntry) {
+						// Update existing entry
+						await updateEntry({
+							entryId: editingEntry.id,
+							fields: {
+								taskTitleSnapshot: taskTitle.trim(),
+								emoji: emoji || null,
+								note: note.trim() || null,
+								durationSec,
+							},
+						});
+					} else if (selectedDay) {
+						// Create new entry
+						const dayStr = format(selectedDay, "yyyy-MM-dd");
+						await logManualEntry({
+							userId: MOCK_USER_ID,
+							day: dayStr,
+							adHocTitle: taskTitle.trim(),
+							emoji: emoji || undefined,
+							note: note.trim() || undefined,
 							durationSec,
-						},
-					});
-				} else if (selectedDay) {
-					// Create new entry
-					const dayStr = format(selectedDay, "yyyy-MM-dd");
-					await logManualEntry({
-						userId: MOCK_USER_ID,
-						day: dayStr,
-						adHocTitle: taskTitle.trim(),
-						emoji: emoji || undefined,
-						note: note.trim() || undefined,
-						durationSec,
-					});
+						});
+					}
 				}
-			}
 
-			// Clear form if not closing (Add More functionality)
-			if (!closeAfterSave && !editingEntry) {
-				setTaskTitle("");
-				setEmoji("");
-				setHours("");
-				setMinutes("");
-				setStartTime("");
-				setEndTime("");
-				setNote("");
-				setError(null);
-			} else {
-				onOpenChange(false);
+				// Clear form if not closing (Add More functionality)
+				if (!closeAfterSave && !editingEntry) {
+					setTaskTitle("");
+					setEmoji("");
+					setHours("");
+					setMinutes("");
+					setStartTime("");
+					setEndTime("");
+					setNote("");
+					setError(null);
+				} else {
+					onOpenChange(false);
+				}
+			} catch (err) {
+				console.error("Error saving entry:", err);
+				setError("Failed to save entry. Please try again.");
+			} finally {
+				setLoading(false);
 			}
-		} catch (err) {
-			console.error("Error saving entry:", err);
-			setError("Failed to save entry. Please try again.");
-		} finally {
-			setLoading(false);
+		},
+		[taskTitle, entryMode, startTime, endTime, selectedDay, editingEntry, emoji, note, hours, minutes, addMoreEntries, onOpenChange]
+	);
+
+	// Keyboard shortcut for Cmd + Enter to save
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.metaKey && event.key === "Enter") {
+				event.preventDefault();
+				handleSubmit(!addMoreEntries);
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("keydown", handleKeyDown);
 		}
-	};
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, addMoreEntries, handleSubmit]);
 
 	const handleQuickAdd = (mins: number) => {
 		const currentMinutes = parseInt(minutes) || 0;
