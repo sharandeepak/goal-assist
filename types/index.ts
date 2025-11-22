@@ -7,6 +7,7 @@ export interface Task {
 	createdAt?: Timestamp; // Optional: for ordering/filtering
 	date?: Timestamp; // Optional: specific date for the task (used in planner/calendar)
 	priority?: "low" | "medium" | "high"; // Optional: for planner
+	urgency?: "low" | "medium" | "high"; // Optional: for Eisenhower matrix
 	tags?: string[]; // Optional: for planner
 	userId?: string; // Optional: if you need multi-user support later
 	milestoneId?: string; // Optional: if the task is associated with a milestone

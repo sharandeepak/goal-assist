@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, ChevronDown, Home, LineChart, Mic, Settings, Target, Clock } from "lucide-react";
+import { Calendar, ChevronDown, Home, LineChart, Mic, Settings, Target, Clock, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,11 @@ const routes = [
 		name: "Day Planner",
 		path: "/planner",
 		icon: ChevronDown,
+	},
+	{
+		name: "Matrix",
+		path: "/matrix",
+		icon: Grid3x3,
 	},
 	{
 		name: "Voice Log",

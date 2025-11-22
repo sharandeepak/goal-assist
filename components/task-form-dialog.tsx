@@ -43,10 +43,11 @@ export interface TaskFormDialogProps {
 	initialData?: Task | Partial<Pick<Task, "date">> | null; // Task for editing, partial for pre-filling date, null/undefined for adding
 	dialogTitle: string;
 	dialogDescription: string;
+	requireUrgency?: boolean; // If true, urgency field is shown and required
 }
 
 // Export the component itself
-export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, dialogTitle, dialogDescription }: TaskFormDialogProps) {
+export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, dialogTitle, dialogDescription, requireUrgency = false }: TaskFormDialogProps) {
 	const [formData, setFormData] = useState<TaskFormData>({});
 	const [tagsString, setTagsString] = useState<string>("");
 	const [error, setError] = useState<string | null>(null);
@@ -60,23 +61,29 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 			setFormData({
 				title: initialData.title,
 				priority: initialData.priority,
+				urgency: initialData.urgency,
 				date: initialData.date,
 			});
 			setTagsString(initialData.tags?.join(", ") || "");
-		} else if (isOpen && initialData && "date" in initialData && !("title" in initialData)) {
-			// Partial object with just date for pre-filling
-			setFormData({ priority: "medium", date: initialData.date });
+		} else if (isOpen && initialData) {
+			// Partial object for pre-filling (could have date, priority, urgency)
+			const today = Timestamp.fromDate(startOfDay(new Date()));
+			setFormData({
+				priority: initialData.priority || "medium",
+				urgency: initialData.urgency || (requireUrgency ? "medium" : undefined),
+				date: initialData.date || today,
+			});
 			setTagsString("");
 		} else if (isOpen) {
 			// Adding new task - default priority and today's date
 			const today = Timestamp.fromDate(startOfDay(new Date()));
-			setFormData({ priority: "medium", date: today });
+			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today });
 			setTagsString("");
 		}
 		// Clear error and submitting state when dialog opens or initial data changes
 		setError(null);
 		setIsSubmitting(false);
-	}, [isOpen, initialData]); // Rerun when dialog opens or data changes
+	}, [isOpen, initialData, requireUrgency]); // Rerun when dialog opens or data changes
 
 	// Update form data state
 	const handleValueChange = (field: keyof Omit<TaskFormData, "tagsString">, value: any) => {
@@ -97,6 +104,10 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 		}
 		if (!formData.priority) {
 			setError("Task priority is required.");
+			return;
+		}
+		if (requireUrgency && !formData.urgency) {
+			setError("Task urgency is required for matrix tasks.");
 			return;
 		}
 		// Date is optional
@@ -217,7 +228,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 						<div className="grid gap-1.5">
 							<Label htmlFor="task-form-priority">Priority *</Label>
 							<Select value={formData.priority || "medium"} onValueChange={(value) => handleValueChange("priority", value as Task["priority"])} disabled={isSubmitting}>
-								<SelectTrigger id="task-form-priority">
+								<SelectTrigger id="task-form-priority" className="focus:ring-0 focus:ring-offset-0">
 									<SelectValue placeholder="Select priority" />
 								</SelectTrigger>
 								<SelectContent>
@@ -228,6 +239,23 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 							</Select>
 						</div>
 					</div>
+
+					{/* Section 2.5: Urgency (if required) */}
+					{requireUrgency && (
+						<div className="grid gap-1.5">
+							<Label htmlFor="task-form-urgency">Urgency *</Label>
+							<Select value={formData.urgency || "medium"} onValueChange={(value) => handleValueChange("urgency", value as Task["urgency"])} disabled={isSubmitting}>
+								<SelectTrigger id="task-form-urgency" className="focus:ring-0 focus:ring-offset-0">
+									<SelectValue placeholder="Select urgency" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="high">High</SelectItem>
+									<SelectItem value="medium">Medium</SelectItem>
+									<SelectItem value="low">Low</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					)}
 
 					{/* Section 3: Tags */}
 					<div className="grid gap-1.5">
