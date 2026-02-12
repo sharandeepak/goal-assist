@@ -133,50 +133,74 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 	const attention = getTaskAttentionStatus(task);
 
 	return (
-		<div className={`flex items-start justify-between space-x-2 py-2 px-2 rounded group transition-colors ${attention.needsAttention ? "bg-destructive/5 border border-destructive/15" : "hover:bg-muted/50"}`}>
-			<div className="flex items-start space-x-2 flex-1 min-w-0">
-				<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} className="h-4 w-4 mt-0.5" aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} />
-				<div className="flex flex-col min-w-0 flex-1">
-					<div className="flex items-center gap-1.5">
+		<div className={`flex items-start justify-between gap-3 py-3 px-4 rounded-xl group transition-all duration-200 ${attention.needsAttention ? "bg-destructive/5 border border-destructive/20" : "bg-muted/30 hover:bg-muted/50"}`}>
+			<div className="flex items-start gap-3 flex-1 min-w-0">
+				<Checkbox 
+					id={`task-${task.id}`} 
+					checked={task.completed} 
+					onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} 
+					className="h-5 w-5 mt-0.5 rounded-md" 
+					aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} 
+				/>
+				<div className="flex flex-col min-w-0 flex-1 gap-1.5">
+					<div className="flex items-center gap-2">
 						{attention.needsAttention && (
-							<span title={attention.reason}>
-								<AlertCircle className="h-3.5 w-3.5 text-destructive/70 flex-shrink-0" />
+							<span title={attention.reason} className="flex-shrink-0">
+								<AlertCircle className="h-4 w-4 text-destructive" />
 							</span>
 						)}
-						<label htmlFor={`task-${task.id}`} className={`text-sm leading-none truncate ${task.completed ? "line-through text-muted-foreground" : ""}`} title={task.title}>
+						<label 
+							htmlFor={`task-${task.id}`} 
+							className={`text-sm font-medium leading-tight ${task.completed ? "line-through text-muted-foreground" : ""}`} 
+							title={task.title}
+						>
 							{task.title}
 						</label>
 					</div>
 					{/* Date info row */}
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+					<div className="flex flex-wrap items-center gap-2">
 						{task.date && (
-							<span className="text-xs text-muted-foreground flex items-center gap-1">
+							<span className="inline-flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-background/50">
 								<CalendarIcon className="h-3 w-3" /> Due: {formatDate(task.date)}
 							</span>
 						)}
 						{task.completedDate && (
-							<span className="text-xs text-muted-foreground flex items-center gap-1">
+							<span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full bg-green-500/10">
 								<CheckCircle2 className="h-3 w-3" /> Completed: {formatDate(task.completedDate)}
 							</span>
 						)}
 						{attention.needsAttention && (
-							<span className="text-xs font-medium text-destructive/80">
+							<span className="text-xs font-medium text-destructive px-2 py-0.5 rounded-full bg-destructive/10">
 								{attention.reason}
 							</span>
 						)}
 					</div>
 				</div>
 			</div>
-			<div className="flex items-center space-x-1 flex-shrink-0 mt-0.5">
+			<div className="flex items-center gap-1 flex-shrink-0">
 				{/* Show Priority */}
-				{task.priority && <Flag className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />}
+				{task.priority && (
+					<div className={`p-1 rounded ${task.priority === 'high' ? 'bg-red-500/10' : task.priority === 'medium' ? 'bg-yellow-500/10' : 'bg-green-500/10'}`}>
+						<Flag className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />
+					</div>
+				)}
 				{/* Edit Button */}
-				<Button variant="ghost" size="icon" onClick={() => onEditRequest(task)} className="h-6 w-6 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
+				<Button 
+					variant="ghost" 
+					size="icon" 
+					onClick={() => onEditRequest(task)} 
+					className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+				>
 					<Edit className="h-3.5 w-3.5" />
 					<span className="sr-only">Edit Task</span>
 				</Button>
 				{/* Delete Button */}
-				<Button variant="ghost" size="icon" onClick={() => onDelete(task.id, milestoneId)} className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
+				<Button 
+					variant="ghost" 
+					size="icon" 
+					onClick={() => onDelete(task.id, milestoneId)} 
+					className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+				>
 					<Trash2 className="h-3.5 w-3.5" />
 					<span className="sr-only">Delete Task</span>
 				</Button>
@@ -353,7 +377,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	const urgencyLabel = milestone.urgency.charAt(0).toUpperCase() + milestone.urgency.slice(1);
 
 	return (
-		<Card>
+		<Card variant="elevated" className="overflow-hidden">
 			{/* Edit Milestone Sheet */}
 			<Sheet open={editMilestoneOpen} onOpenChange={setEditMilestoneOpen}>
 				<SheetContent className="sm:max-w-[480px]">
@@ -417,65 +441,91 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			<TaskFormDialog isOpen={isEditTaskDialogOpen} onOpenChange={setIsEditTaskDialogOpen} onSubmit={handleUpdateTaskSubmit} initialData={editingTask} dialogTitle="Edit Task" dialogDescription={`Update details for "${editingTask?.title || "task"}". Priority is required.`} />
 
 			{/* Card Header */}
-			<CardHeader>
-				<div className="flex justify-between items-start gap-2">
-					<CardTitle className="text-lg flex-1 mr-2 truncate" title={milestone.title}>
-						{milestone.title}
-					</CardTitle>
-					<div className="flex flex-shrink-0 -mt-2 -mr-2">
-						{/* Edit Milestone Button - Triggers the Sheet */}
-						<Button variant="ghost" size="icon" onClick={openEditMilestoneDialog} className="text-muted-foreground hover:text-primary">
+			<CardHeader className="pb-4">
+				<div className="flex justify-between items-start gap-3">
+					<div className="flex-1 min-w-0">
+						<CardTitle className="text-lg font-semibold truncate mb-1" title={milestone.title}>
+							{milestone.title}
+						</CardTitle>
+						{milestone.description && (
+							<CardDescription className="line-clamp-2">{milestone.description}</CardDescription>
+						)}
+					</div>
+					<div className="flex flex-shrink-0 gap-1">
+						{/* Edit Milestone Button */}
+						<Button 
+							variant="ghost" 
+							size="icon" 
+							onClick={openEditMilestoneDialog} 
+							className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+						>
 							<Edit className="h-4 w-4" />
 							<span className="sr-only">Edit Milestone</span>
 						</Button>
 						{/* Delete Milestone Button */}
-						<Button variant="ghost" size="icon" onClick={() => onDelete(milestone.id, false)} className="text-muted-foreground hover:text-destructive">
+						<Button 
+							variant="ghost" 
+							size="icon" 
+							onClick={() => onDelete(milestone.id, false)} 
+							className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+						>
 							<Trash2 className="h-4 w-4" />
 							<span className="sr-only">Delete Milestone</span>
 						</Button>
 					</div>
 				</div>
-				{milestone.description && <CardDescription>{milestone.description}</CardDescription>}
 			</CardHeader>
 			{/* Card Content */}
-			<CardContent className="space-y-3">
+			<CardContent className="space-y-4">
 				{/* Progress Bar */}
-				<div className="flex items-center gap-4">
-					<Progress value={milestone.progress} className="h-2" aria-label={`${milestone.progress}% complete`} />
-					<span className="text-sm font-medium">{milestone.progress}%</span>
+				<div className="flex items-center gap-3">
+					<Progress value={milestone.progress} size="sm" className="flex-1" aria-label={`${milestone.progress}% complete`} />
+					<span className="text-sm font-semibold tabular-nums min-w-[3rem] text-right">{milestone.progress}%</span>
 				</div>
 
 				{/* Tasks Collapsible Section */}
 			<Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
 				<CollapsibleTrigger asChild>
-					<Button variant="ghost" size="sm" className="w-full justify-start px-1 text-muted-foreground hover:text-foreground">
-						{isTasksOpen ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
-						<ListTodo className="h-4 w-4 mr-2" /> Tasks ({tasks.length})
+					<Button 
+						variant="ghost" 
+						size="sm" 
+						className="w-full justify-start px-3 py-2 h-auto text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted/50"
+					>
+						{isTasksOpen ? <ChevronDown className="h-4 w-4 mr-2 transition-transform" /> : <ChevronRight className="h-4 w-4 mr-2 transition-transform" />}
+						<ListTodo className="h-4 w-4 mr-2" /> 
+						<span className="font-medium">Tasks ({tasks.length})</span>
 						{(() => {
 							const attentionCount = tasks.filter((t) => getTaskAttentionStatus(t).needsAttention).length;
 							return attentionCount > 0 ? (
-								<Badge variant="outline" className="ml-2 bg-destructive/10 text-destructive border-destructive/20 text-xs px-1.5 py-0">
+								<Badge variant="destructive" size="sm" className="ml-auto">
 									<AlertCircle className="h-3 w-3 mr-1" />{attentionCount} need attention
 								</Badge>
 							) : null;
 						})()}
 					</Button>
 				</CollapsibleTrigger>
-					<CollapsibleContent className="pt-2 pl-5 pr-1 space-y-2">
+					<CollapsibleContent className="pt-3 space-y-2">
 						{/* Task List */}
 						{loadingTasks ? (
-							<div className="flex items-center justify-center py-4">
+							<div className="flex items-center justify-center py-6">
 								<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
 							</div>
 						) : taskError ? (
-							<p className="text-xs text-destructive text-center py-2">{taskError}</p>
+							<div className="flex items-center justify-center gap-2 py-4 px-3 rounded-xl bg-destructive/5">
+								<AlertCircle className="h-4 w-4 text-destructive" />
+								<p className="text-xs text-destructive">{taskError}</p>
+							</div>
 						) : tasks.length === 0 ? (
-							<p className="text-xs text-muted-foreground text-center py-2">No tasks added yet.</p>
+							<div className="flex flex-col items-center justify-center py-6 text-center">
+								<div className="p-2 rounded-full bg-muted/50 mb-2">
+									<ListTodo className="h-5 w-5 text-muted-foreground" />
+								</div>
+								<p className="text-xs text-muted-foreground">No tasks added yet</p>
+							</div>
 						) : (
-						<div className="max-h-60 overflow-y-auto space-y-1 pr-2">
+						<div className="max-h-80 overflow-y-auto space-y-2 scrollbar-thin">
 							{[...tasks]
 								.sort((a, b) => {
-									// Sort by due date ascending (tasks without dates go to end)
 									const dateA = a.date?.toMillis() ?? Infinity;
 									const dateB = b.date?.toMillis() ?? Infinity;
 									return dateA - dateB;
@@ -486,8 +536,14 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						</div>
 						)}
 						{/* Add Task Button */}
-						<div className="pt-2">
-							<Button variant="outline" size="sm" className="w-full" onClick={openAddTaskDialog} disabled={loadingTasks}>
+						<div className="pt-3">
+							<Button 
+								variant="outline" 
+								size="sm" 
+								className="w-full rounded-xl border-dashed hover:border-primary hover:bg-primary/5" 
+								onClick={openAddTaskDialog} 
+								disabled={loadingTasks}
+							>
 								<Plus className="h-4 w-4 mr-2" />
 								Add Task
 							</Button>
@@ -496,23 +552,28 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 				</Collapsible>
 
 				{/* Badges and Deadline */}
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm pt-2">
-					<Badge variant="outline" className={getUrgencyColor(milestone.urgency)}>
+				<div className="flex flex-wrap items-center gap-2 pt-2">
+					<Badge 
+						variant={milestone.urgency === 'high' ? 'destructive' : milestone.urgency === 'medium' ? 'warning' : 'success'} 
+						size="sm"
+						className="font-medium"
+					>
 						{urgencyLabel}
 					</Badge>
 					{daysLeft !== undefined && milestone.status === "active" && (
-						<span className="flex items-center gap-1 text-muted-foreground">
-							<Clock className="h-3 w-3" /> {daysLeft} day{daysLeft !== 1 ? "s" : ""} left
-						</span>
+						<Badge variant="outline" size="sm" className="gap-1.5">
+							<Clock className="h-3 w-3" /> 
+							{daysLeft} day{daysLeft !== 1 ? "s" : ""} left
+						</Badge>
 					)}
 				</div>
 			</CardContent>
 			{/* Card Footer */}
-			<CardFooter className="flex justify-between items-center text-xs text-muted-foreground">
-				<span className="flex items-center gap-1">
+			<CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
+				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
 					<CalendarIcon className="h-3 w-3" /> Start: {formatDate(milestone.startDate)}
 				</span>
-				<span className="flex items-center gap-1">
+				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
 					<Target className="h-3 w-3" /> End: {formatDate(milestone.endDate)}
 				</span>
 			</CardFooter>

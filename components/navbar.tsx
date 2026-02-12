@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, ChevronDown, Home, LineChart, Mic, Settings, Target, Clock, Grid3x3 } from "lucide-react";
+import { Calendar, ChevronDown, Home, Mic, Settings, Target, Clock, Grid3x3, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -16,9 +16,9 @@ const routes = [
 		icon: Home,
 	},
 	{
-		name: "Day Planner",
+		name: "Planner",
 		path: "/planner",
-		icon: ChevronDown,
+		icon: Calendar,
 	},
 	{
 		name: "Matrix",
@@ -40,11 +40,6 @@ const routes = [
 		path: "/timesheet",
 		icon: Clock,
 	},
-	// {
-	//   name: "Analytics",
-	//   path: "/analytics",
-	//   icon: LineChart,
-	// },
 	{
 		name: "Calendar",
 		path: "/calendar",
@@ -61,32 +56,60 @@ export default function Navbar() {
 	const pathname = usePathname();
 
 	return (
-		<nav className="border-b">
+		<nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
 			<div className="container mx-auto px-4 flex h-16 items-center justify-between">
-				<div className="flex items-center gap-6">
-					<Link href="/" className="font-bold text-xl flex items-center gap-2">
-						<Target className="h-6 w-6" />
-						<span>Goal Assist</span>
+				{/* Logo */}
+				<div className="flex items-center gap-8">
+					<Link
+						href="/"
+						className="font-display font-bold text-xl flex items-center gap-2.5 group"
+					>
+						<div className="relative">
+							<div className="absolute inset-0 bg-primary/20 rounded-lg blur-md group-hover:bg-primary/30 transition-colors" />
+							<div className="relative p-1.5 bg-primary rounded-lg text-primary-foreground">
+								<Target className="h-5 w-5" />
+							</div>
+						</div>
+						<span className="hidden sm:inline gradient-text">Goal Assist</span>
 					</Link>
 
-					<div className="hidden md:flex items-center gap-6">
-						{routes.map((route) => (
-							<Link key={route.path} href={route.path} prefetch={true} className={cn("text-sm font-medium transition-colors hover:text-primary", pathname === route.path ? "text-primary" : "text-muted-foreground")}>
-								{route.name}
-							</Link>
-						))}
+					{/* Desktop Navigation */}
+					<div className="hidden lg:flex items-center gap-1">
+						{routes.map((route) => {
+							const isActive = pathname === route.path;
+							return (
+								<Link
+									key={route.path}
+									href={route.path}
+									prefetch={true}
+									className={cn(
+										"relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+										"hover:bg-accent hover:text-accent-foreground",
+										isActive
+											? "text-primary"
+											: "text-muted-foreground"
+									)}
+								>
+									{route.name}
+									{isActive && (
+										<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+									)}
+								</Link>
+							);
+						})}
 					</div>
 				</div>
 
-				<div className="flex items-center gap-4">
+				{/* Right side actions */}
+				<div className="flex items-center gap-3">
 					<GlobalTimer />
 
+					{/* Command palette trigger */}
 					<Button
 						variant="outline"
 						size="sm"
-						className="hidden md:flex items-center gap-2"
+						className="hidden md:flex items-center gap-2 px-3 text-muted-foreground hover:text-foreground"
 						onClick={() => {
-							// Trigger spotlight
 							const event = new KeyboardEvent("keydown", {
 								key: "k",
 								ctrlKey: true,
@@ -94,29 +117,44 @@ export default function Navbar() {
 							document.dispatchEvent(event);
 						}}
 					>
-						<span>Command</span>
-						<kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+						<Command className="h-3.5 w-3.5" />
+						<span className="text-xs">Search</span>
+						<kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground ml-1">
 							<span className="text-xs">⌘</span>K
 						</kbd>
 					</Button>
 
 					<ModeToggle />
 
+					{/* Mobile menu */}
 					<Sheet>
 						<SheetTrigger asChild>
-							<Button variant="outline" size="icon" className="md:hidden">
+							<Button variant="outline" size="icon" className="lg:hidden">
 								<ChevronDown className="h-4 w-4" />
 								<span className="sr-only">Toggle menu</span>
 							</Button>
 						</SheetTrigger>
-						<SheetContent side="right">
-							<div className="flex flex-col gap-4 mt-8">
-								{routes.map((route) => (
-									<Link key={route.path} href={route.path} prefetch={true} className={cn("flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary p-2 rounded-md", pathname === route.path ? "bg-secondary text-primary" : "text-muted-foreground")}>
-										<route.icon className="h-4 w-4" />
-										{route.name}
-									</Link>
-								))}
+						<SheetContent side="right" className="w-72">
+							<div className="flex flex-col gap-2 mt-8">
+								{routes.map((route) => {
+									const isActive = pathname === route.path;
+									return (
+										<Link
+											key={route.path}
+											href={route.path}
+											prefetch={true}
+											className={cn(
+												"flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+												isActive
+													? "bg-primary/10 text-primary"
+													: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+											)}
+										>
+											<route.icon className="h-5 w-5" />
+											{route.name}
+										</Link>
+									);
+								})}
 							</div>
 						</SheetContent>
 					</Sheet>

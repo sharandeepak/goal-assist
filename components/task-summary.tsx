@@ -1,21 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, AlertCircle, ListTodo, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Task } from "@/types"; // Import the shared Task interface
-import { subscribeToTaskSummary, updateTaskCompletion } from "@/services/taskService"; // Import the service function and updateTaskCompletion
-import Link from "next/link"; // Import Link
-
-// Define the Task interface based on expected Firestore data structure
-// Interface moved to @/types/index.ts
+import { Task } from "@/types";
+import { subscribeToTaskSummary, updateTaskCompletion } from "@/services/taskService";
+import Link from "next/link";
 
 export default function TaskSummary() {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null); // Add error state
-	const [toggleError, setToggleError] = useState<string | null>(null); // Error state for toggle operations
+	const [error, setError] = useState<string | null>(null);
+	const [toggleError, setToggleError] = useState<string | null>(null);
 
 	useEffect(() => {
 		setLoading(true);
@@ -27,36 +24,36 @@ export default function TaskSummary() {
 				setLoading(false);
 			},
 			(err) => {
-				console.error(err); // Service already logs the error
+				console.error(err);
 				setError("Failed to load tasks.");
 				setLoading(false);
 			}
 		);
 
-		// Cleanup listener on component unmount
 		return () => unsubscribe();
-	}, []); // Empty dependency array ensures this runs once on mount
+	}, []);
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
-		setToggleError(null); // Clear previous toggle error
+		setToggleError(null);
 		try {
 			await updateTaskCompletion(taskId, !currentCompleted, undefined);
-			// Optimistic update can be done here if desired, or rely on Firestore listener
 		} catch (err) {
 			console.error("Failed to update task completion from summary:", err);
 			setToggleError("Failed to update task.");
-			// Revert optimistic update here if implemented
 		}
 	};
 
 	if (loading) {
-		// Loading state: Show skeletons
 		return (
-			<div className="mt-4 space-y-2">
+			<div className="mt-4 space-y-3">
 				{[...Array(5)].map((_, i) => (
-					<div key={i} className="flex items-center gap-2 py-1 px-2">
-						<Skeleton className="h-4 w-4 rounded-full" />
-						<Skeleton className="h-4 w-3/4" />
+					<div
+						key={i}
+						className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-muted/30 animate-fade-up"
+						style={{ animationDelay: `${i * 50}ms` }}
+					>
+						<Skeleton className="h-5 w-5 rounded-full" />
+						<Skeleton className="h-4 flex-1" />
 					</div>
 				))}
 			</div>
@@ -64,35 +61,71 @@ export default function TaskSummary() {
 	}
 
 	if (error) {
-		// Error state
-		return <div className="mt-4 text-center text-sm text-red-600">{error}</div>;
+		return (
+			<div className="mt-4 flex items-center gap-2 p-4 rounded-xl bg-destructive/5 text-destructive">
+				<AlertCircle className="h-4 w-4" />
+				<p className="text-sm">{error}</p>
+			</div>
+		);
 	}
 
 	if (tasks.length === 0) {
-		// No data state
-		return <div className="mt-4 text-center text-sm text-muted-foreground">No tasks found for today.</div>;
+		return (
+			<div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
+				<div className="p-3 rounded-full bg-muted/50 mb-3">
+					<ListTodo className="h-6 w-6 text-muted-foreground" />
+				</div>
+				<p className="text-sm text-muted-foreground">No tasks found for today</p>
+			</div>
+		);
 	}
 
-	// Display fetched tasks
 	return (
 		<div className="mt-4 space-y-2">
-			{toggleError && <p className="text-xs text-red-500 text-center py-1">{toggleError}</p>}
-			{tasks.slice(0, 7).map((task) => (
-				<div key={task.id} className={cn("flex items-center gap-2 text-sm py-1 px-2 rounded-md", task.completed ? "text-muted-foreground" : "")}>
-					<button onClick={() => handleTaskToggle(task.id, task.completed)} aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} className="p-0 m-0 bg-transparent border-none cursor-pointer flex items-center">
-						{task.completed ? <CheckCircle className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+			{toggleError && (
+				<div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/5 text-destructive mb-2">
+					<AlertCircle className="h-3 w-3" />
+					<p className="text-xs">{toggleError}</p>
+				</div>
+			)}
+			{tasks.slice(0, 7).map((task, index) => (
+				<div
+					key={task.id}
+					className={cn(
+						"flex items-center gap-3 text-sm py-2.5 px-3 rounded-xl transition-all duration-200",
+						"bg-muted/30 hover:bg-muted/50 cursor-pointer group",
+						"animate-fade-up"
+					)}
+					style={{ animationDelay: `${index * 30}ms` }}
+					onClick={() => handleTaskToggle(task.id, task.completed)}
+				>
+					<button
+						aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`}
+						className="p-0 m-0 bg-transparent border-none cursor-pointer flex items-center flex-shrink-0"
+					>
+						{task.completed ? (
+							<CheckCircle2 className="h-5 w-5 text-green-500" />
+						) : (
+							<Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+						)}
 					</button>
 					<span
-						className={cn("cursor-pointer", task.completed ? "line-through" : "")}
-						onClick={() => handleTaskToggle(task.id, task.completed)} // Also make text clickable
+						className={cn(
+							"flex-grow truncate font-medium",
+							task.completed ? "line-through text-muted-foreground" : ""
+						)}
 					>
 						{task.title}
 					</span>
 				</div>
 			))}
 			{tasks.length > 5 && (
-				<Link href="/planner?tab=all" className="text-xs text-muted-foreground hover:text-primary text-center block pt-2">
-					View more
+				<Link
+					href="/planner?tab=all"
+					className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary text-center py-3 rounded-xl hover:bg-muted/30 transition-colors group"
+				>
+					<span>View all tasks</span>
+					<ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
 				</Link>
 			)}
 		</div>
