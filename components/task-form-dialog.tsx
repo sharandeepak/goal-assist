@@ -63,6 +63,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				priority: initialData.priority,
 				urgency: initialData.urgency,
 				date: initialData.date,
+				completedDate: initialData.completedDate,
 			});
 			setTagsString(initialData.tags?.join(", ") || "");
 		} else if (isOpen && initialData) {
@@ -90,10 +91,12 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	// Handle date selection from calendar
+	// Handle due date selection from calendar
 	const handleDateSelect = (date: Date | undefined) => {
 		handleValueChange("date", date ? Timestamp.fromDate(startOfDay(date)) : undefined);
 	};
+
+
 
 	// Handle form submission
 	const handleSubmit = async () => {
@@ -202,43 +205,54 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 						<Input id="task-form-title" value={formData.title || ""} onChange={(e) => handleValueChange("title", e.target.value)} placeholder="Task title" disabled={isSubmitting} className="focus-visible:ring-0 focus-visible:ring-offset-0" />
 					</div>
 
-					{/* Section 2: Date and Priority */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="grid gap-1.5">
-							<Label htmlFor="task-form-date">Date</Label> {/* htmlFor to associate with button or a hidden input if needed */}
-							<div className="flex gap-2">
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button id="task-form-date" /* Added id for label association */ variant={"outline"} className={`flex-1 justify-start text-left font-normal ${!formData.date ? "text-muted-foreground" : ""}`} disabled={isSubmitting}>
-											<CalendarIcon className="mr-2 h-4 w-4" />
-											{formData.date ? formatDate(formData.date) : <span>Pick a date</span>}
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent className="w-auto p-0">
-										<ShadCalendar
-											mode="single"
-											selected={formData.date?.toDate()} // Use toDate() for ShadCalendar
-											onSelect={handleDateSelect}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-							</div>
-						</div>
-						<div className="grid gap-1.5">
-							<Label htmlFor="task-form-priority">Priority *</Label>
-							<Select value={formData.priority || "medium"} onValueChange={(value) => handleValueChange("priority", value as Task["priority"])} disabled={isSubmitting}>
-								<SelectTrigger id="task-form-priority" className="focus:ring-0 focus:ring-offset-0">
-									<SelectValue placeholder="Select priority" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="high">High</SelectItem>
-									<SelectItem value="medium">Medium</SelectItem>
-									<SelectItem value="low">Low</SelectItem>
-								</SelectContent>
-							</Select>
+				{/* Section 2: Due Date and Priority */}
+				<div className="grid grid-cols-2 gap-4">
+					<div className="grid gap-1.5">
+						<Label htmlFor="task-form-date">Due Date</Label>
+						<div className="flex gap-2">
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button id="task-form-date" variant={"outline"} className={`flex-1 justify-start text-left font-normal ${!formData.date ? "text-muted-foreground" : ""}`} disabled={isSubmitting}>
+										<CalendarIcon className="mr-2 h-4 w-4" />
+										{formData.date ? formatDate(formData.date) : <span>Pick a date</span>}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0">
+									<ShadCalendar
+										mode="single"
+										selected={formData.date?.toDate()}
+										onSelect={handleDateSelect}
+										initialFocus
+									/>
+								</PopoverContent>
+							</Popover>
 						</div>
 					</div>
+					<div className="grid gap-1.5">
+						<Label htmlFor="task-form-priority">Priority *</Label>
+						<Select value={formData.priority || "medium"} onValueChange={(value) => handleValueChange("priority", value as Task["priority"])} disabled={isSubmitting}>
+							<SelectTrigger id="task-form-priority" className="focus:ring-0 focus:ring-offset-0">
+								<SelectValue placeholder="Select priority" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="high">High</SelectItem>
+								<SelectItem value="medium">Medium</SelectItem>
+								<SelectItem value="low">Low</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+				</div>
+
+				{/* Section 2.1: Completed Date (read-only, auto-set when task is marked complete) */}
+				{formData.completedDate && (
+					<div className="grid gap-1.5">
+						<Label>Completed Date</Label>
+						<div className="flex items-center h-10 px-3 rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">
+							<CalendarIcon className="mr-2 h-4 w-4" />
+							{formatDate(formData.completedDate)}
+						</div>
+					</div>
+				)}
 
 					{/* Section 2.5: Urgency (if required) */}
 					{requireUrgency && (

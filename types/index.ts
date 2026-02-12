@@ -5,7 +5,8 @@ export interface Task {
 	title: string;
 	completed: boolean;
 	createdAt?: Timestamp; // Optional: for ordering/filtering
-	date?: Timestamp; // Optional: specific date for the task (used in planner/calendar)
+	date?: Timestamp; // Due date: when the task must be completed by
+	completedDate?: Timestamp; // Completed date: automatically set when the task is marked as complete
 	priority?: "low" | "medium" | "high"; // Optional: for planner
 	urgency?: "low" | "medium" | "high"; // Optional: for Eisenhower matrix
 	tags?: string[]; // Optional: for planner

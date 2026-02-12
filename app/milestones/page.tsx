@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, CheckCircle2, Clock, Plus, Target, Trash2, AlertTriangle, Loader2, ListTodo, ChevronDown, ChevronRight, Edit, Flag } from "lucide-react";
+import { Calendar as CalendarIcon, CheckCircle2, Clock, Plus, Target, Trash2, AlertTriangle, Loader2, ListTodo, ChevronDown, ChevronRight, Edit, Flag, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -94,6 +94,32 @@ const formatDateForInput = (timestamp?: Timestamp): string => {
 	}
 };
 
+// Determine if a task needs attention based on due date vs completed date
+const getTaskAttentionStatus = (task: Task): { needsAttention: boolean; reason: string } => {
+	const today = startOfDay(new Date());
+
+	// If task has a due date and is not completed, and due date has passed
+	if (task.date && !task.completed) {
+		const dueDay = startOfDay(task.date.toDate());
+		if (dueDay < today) {
+			const daysOverdue = differenceInCalendarDays(today, dueDay);
+			return { needsAttention: true, reason: `${daysOverdue} day${daysOverdue !== 1 ? "s" : ""} overdue` };
+		}
+	}
+
+	// If task is completed and has both due date and completed date, check if it was late
+	if (task.completed && task.date && task.completedDate) {
+		const dueDay = startOfDay(task.date.toDate());
+		const completedDay = startOfDay(task.completedDate.toDate());
+		if (completedDay > dueDay) {
+			const daysLate = differenceInCalendarDays(completedDay, dueDay);
+			return { needsAttention: true, reason: `Completed ${daysLate} day${daysLate !== 1 ? "s" : ""} late` };
+		}
+	}
+
+	return { needsAttention: false, reason: "" };
+};
+
 // --- Task Item Component ---
 interface MilestoneTaskItemProps {
 	task: Task;
@@ -104,18 +130,46 @@ interface MilestoneTaskItemProps {
 }
 
 function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditRequest }: MilestoneTaskItemProps) {
+	const attention = getTaskAttentionStatus(task);
+
 	return (
-		<div className="flex items-center justify-between space-x-2 py-1.5 px-2 rounded hover:bg-muted/50 group">
-			<div className="flex items-center space-x-2 flex-1 min-w-0">
-				<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} className="h-4 w-4" aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} />
-				<label htmlFor={`task-${task.id}`} className={`text-sm leading-none truncate ${task.completed ? "line-through text-muted-foreground" : ""}`} title={task.title}>
-					{task.title}
-				</label>
+		<div className={`flex items-start justify-between space-x-2 py-2 px-2 rounded group transition-colors ${attention.needsAttention ? "bg-destructive/5 border border-destructive/15" : "hover:bg-muted/50"}`}>
+			<div className="flex items-start space-x-2 flex-1 min-w-0">
+				<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} className="h-4 w-4 mt-0.5" aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} />
+				<div className="flex flex-col min-w-0 flex-1">
+					<div className="flex items-center gap-1.5">
+						{attention.needsAttention && (
+							<span title={attention.reason}>
+								<AlertCircle className="h-3.5 w-3.5 text-destructive/70 flex-shrink-0" />
+							</span>
+						)}
+						<label htmlFor={`task-${task.id}`} className={`text-sm leading-none truncate ${task.completed ? "line-through text-muted-foreground" : ""}`} title={task.title}>
+							{task.title}
+						</label>
+					</div>
+					{/* Date info row */}
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+						{task.date && (
+							<span className="text-xs text-muted-foreground flex items-center gap-1">
+								<CalendarIcon className="h-3 w-3" /> Due: {formatDate(task.date)}
+							</span>
+						)}
+						{task.completedDate && (
+							<span className="text-xs text-muted-foreground flex items-center gap-1">
+								<CheckCircle2 className="h-3 w-3" /> Completed: {formatDate(task.completedDate)}
+							</span>
+						)}
+						{attention.needsAttention && (
+							<span className="text-xs font-medium text-destructive/80">
+								{attention.reason}
+							</span>
+						)}
+					</div>
+				</div>
 			</div>
-			<div className="flex items-center space-x-1 flex-shrink-0">
-				{/* Show Priority and Date */}
+			<div className="flex items-center space-x-1 flex-shrink-0 mt-0.5">
+				{/* Show Priority */}
 				{task.priority && <Flag className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />}
-				{task.date && <span className="text-xs text-muted-foreground hidden sm:inline">{formatDate(task.date)}</span>}
 				{/* Edit Button */}
 				<Button variant="ghost" size="icon" onClick={() => onEditRequest(task)} className="h-6 w-6 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
 					<Edit className="h-3.5 w-3.5" />
@@ -260,14 +314,26 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	};
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
+		const newCompleted = !currentCompleted;
+		const now = Timestamp.fromDate(startOfDay(new Date()));
 		try {
 			setTaskError(null);
-			setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? { ...t, completed: !currentCompleted } : t)));
-			await updateTaskCompletion(taskId, !currentCompleted, milestone.id);
+			// Optimistic update: set/clear completedDate alongside completed status
+			setTasks((prevTasks) => prevTasks.map((t) =>
+				t.id === taskId
+					? { ...t, completed: newCompleted, completedDate: newCompleted ? now : undefined }
+					: t
+			));
+			await updateTaskCompletion(taskId, newCompleted, milestone.id);
 		} catch (err) {
 			console.error("Failed to toggle task:", err);
 			setTaskError("Failed to update task status.");
-			setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? { ...t, completed: currentCompleted } : t)));
+			// Revert optimistic update
+			setTasks((prevTasks) => prevTasks.map((t) =>
+				t.id === taskId
+					? { ...t, completed: currentCompleted, completedDate: currentCompleted ? t.completedDate : undefined }
+					: t
+			));
 		}
 	};
 
@@ -380,13 +446,21 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 				</div>
 
 				{/* Tasks Collapsible Section */}
-				<Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
-					<CollapsibleTrigger asChild>
-						<Button variant="ghost" size="sm" className="w-full justify-start px-1 text-muted-foreground hover:text-foreground">
-							{isTasksOpen ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
-							<ListTodo className="h-4 w-4 mr-2" /> Tasks ({tasks.length})
-						</Button>
-					</CollapsibleTrigger>
+			<Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
+				<CollapsibleTrigger asChild>
+					<Button variant="ghost" size="sm" className="w-full justify-start px-1 text-muted-foreground hover:text-foreground">
+						{isTasksOpen ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+						<ListTodo className="h-4 w-4 mr-2" /> Tasks ({tasks.length})
+						{(() => {
+							const attentionCount = tasks.filter((t) => getTaskAttentionStatus(t).needsAttention).length;
+							return attentionCount > 0 ? (
+								<Badge variant="outline" className="ml-2 bg-destructive/10 text-destructive border-destructive/20 text-xs px-1.5 py-0">
+									<AlertCircle className="h-3 w-3 mr-1" />{attentionCount} need attention
+								</Badge>
+							) : null;
+						})()}
+					</Button>
+				</CollapsibleTrigger>
 					<CollapsibleContent className="pt-2 pl-5 pr-1 space-y-2">
 						{/* Task List */}
 						{loadingTasks ? (
@@ -398,11 +472,18 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						) : tasks.length === 0 ? (
 							<p className="text-xs text-muted-foreground text-center py-2">No tasks added yet.</p>
 						) : (
-							<div className="max-h-48 overflow-y-auto space-y-1 pr-2">
-								{tasks.map((task) => (
+						<div className="max-h-60 overflow-y-auto space-y-1 pr-2">
+							{[...tasks]
+								.sort((a, b) => {
+									// Sort by due date ascending (tasks without dates go to end)
+									const dateA = a.date?.toMillis() ?? Infinity;
+									const dateB = b.date?.toMillis() ?? Infinity;
+									return dateA - dateB;
+								})
+								.map((task) => (
 									<MilestoneTaskItem key={task.id} task={task} milestoneId={milestone.id} onToggle={handleTaskToggle} onDelete={handleDeleteTask} onEditRequest={openEditTaskDialog} />
 								))}
-							</div>
+						</div>
 						)}
 						{/* Add Task Button */}
 						<div className="pt-2">

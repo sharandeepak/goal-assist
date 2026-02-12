@@ -256,7 +256,15 @@ export const updateTask = async (taskId: string, dataToUpdate: Partial<Omit<Task
 export const updateTaskCompletion = async (taskId: string, completed: boolean, milestoneId?: string): Promise<void> => {
     const taskDocRef = doc(db, "tasks", taskId);
     try {
-        await updateDoc(taskDocRef, { completed });
+        // Auto-set completedDate when marking as complete, clear it when unmarking
+        const updateData: Record<string, any> = { completed };
+        if (completed) {
+            updateData.completedDate = Timestamp.fromDate(startOfDay(new Date()));
+        } else {
+            // Use deleteField or set to null to clear the completedDate
+            updateData.completedDate = null;
+        }
+        await updateDoc(taskDocRef, updateData);
         if (milestoneId) {
             await updateMilestoneProgress(milestoneId);
         }
@@ -299,7 +307,7 @@ export const getTasksForMilestone = async (milestoneId: string): Promise<Task[]>
     const q = query(
         tasksCollection,
         where("milestoneId", "==", milestoneId),
-        orderBy("createdAt", "asc")
+        orderBy("date", "asc") // Sort by due date
     );
 
     try {
