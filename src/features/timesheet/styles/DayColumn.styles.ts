@@ -1,0 +1,15 @@
+export const styles = {
+	card: "flex flex-col",
+	cardToday: "border-primary border-2",
+	header: "pb-3 flex-shrink-0",
+	headerRow: "flex items-center justify-between",
+	headerLeft: "flex-1 min-w-0",
+	dayTitle: "text-sm font-medium",
+	totalText: "text-xs text-muted-foreground mt-1",
+	headerActions: "flex items-center gap-1",
+	headerButton: "h-7 w-7",
+	headerIcon: "h-3 w-3",
+	content: "flex-1 overflow-y-auto space-y-2 min-h-0",
+	emptyState: "text-center py-8 text-sm text-muted-foreground",
+	emptyButton: "block mx-auto mt-2",
+} as const;

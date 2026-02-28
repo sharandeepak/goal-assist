@@ -1,7 +1,7 @@
 "use client";
 
 import { Task } from "@/common/types";
-import styles from "../styles/MatrixTaskCard.module.css";
+import { styles } from "../styles/MatrixTaskCard.styles";
 import { Badge } from "@/common/ui/badge";
 import { Button } from "@/common/ui/button";
 import { Checkbox } from "@/common/ui/checkbox";
@@ -18,17 +18,15 @@ interface MatrixTaskCardProps {
 	isOverlay?: boolean;
 }
 
-const formatDate = (timestamp?: any): string => {
-	if (!timestamp) return "N/A";
+const formatDate = (dateStr?: string | null): string => {
+	if (!dateStr) return "N/A";
 	try {
-		// Handle both Firestore Timestamp and regular Date
-		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+		const date = new Date(dateStr);
 		if (isNaN(date.getTime())) {
-			throw new Error("Invalid Date");
+			return "Invalid";
 		}
 		return format(date, "MMM d");
-	} catch (e) {
-		console.error("Error formatting timestamp:", timestamp, e);
+	} catch {
 		return "Invalid";
 	}
 };

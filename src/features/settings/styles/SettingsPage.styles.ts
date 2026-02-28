@@ -1,0 +1,15 @@
+export const styles = {
+  wrapper: "max-w-[1280px] mx-auto p-4",
+  pageTitle: "text-2xl font-bold mb-6",
+  section: "mb-8",
+  sectionTitle: "text-xl font-semibold mb-3",
+  appearanceCard: "flex items-center justify-between p-4 border rounded-lg",
+  remindersCard: "p-4 border rounded-lg space-y-4",
+  remindersRow: "flex items-center justify-between",
+  remindersTimeSection: "space-y-2",
+  reminderInput: "w-full md:w-1/2",
+  reminderHelp: "text-sm text-muted-foreground",
+  accountCard: "p-4 border rounded-lg",
+  accountSectionTitle: "text-lg font-medium",
+  accountDescription: "text-muted-foreground mt-1 mb-3",
+} as const;

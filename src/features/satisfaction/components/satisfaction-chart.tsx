@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts"
-import styles from "../styles/SatisfactionChart.module.css"
+import { styles } from "../styles/SatisfactionChart.styles"
 import { ChartContainer, ChartTooltipContent } from "@/common/ui/chart"
 import { Skeleton } from "@/common/ui/skeleton"
 import { SatisfactionLog } from "@/common/types"
@@ -27,9 +27,9 @@ export default function SatisfactionChart() {
       (fetchedLogs) => {
         // Format data for the chart (sort ascending for the chart line)
         const formattedData = fetchedLogs
-          .sort((a, b) => a.date.toMillis() - b.date.toMillis()) // Sort chronologically
+          .sort((a, b) => new Date(a.log_date).getTime() - new Date(b.log_date).getTime())
           .map((log) => ({
-            day: format(log.date.toDate(), "E"), // Format date to 'Mon', 'Tue', etc.
+            day: format(new Date(log.log_date), "E"),
             satisfaction: log.score,
           }))
 
@@ -48,30 +48,30 @@ export default function SatisfactionChart() {
 
   if (loading) {
     return (
-      <div className="h-[100px] mt-4">
-        <Skeleton className="w-full h-full" />
+      <div className={styles.container}>
+        <Skeleton className={styles.skeleton} />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="h-[100px] mt-4 flex items-center justify-center">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className={styles.emptyState}>
+        <p className={styles.errorText}>{error}</p>
       </div>
     )
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="h-[100px] mt-4 flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">No satisfaction data available.</p>
+      <div className={styles.emptyState}>
+        <p className={styles.mutedText}>No satisfaction data available.</p>
       </div>
     )
   }
 
   return (
-    <div className="h-[100px] mt-4">
+    <div className={styles.container}>
       <ChartContainer
         config={{
           satisfaction: {

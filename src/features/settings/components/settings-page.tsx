@@ -6,7 +6,7 @@ import { Label } from '@/common/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/common/ui/dialog';
 
 import { settingsService } from '@/features/settings/services/settingsService';
-import styles from '../styles/SettingsPage.module.css';
+import { styles } from '../styles/SettingsPage.styles';
 
 // TODO: Import necessary components (e.g., for layout, theme toggle, dialogs)
 // import { ModeToggle } from './mode-toggle'; // Assuming this is the theme toggle

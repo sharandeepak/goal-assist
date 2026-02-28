@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Clock, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/common/ui/button";
 import { Badge } from "@/common/ui/badge";
-import styles from "../styles/EntryRow.module.css";
+import { styles } from "../styles/EntryRow.styles";
 
 interface EntryRowProps {
 	entry: TimeEntry;
@@ -15,9 +15,9 @@ interface EntryRowProps {
 }
 
 export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowProps) {
-	const formatTime = (timestamp: any): string => {
+	const formatTime = (timestamp: string | null | undefined): string => {
 		if (!timestamp) return "";
-		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+		const date = new Date(timestamp);
 		return format(date, "HH:mm");
 	};
 
@@ -31,8 +31,8 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 		return `${minutes}m`;
 	};
 
-	const isRunning = entry.startedAt && !entry.endedAt;
-	const isDurationOnly = !entry.startedAt && !entry.endedAt;
+	const isRunning = entry.started_at && !entry.ended_at;
+	const isDurationOnly = !entry.started_at && !entry.ended_at;
 
 	return (
 		<div className={`group ${styles.card}`} onClick={() => onView?.(entry)}>
@@ -41,7 +41,7 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 					<div className={styles.titleRow}>
 						<h4 className={styles.title}>
 							{entry.emoji && <span className={styles.emoji}>{entry.emoji}</span>}
-							{entry.taskTitleSnapshot}
+							{entry.task_title_snapshot}
 						</h4>
 						{/* {entry.source === "timer" && (
 							<Badge variant="outline" className="text-xs">
@@ -57,13 +57,13 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 					<div className={styles.timeRow}>
 						<Clock className={styles.actionIcon} />
 						{isDurationOnly ? (
-							<span className="font-medium">{formatDuration(entry.durationSec)}</span>
+							<span className="font-medium">{formatDuration(entry.duration_sec)}</span>
 						) : (
 							<>
 								<span>
-									{formatTime(entry.startedAt)} - {isRunning ? "Running" : formatTime(entry.endedAt)}
+									{formatTime(entry.started_at)} - {isRunning ? "Running" : formatTime(entry.ended_at)}
 								</span>
-								<span className="font-medium">{formatDuration(entry.durationSec)}</span>
+								<span className="font-medium">{formatDuration(entry.duration_sec)}</span>
 							</>
 						)}
 					</div>

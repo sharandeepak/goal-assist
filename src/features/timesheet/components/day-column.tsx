@@ -6,7 +6,7 @@ import { Plus, Copy, Check, Trash2 } from "lucide-react";
 import { Button } from "@/common/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/ui/card";
 import EntryRow from "./entry-row";
-import styles from "../styles/DayColumn.module.css";
+import { styles } from "../styles/DayColumn.styles";
 import { useState } from "react";
 import { useToast } from "@/common/hooks/use-toast";
 
@@ -25,15 +25,15 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 	const { toast } = useToast();
 
 	const dayEntries = entries.filter((entry) => {
-		// For duration-based entries without startedAt, use the day field
-		if (!entry.startedAt) {
+		// For duration-based entries without started_at, use the day field
+		if (!entry.started_at) {
 			return entry.day === format(day, "yyyy-MM-dd");
 		}
-		const entryDate = entry.startedAt.toDate();
+		const entryDate = new Date(entry.started_at);
 		return isSameDay(entryDate, day);
 	});
 
-	const totalSeconds = dayEntries.reduce((sum, entry) => sum + entry.durationSec, 0);
+	const totalSeconds = dayEntries.reduce((sum, entry) => sum + entry.duration_sec, 0);
 
 	const formatTotal = (seconds: number): string => {
 		const hours = Math.floor(seconds / 3600);
@@ -45,9 +45,9 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 		return `${minutes}m`;
 	};
 
-	const formatTime = (timestamp: any): string => {
+	const formatTime = (timestamp: string | null | undefined): string => {
 		if (!timestamp) return "";
-		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+		const date = new Date(timestamp);
 		return format(date, "HH:mm");
 	};
 
@@ -75,18 +75,18 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 		const dayText = format(day, "EEEE, MMMM d, yyyy");
 		const entriesText = dayEntries
 			.map((entry) => {
-				const duration = formatDuration(entry.durationSec);
+				const duration = formatDuration(entry.duration_sec);
 				const note = entry.note ? ` - ${entry.note}` : "";
-				if (entry.startedAt && entry.endedAt) {
-					const startTime = formatTime(entry.startedAt);
-					const endTime = formatTime(entry.endedAt);
-					return `• ${entry.taskTitleSnapshot} (${startTime} - ${endTime}, ${duration})${note}`;
-				} else if (entry.startedAt && !entry.endedAt) {
-					const startTime = formatTime(entry.startedAt);
-					return `• ${entry.taskTitleSnapshot} (${startTime} - Running, ${duration})${note}`;
+				if (entry.started_at && entry.ended_at) {
+					const startTime = formatTime(entry.started_at);
+					const endTime = formatTime(entry.ended_at);
+					return `• ${entry.task_title_snapshot} (${startTime} - ${endTime}, ${duration})${note}`;
+				} else if (entry.started_at && !entry.ended_at) {
+					const startTime = formatTime(entry.started_at);
+					return `• ${entry.task_title_snapshot} (${startTime} - Running, ${duration})${note}`;
 				} else {
 					// Duration-only entry
-					return `• ${entry.taskTitleSnapshot} (${duration})${note}`;
+					return `• ${entry.task_title_snapshot} (${duration})${note}`;
 				}
 			})
 			.join("\n");

@@ -1,58 +1,42 @@
-import { Task } from "@/common/types";
-import { Timestamp, Unsubscribe } from "firebase/firestore";
+import type { SupabaseTask, SupabaseTaskInsert, SupabaseTaskUpdate } from "@/common/types";
 
-/** Summary data returned by getTodaysTaskSummary */
 export interface TaskSummaryData {
   completed: number;
   total: number;
 }
 
-/** Repository interface for task persistence operations */
 export interface TaskRepository {
-  /** Subscribe to tasks within a date range. Returns unsubscribe function. */
   subscribeTasks(
     startDate: Date,
     endDate: Date,
-    callback: (tasks: Task[]) => void,
+    callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
-  ): Unsubscribe;
+  ): () => void;
 
-  /** Subscribe to latest tasks for dashboard summary (e.g. latest 8). Returns unsubscribe function. */
   subscribeTaskSummary(
-    callback: (tasks: Task[]) => void,
+    callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
-  ): Unsubscribe;
+  ): () => void;
 
-  /** Fetch tasks for a specific date */
-  getTasksForDate(date: Date): Promise<Task[]>;
+  getTasksForDate(date: Date): Promise<SupabaseTask[]>;
 
-  /** Fetch all tasks for a milestone */
-  getTasksForMilestone(milestoneId: string): Promise<Task[]>;
+  getTasksByDateRange(startDate: Date, endDate: Date): Promise<SupabaseTask[]>;
 
-  /** Get total and completed task counts for a milestone */
+  getTasksForMilestone(milestoneId: string): Promise<SupabaseTask[]>;
+
   getTaskCountsForMilestone(milestoneId: string): Promise<{ total: number; completed: number }>;
 
-  /** Get today's task summary (total and completed counts) */
   getTodaysTaskSummary(): Promise<TaskSummaryData>;
 
-  /** Create a new task. Returns the new document ID. */
-  addTask(taskData: Omit<Task, "id">): Promise<string>;
+  addTask(taskData: SupabaseTaskInsert): Promise<SupabaseTask>;
 
-  /** Update task fields (excludes completion, createdAt, milestoneId) */
-  updateTask(
-    taskId: string,
-    dataToUpdate: Partial<Omit<Task, "id" | "completed" | "createdAt" | "milestoneId">>
-  ): Promise<void>;
+  updateTask(taskId: string, dataToUpdate: SupabaseTaskUpdate): Promise<void>;
 
-  /** Update completion status and completedDate */
-  updateTaskCompletion(taskId: string, completed: boolean, completedDate: Timestamp | null): Promise<void>;
+  updateTaskCompletion(taskId: string, completed: boolean): Promise<void>;
 
-  /** Delete a task */
   deleteTask(taskId: string): Promise<void>;
 
-  /** Delete all tasks for a milestone */
   deleteTasksForMilestone(milestoneId: string): Promise<void>;
 
-  /** Delete all tasks in the collection */
   deleteAllTasks(): Promise<void>;
 }

@@ -14,8 +14,8 @@ import { Label } from "@/common/ui/label";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
 import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
+import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
 import { startOfDay, endOfDay, addDays, format } from "date-fns";
-import { Timestamp } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { AlertTriangle } from "lucide-react";
@@ -48,24 +48,23 @@ const getPriorityLabel = (priority?: Task["priority"]) => {
 	}
 };
 
-const formatDate = (timestamp?: Timestamp): string => {
-	if (!timestamp) return "N/A";
+const formatDate = (dateStr?: string | null): string => {
+	if (!dateStr) return "N/A";
 	try {
-		const date = timestamp.toDate();
-		if (isNaN(date.getTime())) {
-			throw new Error("Invalid Date object from Timestamp");
-		}
-		return format(date, "MMM d, yyyy");
+		const d = new Date(dateStr);
+		if (isNaN(d.getTime())) return "Invalid Date";
+		return format(d, "MMM d, yyyy");
 	} catch (e) {
-		console.error("Error formatting timestamp:", timestamp, e);
+		console.error("Error formatting date:", dateStr, e);
 		return "Invalid Date";
 	}
 };
 
-const formatDateForInput = (timestamp?: Timestamp): string => {
-	if (!timestamp) return "";
+const formatDateForInput = (dateStr?: string | null): string => {
+	if (!dateStr) return "";
 	try {
-		return format(timestamp.toDate(), "yyyy-MM-dd");
+		const d = new Date(dateStr);
+		return isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
 	} catch {
 		return "";
 	}
@@ -146,7 +145,7 @@ function DayPlannerContent() {
 			allTasksStartDate,
 			allTasksEndDate,
 			(fetchedTasks) => {
-				setAllTasks(fetchedTasks.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0)));
+				setAllTasks(fetchedTasks.sort((a, b) => (a.created_at ? new Date(a.created_at).getTime() : 0) - (b.created_at ? new Date(b.created_at).getTime() : 0)));
 				setLoadingAll(false);
 				setError((prev) => (prev === "Failed to load all tasks." ? null : prev));
 			},
@@ -180,15 +179,15 @@ function DayPlannerContent() {
 
 	// --- Dialog Submit Handlers ---
 	const handleAddTaskSubmit = async (formData: TaskFormData) => {
-		// Default date if not provided
-		const dateToSave = formData.date || Timestamp.fromDate(todayStart);
+		const dateToSave = formData.date || todayStart.toISOString();
 
-		const taskToAdd: Omit<Task, "id"> = {
-			title: formData.title!, // Assert non-null as validated in dialog
+		const taskToAdd = {
+			title: formData.title!,
 			completed: false,
 			date: dateToSave,
-			priority: formData.priority!, // Assert non-null
-			createdAt: Timestamp.now(),
+			priority: formData.priority!,
+			user_id: MOCK_USER_ID,
+			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -208,10 +207,9 @@ function DayPlannerContent() {
 	const handleUpdateTaskSubmit = async (formData: TaskFormData) => {
 		if (!editingTask) throw new Error("No task selected for editing.");
 
-		// Default date if not provided during edit
-		const dateToSave = formData.date || Timestamp.fromDate(todayStart);
+		const dateToSave = formData.date || todayStart.toISOString();
 
-		const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "createdAt" | "milestoneId">> = {
+		const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "created_at" | "milestone_id">> = {
 			title: formData.title!,
 			priority: formData.priority!,
 			date: dateToSave,

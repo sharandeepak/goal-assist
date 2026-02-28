@@ -7,11 +7,10 @@ import { Badge } from "@/common/ui/badge";
 import { CheckCircle2, Clock, Target, AlertTriangle, Calendar as CalendarIcon, Plus } from "lucide-react";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task, Milestone } from "@/common/types";
-import { getTasksForDate, addTask } from "@/features/tasks/services/taskService";
+import { getTasksForDate, addTask, getTasksByDateRange } from "@/features/tasks/services/taskService";
 import { getMilestonesEndingOnDate, getNextActiveMilestone, getUpcomingActiveMilestones } from "@/features/milestones/services/milestoneService";
 import { format, startOfDay, endOfDay, differenceInCalendarDays, getDay, addDays } from "date-fns";
-import { Timestamp, collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { db } from "@/common/lib/db";
+import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
 import { Button } from "@/common/ui/button";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 
@@ -71,8 +70,8 @@ export default function SmartCalendarPage() {
 				const [fetchedTasks, fetchedMilestones, nextMilestone] = await Promise.all([getTasksForDate(date), getMilestonesEndingOnDate(date), getNextActiveMilestone(date)]);
 				setSelectedDateTasks(fetchedTasks);
 				setSelectedDateMilestones(fetchedMilestones);
-				if (nextMilestone?.endDate) {
-					setWorkingDaysToNextMilestone(calculateWorkingDays(date, nextMilestone.endDate.toDate()));
+				if (nextMilestone?.end_date) {
+					setWorkingDaysToNextMilestone(calculateWorkingDays(date, new Date(nextMilestone.end_date)));
 				} else {
 					setWorkingDaysToNextMilestone(null);
 				}
@@ -97,31 +96,25 @@ export default function SmartCalendarPage() {
 				const today = new Date();
 				const nextWeek = addDays(today, 7);
 
-				// Fetch upcoming tasks using imported functions
-				const tasksQuery = query(collection(db, "tasks"), where("date", ">=", Timestamp.fromDate(startOfDay(today))), where("date", "<=", Timestamp.fromDate(endOfDay(nextWeek))), orderBy("date", "asc"));
-				const upcomingTasksPromise = getDocs(tasksQuery);
-				const upcomingMilestonesPromise = getUpcomingActiveMilestones(10);
-
-				const [tasksSnapshot, upcomingMilestonesData] = await Promise.all([upcomingTasksPromise, upcomingMilestonesPromise]);
-
-				// Add explicit type to doc
-				const upcomingTasksData: Task[] = tasksSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Task));
+				const [upcomingTasksData, upcomingMilestonesData] = await Promise.all([
+					getTasksByDateRange(startOfDay(today), endOfDay(nextWeek)),
+					getUpcomingActiveMilestones(10),
+				]);
 
 				const combined: { [key: string]: UpcomingDeadline } = {};
 
 				upcomingTasksData.forEach((task) => {
 					if (task.date) {
-						const dateStr = format(task.date.toDate(), "yyyy-MM-dd");
-						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(task.date.toDate()), tasks: [], milestones: [] };
+						const dateStr = format(new Date(task.date), "yyyy-MM-dd");
+						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(task.date)), tasks: [], milestones: [] };
 						combined[dateStr].tasks.push(task);
 					}
 				});
 
-				// Add explicit type to milestone
 				upcomingMilestonesData.forEach((milestone: Milestone) => {
-					if (milestone.endDate) {
-						const dateStr = format(milestone.endDate.toDate(), "yyyy-MM-dd");
-						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(milestone.endDate.toDate()), tasks: [], milestones: [] };
+					if (milestone.end_date) {
+						const dateStr = format(new Date(milestone.end_date), "yyyy-MM-dd");
+						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(milestone.end_date)), tasks: [], milestones: [] };
 						combined[dateStr].milestones.push(milestone);
 					}
 				});
@@ -151,14 +144,15 @@ export default function SmartCalendarPage() {
 	const handleAddTaskSubmit = async (formData: TaskFormData) => {
 		if (!date) return; // Ensure date is selected
 
-		const dateToSave = formData.date || Timestamp.fromDate(startOfDay(date)); // Use selected date as default
+		const dateToSave = formData.date || startOfDay(date).toISOString();
 
-		const taskToAdd: Omit<Task, "id"> = {
+		const taskToAdd = {
 			title: formData.title!,
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
-			createdAt: Timestamp.now(),
+			user_id: MOCK_USER_ID,
+			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -349,7 +343,7 @@ export default function SmartCalendarPage() {
 				</CardContent>
 			</Card>
 
-			<TaskFormDialog isOpen={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} onSubmit={handleAddTaskSubmit} initialData={date ? { date: Timestamp.fromDate(startOfDay(date)) } : null} dialogTitle={`Add Task for ${date ? format(date, "MMM d") : "Selected Date"}`} dialogDescription="Enter details for the new task. Priority is required." />
+			<TaskFormDialog isOpen={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} onSubmit={handleAddTaskSubmit} initialData={date ? { date: startOfDay(date).toISOString() } : null} dialogTitle={`Add Task for ${date ? format(date, "MMM d") : "Selected Date"}`} dialogDescription="Enter details for the new task. Priority is required." />
 		</div>
 	);
 }

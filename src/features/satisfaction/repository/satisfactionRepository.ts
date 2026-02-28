@@ -1,32 +1,32 @@
-import type { SatisfactionLog, SatisfactionSummary } from "@/common/types";
+import type { SupabaseSatisfactionLog, SupabaseSatisfactionLogInsert, SatisfactionSummary } from "@/common/types";
 import type { Unsubscribe } from "@/common/repository/types";
 
 export interface SatisfactionEntry {
-	id?: string;
-	date: Date | import("firebase/firestore").Timestamp;
-	mood: "happy" | "cool" | "angry" | "okay";
-	score: number;
+  id?: string;
+  date: Date | string;
+  mood: "happy" | "cool" | "angry" | "okay";
+  score: number;
 }
 
 export interface SatisfactionRepository {
-	subscribeToRecentLogs(
-		limit: number,
-		callback: (logs: SatisfactionLog[]) => void,
-		onError: (error: Error) => void
-	): Unsubscribe;
+  subscribeToRecentLogs(
+    limit: number,
+    callback: (logs: SupabaseSatisfactionLog[]) => void,
+    onError: (error: Error) => void
+  ): Unsubscribe;
 
-	subscribeToLogsForMonth(
-		year: number,
-		month: number,
-		callback: (entries: SatisfactionEntry[]) => void,
-		onError: (error: Error) => void
-	): Unsubscribe;
+  subscribeToLogsForMonth(
+    year: number,
+    month: number,
+    callback: (logs: SupabaseSatisfactionLog[]) => void,
+    onError: (error: Error) => void
+  ): Unsubscribe;
 
-	addSatisfactionEntry(logData: Omit<SatisfactionLog, "id">): Promise<string>;
+  addSatisfactionEntry(logData: SupabaseSatisfactionLogInsert): Promise<SupabaseSatisfactionLog>;
 
-	saveSatisfactionEntry(entryData: Omit<SatisfactionEntry, "id">): Promise<string>;
+  saveSatisfactionEntry(entryData: SupabaseSatisfactionLogInsert): Promise<SupabaseSatisfactionLog>;
 
-	getSatisfactionSummary(): Promise<SatisfactionSummary>;
+  getSatisfactionSummary(): Promise<SatisfactionSummary>;
 
-	deleteAllSatisfactionLogs(): Promise<void>;
+  deleteAllSatisfactionLogs(): Promise<void>;
 }

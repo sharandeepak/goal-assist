@@ -1,0 +1,69 @@
+---
+description: "Backend architecture rules for Supabase + Sequelize with clean Service/Repository separation and structured error handling."
+alwaysApply: true
+---
+
+# Backend Architecture Rules
+
+## Core Stack
+- Use **Supabase** for all database operations.
+- Use **Sequelize ORM** for all DB interactions.
+- Repositories must only call the Supabase client via Sequelize.
+- No raw queries unless absolutely necessary.
+
+---
+
+## Repository Rules
+- Repositories must:
+  - Only handle database access.
+  - Contain NO business logic.
+  - Directly return DB results.
+  - Be wrapped inside try-catch.
+  - Throw custom errors with:
+    - `errorCode`
+    - `errorMessage`
+- No response formatting in repositories.
+- No validation logic in repositories.
+
+---
+
+## Service Rules
+- Services contain all business logic.
+- Services must:
+  - Be wrapped in try-catch.
+  - Validate inputs.
+  - Transform/format responses.
+  - Handle null/empty DB responses.
+  - Throw custom structured errors.
+- Services must never directly access the DB (only via repositories).
+
+---
+
+## Error Handling
+- Create centralized custom error class.
+- Error must include:
+  - `errorCode`
+  - `errorMessage`
+  - `httpStatusCode`
+- Backend should return user-friendly error messages.
+- Never expose raw DB errors to users.
+
+---
+
+## Folder Structure Rules
+- `/constants` → All constants
+- `/enums` → All enums
+- `/types` → All types & interfaces
+- `/repositories` → DB access only
+- `/services` → Business logic only
+- `/errors` → Custom error classes
+
+---
+
+## Additional Best Practices
+- No circular dependencies.
+- Use dependency injection.
+- Keep functions small and single-responsibility.
+- Strict typing — no `any`.
+- All async functions must use `await`.
+- Log errors internally, never expose stack traces to client.

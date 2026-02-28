@@ -1,0 +1,15 @@
+export const styles = {
+	card: "relative bg-background/50 border border-border/50 rounded-lg p-3",
+	cardInteractive: "hover:bg-background hover:border-border hover:shadow-sm transition-all cursor-grab active:cursor-grabbing",
+	cardDragging: "shadow-lg z-50 rotate-2",
+	cardCompleted: "opacity-60",
+	contentRow: "flex items-start gap-2",
+	checkbox: "mt-0.5 flex-shrink-0",
+	contentArea: "flex-1 min-w-0",
+	label: "text-sm font-medium leading-snug block cursor-pointer",
+	labelCompleted: "line-through text-muted-foreground",
+	tagsContainer: "flex flex-wrap gap-1 mt-1.5",
+	tagBadge: "text-xs px-1.5 py-0 h-5",
+	dateRow: "flex items-center gap-1 mt-1.5 text-xs text-muted-foreground",
+	actions: "flex items-center gap-1 transition-opacity flex-shrink-0",
+} as const;

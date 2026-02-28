@@ -1,36 +1,33 @@
-import { Unsubscribe } from "firebase/firestore";
-import { Milestone, MilestoneProgressData } from "@/common/types";
+import type { SupabaseMilestone, SupabaseMilestoneInsert, SupabaseMilestoneUpdate } from "@/common/types";
 import { getTaskCountsForMilestone, deleteTasksForMilestone } from "@/features/tasks/services/taskService";
-import { FirebaseMilestoneRepository } from "@/features/milestones/repository/firebaseMilestoneRepository";
-import type { MilestonePageSummaryData } from "@/features/milestones/repository/milestoneRepository";
+import { supabaseMilestoneRepository } from "@/features/milestones/repository/supabaseMilestoneRepository";
+import type { MilestonePageSummaryData, MilestoneRepository } from "@/features/milestones/repository/milestoneRepository";
 import { calculateDaysLeft } from "@/features/milestones/utils";
+import { AppError } from "@/common/errors/AppError";
 
-const repository = new FirebaseMilestoneRepository();
+const repository: MilestoneRepository = supabaseMilestoneRepository;
 
-/**
- * Subscribes to milestones based on their status.
- */
+export interface MilestoneProgressData extends SupabaseMilestone {
+  daysLeft?: number;
+}
+
 export const subscribeToMilestonesByStatus = (
-  status: Milestone["status"],
-  callback: (milestones: Milestone[]) => void,
+  status: SupabaseMilestone["status"],
+  callback: (milestones: SupabaseMilestone[]) => void,
   onError: (error: Error) => void
-): Unsubscribe => {
+): (() => void) => {
   return repository.subscribeToMilestonesByStatus(status, callback, onError);
 };
 
-/**
- * Subscribes to active milestones for the Milestone Progress component,
- * calculating daysLeft dynamically.
- */
 export const subscribeToActiveMilestonesProgress = (
   callback: (milestones: MilestoneProgressData[]) => void,
   onError: (error: Error) => void
-): Unsubscribe => {
+): (() => void) => {
   return repository.subscribeToActiveMilestonesProgress(
     (milestones) => {
       const withDaysLeft: MilestoneProgressData[] = milestones.map((m) => ({
         ...m,
-        daysLeft: calculateDaysLeft(m.endDate),
+        daysLeft: calculateDaysLeft(m.end_date),
       }));
       callback(withDaysLeft);
     },
@@ -38,123 +35,143 @@ export const subscribeToActiveMilestonesProgress = (
   );
 };
 
-/**
- * Fetches summary data for the main page's milestone card.
- */
 export const getPageMilestoneSummary = async (): Promise<MilestonePageSummaryData> => {
-  return repository.getPageMilestoneSummary();
+  try {
+    return await repository.getPageMilestoneSummary();
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_SUMMARY_ERROR", "Failed to fetch milestone summary.");
+  }
 };
 
-/**
- * Fetches the next single active milestone occurring after a given date.
- */
-export const getNextActiveMilestone = async (date: Date): Promise<Milestone | null> => {
-  return repository.getNextActiveMilestone(date);
+export const getNextActiveMilestone = async (date: Date): Promise<SupabaseMilestone | null> => {
+  try {
+    return await repository.getNextActiveMilestone(date);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_NEXT_ERROR", "Failed to fetch next active milestone.");
+  }
 };
 
-/**
- * Fetches a list of upcoming active milestones.
- */
-export const getUpcomingActiveMilestones = async (count: number): Promise<Milestone[]> => {
-  return repository.getUpcomingActiveMilestones(count);
+export const getUpcomingActiveMilestones = async (count: number): Promise<SupabaseMilestone[]> => {
+  try {
+    return await repository.getUpcomingActiveMilestones(count);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_UPCOMING_ERROR", "Failed to fetch upcoming milestones.");
+  }
 };
 
-/**
- * Fetches milestones ending on a specific date.
- */
-export const getMilestonesEndingOnDate = async (date: Date): Promise<Milestone[]> => {
-  return repository.getMilestonesEndingOnDate(date);
+export const getMilestonesEndingOnDate = async (date: Date): Promise<SupabaseMilestone[]> => {
+  try {
+    return await repository.getMilestonesEndingOnDate(date);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_ENDING_ERROR", "Failed to fetch milestones ending on date.");
+  }
 };
 
-/**
- * Adds a new milestone.
- */
-export const addMilestone = async (milestoneData: Omit<Milestone, "id">): Promise<string> => {
-  return repository.addMilestone(milestoneData);
+export const addMilestone = async (milestoneData: SupabaseMilestoneInsert): Promise<SupabaseMilestone> => {
+  if (!milestoneData.title) {
+    throw AppError.badRequest("MILESTONE_TITLE_REQUIRED", "Milestone title is required.");
+  }
+  if (!milestoneData.urgency) {
+    throw AppError.badRequest("MILESTONE_URGENCY_REQUIRED", "Milestone urgency is required.");
+  }
+  if (!milestoneData.status) {
+    throw AppError.badRequest("MILESTONE_STATUS_REQUIRED", "Milestone status is required.");
+  }
+
+  try {
+    return await repository.addMilestone(milestoneData);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_ADD_ERROR", "Failed to add milestone.");
+  }
 };
 
-/**
- * Updates specific fields of an existing milestone.
- * Forbidden fields: id, progress, startDate, tasks.
- */
 export const updateMilestone = async (
   milestoneId: string,
-  dataToUpdate: Partial<Omit<Milestone, "id" | "progress" | "startDate" | "tasks">>
+  dataToUpdate: SupabaseMilestoneUpdate
 ): Promise<void> => {
-  if (!milestoneId) throw new Error("Milestone ID is required for update.");
+  if (!milestoneId) {
+    throw AppError.badRequest("MILESTONE_ID_REQUIRED", "Milestone ID is required for update.");
+  }
   if (Object.keys(dataToUpdate).length === 0) {
-    console.warn("updateMilestone called with no data to update.");
     return;
   }
 
-  if (dataToUpdate.status && !["active", "completed", "archived"].includes(dataToUpdate.status)) {
-    throw new Error(`Invalid milestone status provided: ${dataToUpdate.status}`);
-  }
-
-  const forbiddenFields: (keyof Milestone)[] = ["id", "progress", "startDate", "tasks"];
+  const forbiddenFields = ["id", "progress", "start_date"] as const;
   for (const field of forbiddenFields) {
     if (field in dataToUpdate) {
-      console.warn(
-        `Attempted to update forbidden field '${field}' in updateMilestone. Ignoring.`
-      );
       delete dataToUpdate[field as keyof typeof dataToUpdate];
     }
   }
+
   if (Object.keys(dataToUpdate).length === 0) {
-    console.warn("updateMilestone called with only forbidden fields. No update performed.");
     return;
-  }
-
-  await repository.updateMilestone(milestoneId, dataToUpdate);
-};
-
-/**
- * Calculates and updates the progress percentage based on associated tasks.
- * Auto status: completed when 100%, revert to active when drops below 100%.
- */
-export const updateMilestoneProgress = async (milestoneId: string): Promise<void> => {
-  if (!milestoneId) {
-    console.warn("updateMilestoneProgress called without milestoneId");
-    return;
-  }
-
-  const current = await repository.getMilestoneById(milestoneId);
-  if (!current) {
-    console.error(`Milestone ${milestoneId} not found for progress update.`);
-    return;
-  }
-
-  const { total, completed } = await getTaskCountsForMilestone(milestoneId);
-  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  const dataToUpdate: { progress: number; status?: Milestone["status"] } = { progress };
-
-  if (progress === 100 && current.status !== "completed") {
-    dataToUpdate.status = "completed";
-    console.log(`Milestone ${milestoneId} automatically marked as completed.`);
-  } else if (progress < 100 && current.status === "completed") {
-    dataToUpdate.status = "active";
-    console.log(
-      `Milestone ${milestoneId} automatically reverted to active due to progress drop.`
-    );
   }
 
   if (
-    dataToUpdate.progress !== current.progress ||
-    (dataToUpdate.status !== undefined && dataToUpdate.status !== current.status)
+    dataToUpdate.status &&
+    !["planned", "active", "completed", "on_hold"].includes(dataToUpdate.status)
   ) {
-    await repository.updateMilestoneProgress(milestoneId, dataToUpdate);
+    throw AppError.badRequest(
+      "MILESTONE_INVALID_STATUS",
+      `Invalid milestone status: ${dataToUpdate.status}`
+    );
+  }
+
+  try {
+    await repository.updateMilestone(milestoneId, dataToUpdate);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_UPDATE_ERROR", "Failed to update milestone.");
   }
 };
 
-/**
- * Deletes a milestone. Optionally deletes associated tasks first.
- */
+export const updateMilestoneProgress = async (milestoneId: string): Promise<void> => {
+  if (!milestoneId) {
+    return;
+  }
+
+  try {
+    const current = await repository.getMilestoneById(milestoneId);
+    if (!current) {
+      console.error(`Milestone ${milestoneId} not found for progress update.`);
+      return;
+    }
+
+    const { total, completed } = await getTaskCountsForMilestone(milestoneId);
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const updateData: { progress: number; status?: SupabaseMilestone["status"] } = { progress };
+
+    if (progress === 100 && current.status !== "completed") {
+      updateData.status = "completed";
+    } else if (progress < 100 && current.status === "completed") {
+      updateData.status = "active";
+    }
+
+    if (
+      updateData.progress !== current.progress ||
+      (updateData.status !== undefined && updateData.status !== current.status)
+    ) {
+      await repository.updateMilestoneProgress(milestoneId, updateData);
+    }
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_PROGRESS_ERROR", "Failed to update milestone progress.");
+  }
+};
+
 export const deleteMilestone = async (
   milestoneId: string,
   deleteAssociatedTasks: boolean = false
 ): Promise<void> => {
-  if (!milestoneId) throw new Error("Milestone ID is required for deletion.");
+  if (!milestoneId) {
+    throw AppError.badRequest("MILESTONE_ID_REQUIRED", "Milestone ID is required for deletion.");
+  }
 
   try {
     if (deleteAssociatedTasks) {
@@ -162,36 +179,32 @@ export const deleteMilestone = async (
     }
     await repository.deleteMilestone(milestoneId);
   } catch (error) {
-    console.error(`Error during deletion process for milestone ${milestoneId}: `, error);
-    throw new Error(
-      `Failed to delete milestone ${milestoneId}${deleteAssociatedTasks ? " or its associated tasks" : ""}.`
+    if (error instanceof AppError) throw error;
+    throw AppError.internal(
+      "MILESTONE_DELETE_ERROR",
+      `Failed to delete milestone ${milestoneId}.`
     );
   }
 };
 
-/**
- * Deletes all milestones and their associated tasks.
- * WARNING: Permanently deletes all documents in the milestones collection.
- */
 export const deleteAllUserMilestones = async (): Promise<void> => {
-  console.warn(
-    "deleteAllUserMilestones called. This will delete all documents in the 'milestones' collection and their associated tasks."
-  );
-
-  const ids = await repository.getAllMilestoneIds();
-  if (ids.length === 0) {
-    console.log("No milestones found to delete.");
-    return;
-  }
-
-  for (const milestoneId of ids) {
-    try {
-      await deleteTasksForMilestone(milestoneId);
-    } catch (taskError) {
-      console.error(`Error deleting tasks for milestone ${milestoneId}:`, taskError);
+  try {
+    const ids = await repository.getAllMilestoneIds();
+    if (ids.length === 0) {
+      return;
     }
-  }
 
-  await repository.deleteAllMilestones(ids);
-  console.log(`Successfully deleted ${ids.length} milestones.`);
+    for (const milestoneId of ids) {
+      try {
+        await deleteTasksForMilestone(milestoneId);
+      } catch (taskError) {
+        console.error(`Error deleting tasks for milestone ${milestoneId}:`, taskError);
+      }
+    }
+
+    await repository.deleteAllMilestones(ids);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_DELETE_ALL_ERROR", "Failed to delete all milestones.");
+  }
 };

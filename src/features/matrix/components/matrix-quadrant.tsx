@@ -1,7 +1,7 @@
 "use client";
 
 import { Task } from "@/common/types";
-import styles from "../styles/MatrixQuadrant.module.css";
+import { styles } from "../styles/MatrixQuadrant.styles";
 import { MatrixTaskCard } from "./matrix-task-card";
 import { Card, CardContent, CardHeader } from "@/common/ui/card";
 import { Badge } from "@/common/ui/badge";

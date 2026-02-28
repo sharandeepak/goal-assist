@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/common/ui/card";
 import { Skeleton } from "@/common/ui/skeleton";
 import { PageMilestoneSummary } from "@/common/types";
-import styles from "../styles/MilestoneSummary.module.css";
+import { styles } from "../styles/MilestoneSummary.styles";
 
 interface MilestoneSummaryProps {
 	initialData?: PageMilestoneSummary[];

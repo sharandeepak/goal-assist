@@ -10,7 +10,7 @@ import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-f
 import { subscribeToMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
 import { Task } from "@/common/types";
 import { addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
-import { Timestamp } from "firebase/firestore";
+import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
 import { Skeleton } from "@/common/ui/skeleton";
 import { useToast } from "@/common/hooks/use-toast";
 
@@ -136,13 +136,14 @@ export default function MatrixPage() {
 			throw new Error("Both priority and urgency are required for matrix tasks.");
 		}
 
-		const taskToAdd: Omit<Task, "id"> = {
+		const taskToAdd = {
 			title: formData.title!,
 			completed: false,
-			date: formData.date || Timestamp.now(),
+			date: formData.date || new Date().toISOString(),
 			priority: formData.priority,
 			urgency: formData.urgency,
-			createdAt: Timestamp.now(),
+			user_id: MOCK_USER_ID,
+			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -176,7 +177,7 @@ export default function MatrixPage() {
 
 		try {
 			// Update all task fields including title, tags, date, priority, and urgency
-			const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "createdAt" | "milestoneId">> = {
+			const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "created_at" | "milestone_id">> = {
 				title: formData.title!,
 				priority: formData.priority,
 				urgency: formData.urgency,

@@ -7,7 +7,7 @@ import { MilestoneProgressData } from "@/common/types";
 import { subscribeToActiveMilestonesProgress } from "@/features/milestones/services/milestoneService";
 import { Target, Clock, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import { cn } from "@/common/lib/utils";
-import styles from "../styles/MilestoneProgress.module.css";
+import { styles } from "../styles/MilestoneProgress.styles";
 
 export default function MilestoneProgress() {
 	const [milestones, setMilestones] = useState<MilestoneProgressData[]>([]);

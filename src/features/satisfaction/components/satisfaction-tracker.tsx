@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/common/ui/card";
-import styles from "../styles/SatisfactionTracker.module.css";
+import { styles } from "../styles/SatisfactionTracker.styles";
 import { subscribeToSatisfactionLogs } from "@/features/satisfaction/services/satisfactionService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/common/ui/skeleton";
 import { SatisfactionLog } from "@/common/types";
 import { format } from "date-fns";
-import { Timestamp } from "firebase/firestore";
 
 interface FormattedLog {
 	date: string;
@@ -24,10 +23,9 @@ export default function SatisfactionTracker() {
 		const unsubscribe = subscribeToSatisfactionLogs(
 			(logs: SatisfactionLog[]) => {
 				const formattedLogs = logs.map((log) => {
-					const date = log.date instanceof Timestamp ? log.date.toDate() : new Date(log.date);
 					return {
 						...log,
-						date: format(date, "MMM d"),
+						date: format(new Date(log.log_date), "MMM d"),
 					};
 				});
 				setSatisfactionLogs(formattedLogs.reverse());
@@ -48,23 +46,23 @@ export default function SatisfactionTracker() {
 				<CardTitle>Satisfaction Tracker</CardTitle>
 				<CardDescription>Your satisfaction score over the last 7 entries.</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className={styles.chartContainer}>
 				{isLoading ? (
-					<Skeleton className={styles.skeleton} />
+					<Skeleton className="h-full w-full" />
 				) : error ? (
-					<p className={styles.errorText}>Failed to load satisfaction data.</p>
+					<p className={styles.errorText}>Error loading data.</p>
+				) : satisfactionLogs.length === 0 ? (
+					<p className={styles.emptyText}>No data yet. Log your first entry!</p>
 				) : (
-					<div className={styles.chartContainer}>
-					<ResponsiveContainer width="100%" height={200}>
+					<ResponsiveContainer width="100%" height="100%">
 						<LineChart data={satisfactionLogs}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="date" />
-							<YAxis domain={[0, 10]} />
+							<CartesianGrid strokeDasharray="3 3" className={styles.cartesianGrid} />
+							<XAxis dataKey="date" className={styles.axisText} />
+							<YAxis domain={[0, 10]} className={styles.axisText} />
 							<Tooltip />
-							<Line type="monotone" dataKey="score" stroke="#8884d8" activeDot={{ r: 8 }} />
+							<Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 5 }} />
 						</LineChart>
 					</ResponsiveContainer>
-					</div>
 				)}
 			</CardContent>
 		</Card>

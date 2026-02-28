@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/common/ui/button";
-import styles from "../styles/TaskFormDialog.module.css";
+import { styles } from "../styles/TaskFormDialog.styles";
 import { Input } from "@/common/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/common/ui/sheet";
@@ -11,43 +11,34 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { Calendar as CalendarIcon, Loader2, X } from "lucide-react";
 import { Task } from "@/common/types";
-import { Timestamp } from "firebase/firestore";
 import { startOfDay, format } from "date-fns";
 import { Switch } from "@/common/ui/switch";
 
-// Helper to format date (could be moved to utils)
-const formatDate = (timestamp?: Timestamp): string => {
-	if (!timestamp) return "N/A";
+const formatDate = (dateStr?: string | null): string => {
+	if (!dateStr) return "N/A";
 	try {
-		const date = timestamp.toDate();
-		// Add validation for invalid date objects potentially stored
+		const date = new Date(dateStr);
 		if (isNaN(date.getTime())) {
-			throw new Error("Invalid Date object from Timestamp");
+			return "Invalid Date";
 		}
 		return format(date, "MMM d, yyyy");
-	} catch (e) {
-		console.error("Error formatting timestamp:", timestamp, e);
+	} catch {
 		return "Invalid Date";
 	}
 };
 
-// Type for form data, including the tags string
-// Exporting so it can be used by parent components for the onSubmit callback
-export type TaskFormData = Partial<Omit<Task, "id" | "completed" | "createdAt"> & { tagsString: string }>;
+export type TaskFormData = Partial<Omit<Task, "id" | "completed" | "created_at"> & { tagsString: string }>;
 
-// Props interface for the dialog
-// Exporting so it can be used by parent components
 export interface TaskFormDialogProps {
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
-	onSubmit: (formData: TaskFormData) => Promise<void>; // Expects parent to handle DB call & closing
-	initialData?: Task | Partial<Pick<Task, "date">> | null; // Task for editing, partial for pre-filling date, null/undefined for adding
+	onSubmit: (formData: TaskFormData) => Promise<void>;
+	initialData?: Task | Partial<Pick<Task, "date" | "priority" | "urgency">> | null;
 	dialogTitle: string;
 	dialogDescription: string;
-	requireUrgency?: boolean; // If true, urgency field is shown and required
+	requireUrgency?: boolean;
 }
 
-// Export the component itself
 export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, dialogTitle, dialogDescription, requireUrgency = false }: TaskFormDialogProps) {
 	const [formData, setFormData] = useState<TaskFormData>({});
 	const [tagsString, setTagsString] = useState<string>("");
@@ -58,18 +49,16 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 
 	useEffect(() => {
 		if (isOpen && initialData && "title" in initialData) {
-			// Full Task object for editing
 			setFormData({
 				title: initialData.title,
 				priority: initialData.priority,
 				urgency: initialData.urgency,
 				date: initialData.date,
-				completedDate: initialData.completedDate,
+				completed_date: initialData.completed_date,
 			});
 			setTagsString(initialData.tags?.join(", ") || "");
 		} else if (isOpen && initialData) {
-			// Partial object for pre-filling (could have date, priority, urgency)
-			const today = Timestamp.fromDate(startOfDay(new Date()));
+			const today = startOfDay(new Date()).toISOString();
 			setFormData({
 				priority: initialData.priority || "medium",
 				urgency: initialData.urgency || (requireUrgency ? "medium" : undefined),
@@ -77,31 +66,23 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 			});
 			setTagsString("");
 		} else if (isOpen) {
-			// Adding new task - default priority and today's date
-			const today = Timestamp.fromDate(startOfDay(new Date()));
+			const today = startOfDay(new Date()).toISOString();
 			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today });
 			setTagsString("");
 		}
-		// Clear error and submitting state when dialog opens or initial data changes
 		setError(null);
 		setIsSubmitting(false);
-	}, [isOpen, initialData, requireUrgency]); // Rerun when dialog opens or data changes
+	}, [isOpen, initialData, requireUrgency]);
 
-	// Update form data state
-	const handleValueChange = (field: keyof Omit<TaskFormData, "tagsString">, value: any) => {
+	const handleValueChange = (field: keyof Omit<TaskFormData, "tagsString">, value: unknown) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	// Handle due date selection from calendar
 	const handleDateSelect = (date: Date | undefined) => {
-		handleValueChange("date", date ? Timestamp.fromDate(startOfDay(date)) : undefined);
+		handleValueChange("date", date ? startOfDay(date).toISOString() : undefined);
 	};
 
-
-
-	// Handle form submission
 	const handleSubmit = async () => {
-		// Validation
 		if (!formData.title?.trim()) {
 			setError("Task title cannot be empty.");
 			return;
@@ -114,12 +95,10 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 			setError("Task urgency is required for matrix tasks.");
 			return;
 		}
-		// Date is optional
 
 		setError(null);
 		setIsSubmitting(true);
 
-		// Set prevent close flag if in multiple tasks mode
 		if (addMultipleTasks) {
 			setPreventClose(true);
 		}
@@ -127,32 +106,25 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 		try {
 			const dataToSubmit: TaskFormData = {
 				...formData,
-				tagsString: tagsString, // Pass tags as a string for parent to parse
+				tagsString: tagsString,
 			};
-			await onSubmit(dataToSubmit); // Call parent's submit handler
+			await onSubmit(dataToSubmit);
 
-			// If add multiple tasks is enabled, reset only the title and ensure dialog remains open
 			if (addMultipleTasks) {
 				setFormData((prev) => ({ ...prev, title: "" }));
 				setError(null);
-				// Re-open in case parent attempted to close after submit
 				onOpenChange(true);
-				// Keep preventClose true just for this tick so Sheet ignores close event
 				setTimeout(() => setPreventClose(false), 0);
-			} else {
-				// NOTE: Parent's onSubmit is responsible for closing the dialog via onOpenChange(false) on success
 			}
 		} catch (err) {
 			console.error("Error submitting task form:", err);
 			setError(err instanceof Error ? err.message : "An unexpected error occurred.");
 			setPreventClose(false);
-			// Keep dialog open on error
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	// Keyboard shortcut: Cmd/Ctrl + Enter to submit when dialog is open
 	useEffect(() => {
 		if (!isOpen) return;
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -169,15 +141,12 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 		};
 	}, [isOpen, isSubmitting, handleSubmit]);
 
-	// Handle external closing/opening, reset state on close
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
-			// Prevent closing if we just submitted in multiple tasks mode
 			if (preventClose) {
 				return;
 			}
-			// Reset form state when dialog is closed
-			const today = Timestamp.fromDate(startOfDay(new Date()));
+			const today = startOfDay(new Date()).toISOString();
 			setFormData({ priority: "medium", date: today });
 			setTagsString("");
 			setError(null);
@@ -185,28 +154,22 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 			setAddMultipleTasks(false);
 			setPreventClose(false);
 		}
-		onOpenChange(open); // Inform parent of the change
+		onOpenChange(open);
 	};
 
 	return (
-		// Use the controlled Sheet component
 		<Sheet open={isOpen} onOpenChange={handleOpenChange}>
 			<SheetContent className={styles.sheetContent}>
 				<SheetHeader>
 					<SheetTitle>{dialogTitle}</SheetTitle>
 					<SheetDescription>{dialogDescription}</SheetDescription>
 				</SheetHeader>
-				{/* Form Fields: Flex column for sections, with vertical spacing */}
-				{/* flex-grow will make this div take available space, pushing footer down */}
-				{/* Removed pr-6, relying on SheetContent's padding */}
 				<div className={styles.formBody}>
-					{/* Section 1: Title */}
 					<div className={styles.formSection}>
 						<Label htmlFor="task-form-title">Title *</Label>
 						<Input id="task-form-title" value={formData.title || ""} onChange={(e) => handleValueChange("title", e.target.value)} placeholder="Task title" disabled={isSubmitting} className={styles.inputNoRing} />
 					</div>
 
-				{/* Section 2: Due Date and Priority */}
 				<div className={styles.formGrid}>
 					<div className={styles.formSection}>
 						<Label htmlFor="task-form-date">Due Date</Label>
@@ -221,7 +184,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 								<PopoverContent className="w-auto p-0">
 									<ShadCalendar
 										mode="single"
-										selected={formData.date?.toDate()}
+										selected={formData.date ? new Date(formData.date) : undefined}
 										onSelect={handleDateSelect}
 										initialFocus
 									/>
@@ -244,18 +207,16 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 					</div>
 				</div>
 
-				{/* Section 2.1: Completed Date (read-only, auto-set when task is marked complete) */}
-				{formData.completedDate && (
+				{formData.completed_date && (
 					<div className={styles.formSection}>
 						<Label>Completed Date</Label>
 						<div className={styles.completedDateDisplay}>
 							<CalendarIcon className="mr-2 h-4 w-4" />
-							{formatDate(formData.completedDate)}
+							{formatDate(formData.completed_date)}
 						</div>
 					</div>
 				)}
 
-					{/* Section 2.5: Urgency (if required) */}
 					{requireUrgency && (
 						<div className={styles.formSection}>
 							<Label htmlFor="task-form-urgency">Urgency *</Label>
@@ -272,7 +233,6 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 						</div>
 					)}
 
-					{/* Section 3: Tags */}
 					<div className={styles.formSection}>
 						<Label htmlFor="task-form-tags">Tags (comma-separated)</Label>
 						<Input id="task-form-tags" value={tagsString} onChange={(e) => setTagsString(e.target.value)} placeholder="e.g. work, important, project-x" disabled={isSubmitting} className={styles.inputNoRing} />
@@ -288,15 +248,13 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 							<Switch id="add-multiple-tasks" checked={addMultipleTasks} onCheckedChange={setAddMultipleTasks} disabled={isSubmitting} />
 						</div>
 					)}
-					{/* Error Message - Inside scrollable content */}
 					{error && <p className={styles.errorText}>{error}</p>}
 				</div>
 
-				{/* Footer Buttons */}
 				<SheetFooter className={styles.footer}>
 					<Button onClick={handleSubmit} disabled={isSubmitting}>
-						{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} {/* Loading indicator */}
-						{initialData && "title" in initialData ? "Save Changes" : "Add Task"} {/* Dynamic button text */}
+						{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+						{initialData && "title" in initialData ? "Save Changes" : "Add Task"}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

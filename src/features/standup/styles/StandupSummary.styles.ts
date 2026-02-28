@@ -1,0 +1,16 @@
+export const styles = {
+  gridLayout: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+  cardFullHeight: "h-full",
+  cardHeader: "pb-3",
+  cardTitleRow: "flex items-center gap-3 text-base",
+  iconBadgeGreen: "p-2 rounded-lg bg-green-500/10",
+  iconBadgePrimary: "p-2 rounded-lg bg-primary/10",
+  skeletonList: "space-y-3",
+  skeletonItem: "flex items-center gap-3 p-3 rounded-lg bg-muted/30",
+  errorState: "flex items-center gap-2 p-4 rounded-lg bg-destructive/10 text-destructive",
+  emptyState: "flex flex-col items-center justify-center py-8 text-center",
+  emptyStateIcon: "p-3 rounded-full bg-muted/50 mb-3",
+  taskList: "space-y-2",
+  taskItem: "flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors",
+  cardFooterActions: "flex justify-end gap-2 pt-3",
+} as const;

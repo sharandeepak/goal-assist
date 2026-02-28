@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "../styles/MatrixGrid.module.css";
+import { styles } from "../styles/MatrixGrid.styles";
 import { Task } from "@/common/types";
 import { MatrixQuadrant, QuadrantConfig } from "./matrix-quadrant";
 import { AlertCircle, Clock, Users, Archive } from "lucide-react";

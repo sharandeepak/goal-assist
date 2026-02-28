@@ -11,11 +11,12 @@ import { Input } from "@/common/ui/input";
 import { Label } from "@/common/ui/label";
 import { Textarea } from "@/common/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/common/ui/sheet";
-import styles from "../styles/AddEntryDialog.module.css";
+import { styles } from "../styles/AddEntryDialog.styles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { Switch } from "@/common/ui/switch";
-import { logManualEntry, updateEntry, MOCK_USER_ID } from "@/features/timesheet/services/timeService";
-import { Timestamp } from "firebase/firestore";
+import { logManualEntry, updateEntry } from "@/features/timesheet/services/timeService";
+
+const MOCK_USER_ID = "demo-user";
 
 interface AddEntryDialogProps {
 	isOpen: boolean;
@@ -42,25 +43,22 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 
 	useEffect(() => {
 		if (isOpen && editingEntry) {
-			// Populate form for editing
-			setTaskTitle(editingEntry.taskTitleSnapshot);
+			setTaskTitle(editingEntry.task_title_snapshot);
 			setEmoji(editingEntry.emoji || "");
-			const totalMinutes = Math.floor(editingEntry.durationSec / 60);
+			const totalMinutes = Math.floor(editingEntry.duration_sec / 60);
 			setHours(Math.floor(totalMinutes / 60).toString());
 			setMinutes((totalMinutes % 60).toString());
 			setNote(editingEntry.note || "");
 
-			// Set times if available
-			if (editingEntry.startedAt) {
-				const startDate = editingEntry.startedAt.toDate();
+			if (editingEntry.started_at) {
+				const startDate = new Date(editingEntry.started_at);
 				setStartTime(format(startDate, "HH:mm"));
 			}
-			if (editingEntry.endedAt) {
-				const endDate = editingEntry.endedAt.toDate();
+			if (editingEntry.ended_at) {
+				const endDate = new Date(editingEntry.ended_at);
 				setEndTime(format(endDate, "HH:mm"));
 			}
 		} else if (isOpen) {
-			// Reset form for new entry
 			setTaskTitle("");
 			setEmoji("");
 			setHours("");
@@ -85,7 +83,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 
 			try {
 				if (entryMode === "time") {
-					// Time-based entry
 					if (!startTime || !endTime) {
 						setError("Both start and end times are required");
 						setLoading(false);
@@ -98,7 +95,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						return;
 					}
 
-					// Parse times
 					const [startHour, startMin] = startTime.split(":").map(Number);
 					const [endHour, endMin] = endTime.split(":").map(Number);
 
@@ -108,7 +104,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					const endDate = new Date(selectedDay);
 					endDate.setHours(endHour, endMin, 0, 0);
 
-					// Validate end is after start
 					if (endDate <= startDate) {
 						setError("End time must be after start time");
 						setLoading(false);
@@ -116,19 +111,17 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					}
 
 					if (editingEntry) {
-						// Update with times
 						await updateEntry({
 							entryId: editingEntry.id,
 							fields: {
-								taskTitleSnapshot: taskTitle.trim(),
+								task_title_snapshot: taskTitle.trim(),
 								emoji: emoji || null,
 								note: note.trim() || null,
-								startedAt: Timestamp.fromDate(startDate),
-								endedAt: Timestamp.fromDate(endDate),
+								started_at: startDate.toISOString(),
+								ended_at: endDate.toISOString(),
 							},
 						});
 					} else {
-						// Create with times
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
 							userId: MOCK_USER_ID,
@@ -141,7 +134,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						});
 					}
 				} else {
-					// Duration-based entry
 					const h = parseInt(hours) || 0;
 					const m = parseInt(minutes) || 0;
 					const durationSec = h * 3600 + m * 60;
@@ -153,18 +145,16 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					}
 
 					if (editingEntry) {
-						// Update existing entry
 						await updateEntry({
 							entryId: editingEntry.id,
 							fields: {
-								taskTitleSnapshot: taskTitle.trim(),
+								task_title_snapshot: taskTitle.trim(),
 								emoji: emoji || null,
 								note: note.trim() || null,
-								durationSec,
+								duration_sec: durationSec,
 							},
 						});
 					} else if (selectedDay) {
-						// Create new entry
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
 							userId: MOCK_USER_ID,
@@ -177,7 +167,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					}
 				}
 
-				// Clear form if not closing (Add More functionality)
 				if (!closeAfterSave && !editingEntry) {
 					setTaskTitle("");
 					setEmoji("");
@@ -200,7 +189,6 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 		[taskTitle, entryMode, startTime, endTime, selectedDay, editingEntry, emoji, note, hours, minutes, addMoreEntries, onOpenChange]
 	);
 
-	// Keyboard shortcut for Cmd + Enter to save
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.metaKey && event.key === "Enter") {
@@ -252,7 +240,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 											setEmoji(emojiData.emoji);
 											setShowEmojiPicker(false);
 										}}
-										theme={isDarkTheme ? "dark" : ("light" as any)}
+										theme={isDarkTheme ? ("dark" as never) : ("light" as never)}
 									/>
 								</div>
 							)}

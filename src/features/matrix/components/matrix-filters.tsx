@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "../styles/MatrixFilters.module.css";
+import { styles } from "../styles/MatrixFilters.styles";
 import { Button } from "@/common/ui/button";
 import { Input } from "@/common/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";

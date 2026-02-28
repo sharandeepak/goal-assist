@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/common/ui/input";
 import { Label } from "@/common/ui/label";
 import { Textarea } from "@/common/ui/textarea";
-import styles from "../styles/GlobalTimer.module.css";
+import { styles } from "../styles/GlobalTimer.styles";
 
 export default function GlobalTimer() {
 	const [runningEntry, setRunningEntry] = useState<TimeEntry | null>(null);
@@ -43,8 +43,8 @@ export default function GlobalTimer() {
 
 		const interval = setInterval(() => {
 			const now = new Date();
-			const startDate = runningEntry?.createdAt?.toDate();
-			const elapsed = Math.floor((now.getTime() - startDate.getTime()) / 1000);
+			const startDate = runningEntry?.created_at ? new Date(runningEntry.created_at) : null;
+			const elapsed = startDate ? Math.floor((now.getTime() - startDate.getTime()) / 1000) : 0;
 			setElapsedSeconds(elapsed);
 		}, 1000);
 
@@ -106,7 +106,7 @@ export default function GlobalTimer() {
 				<div className={styles.runningTextColumn}>
 					<span className={styles.taskTitle}>
 						{runningEntry.emoji && <span className={styles.emoji}>{runningEntry.emoji}</span>}
-						{runningEntry.taskTitleSnapshot}
+						{runningEntry.task_title_snapshot}
 					</span>
 					<span className={styles.elapsedTime}>{formatTime(elapsedSeconds)}</span>
 				</div>

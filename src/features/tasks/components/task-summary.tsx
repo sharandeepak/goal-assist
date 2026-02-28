@@ -6,7 +6,7 @@ import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
 import { subscribeToTaskSummary, updateTaskCompletion } from "@/features/tasks/services/taskService";
 import Link from "next/link";
-import styles from "../styles/TaskSummary.module.css";
+import { styles } from "../styles/TaskSummary.styles";
 
 export default function TaskSummary() {
 	const [tasks, setTasks] = useState<Task[]>([]);

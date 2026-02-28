@@ -4,7 +4,7 @@ import { Button } from "@/common/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
-import styles from "../styles/WeekSelector.module.css";
+import { styles } from "../styles/WeekSelector.styles";
 
 export type DateFilter = "today" | "week" | "month";
 

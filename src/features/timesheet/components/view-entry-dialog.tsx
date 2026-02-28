@@ -8,7 +8,7 @@ const format = formatDate;
 import { Clock, Calendar, Edit2, Copy, Check, Timer } from "lucide-react";
 import { Button } from "@/common/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/common/ui/sheet";
-import styles from "../styles/ViewEntryDialog.module.css";
+import { styles } from "../styles/ViewEntryDialog.styles";
 import { Badge } from "@/common/ui/badge";
 import { Separator } from "@/common/ui/separator";
 import { useState } from "react";
@@ -27,15 +27,15 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 
 	if (!entry) return null;
 
-	const formatTime = (timestamp: any): string => {
+	const formatTime = (timestamp: string | null | undefined): string => {
 		if (!timestamp) return "";
-		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+		const date = new Date(timestamp);
 		return format(date, "HH:mm");
 	};
 
-	const formatFullDate = (timestamp: any): string => {
+	const formatFullDate = (timestamp: string | null | undefined): string => {
 		if (!timestamp) return "";
-		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+		const date = new Date(timestamp);
 		return format(date, "EEEE, MMMM d, yyyy");
 	};
 
@@ -49,26 +49,26 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 		return `${minutes}m`;
 	};
 
-	const isRunning = !entry.endedAt;
+	const isRunning = !entry.ended_at;
 
 	const handleCopy = async () => {
-		const entryDate = entry.startedAt ? formatFullDate(entry.startedAt) : format(new Date(entry.day), "EEEE, MMMM d, yyyy");
-		const duration = formatDuration(entry.durationSec);
+		const entryDate = entry.started_at ? formatFullDate(entry.started_at) : format(new Date(entry.day), "EEEE, MMMM d, yyyy");
+		const duration = formatDuration(entry.duration_sec);
 		const note = entry.note ? `\n\nNotes:\n${entry.note}` : "";
 
 		let timeInfo = "";
-		if (entry.startedAt && entry.endedAt) {
-			const startTime = formatTime(entry.startedAt);
-			const endTime = formatTime(entry.endedAt);
+		if (entry.started_at && entry.ended_at) {
+			const startTime = formatTime(entry.started_at);
+			const endTime = formatTime(entry.ended_at);
 			timeInfo = `${startTime} - ${endTime} (${duration})`;
-		} else if (entry.startedAt && !entry.endedAt) {
-			const startTime = formatTime(entry.startedAt);
+		} else if (entry.started_at && !entry.ended_at) {
+			const startTime = formatTime(entry.started_at);
 			timeInfo = `${startTime} - Running (${duration})`;
 		} else {
 			timeInfo = `Duration: ${duration}`;
 		}
 
-		const clipboardText = `${entry.taskTitleSnapshot}\n${entryDate}\n${timeInfo}${note}`;
+		const clipboardText = `${entry.task_title_snapshot}\n${entryDate}\n${timeInfo}${note}`;
 
 		try {
 			await navigator.clipboard.writeText(clipboardText);
@@ -100,7 +100,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					<SheetTitle className={styles.titleRow}>
 						<span className={styles.titleText}>
 							{entry.emoji && <span className={styles.emoji}>{entry.emoji}</span>}
-							{entry.taskTitleSnapshot}
+							{entry.task_title_snapshot}
 						</span>
 						{entry.source === "timer" && (
 							<Badge variant="outline" className={styles.badge}>
@@ -108,7 +108,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 								Timer
 							</Badge>
 						)}
-						{isRunning && entry.startedAt && (
+						{isRunning && entry.started_at && (
 							<Badge variant="default" className={`${styles.badge} animate-pulse`}>
 								Running
 							</Badge>
@@ -116,42 +116,42 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					</SheetTitle>
 					<SheetDescription className={styles.descriptionRow}>
 						<Calendar className="h-4 w-4" />
-						{entry.startedAt ? formatFullDate(entry.startedAt) : format(new Date(entry.day), "EEEE, MMMM d, yyyy")}
+						{entry.started_at ? formatFullDate(entry.started_at) : format(new Date(entry.day), "EEEE, MMMM d, yyyy")}
 					</SheetDescription>
 				</SheetHeader>
 
 				<div className={styles.contentBody}>
 					{/* Time Section - Only show if times are available */}
-					{(entry.startedAt || entry.endedAt) && (
+					{(entry.started_at || entry.ended_at) && (
 						<div className="space-y-3">
 							<div className={styles.sectionHeader}>
 								<Clock className="h-4 w-4" />
 								Time Details
 							</div>
 							<div className={styles.sectionContent}>
-								{entry.startedAt && (
+								{entry.started_at && (
 									<div className={styles.row}>
 										<span className={styles.rowLabel}>Start Time:</span>
-										<span className={styles.rowValue}>{formatTime(entry.startedAt)}</span>
+										<span className={styles.rowValue}>{formatTime(entry.started_at)}</span>
 									</div>
 								)}
-								{entry.startedAt && (
+								{entry.started_at && (
 									<div className={styles.row}>
 										<span className={styles.rowLabel}>End Time:</span>
-										<span className={styles.rowValue}>{isRunning ? <Badge variant="default">Running</Badge> : entry.endedAt ? formatTime(entry.endedAt) : "N/A"}</span>
+										<span className={styles.rowValue}>{isRunning ? <Badge variant="default">Running</Badge> : entry.ended_at ? formatTime(entry.ended_at) : "N/A"}</span>
 									</div>
 								)}
 								<Separator />
 								<div className={styles.row}>
 									<span className={styles.rowLabel}>Total Duration:</span>
-									<span className={styles.durationValue}>{formatDuration(entry.durationSec)}</span>
+									<span className={styles.durationValue}>{formatDuration(entry.duration_sec)}</span>
 								</div>
 							</div>
 						</div>
 					)}
 
 					{/* Duration Only Section - Show if no times */}
-					{!entry.startedAt && !entry.endedAt && (
+					{!entry.started_at && !entry.ended_at && (
 						<div className="space-y-3">
 							<div className={styles.sectionHeader}>
 								<Clock className="h-4 w-4" />
@@ -160,7 +160,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 							<div className={styles.sectionContentSingle}>
 								<div className={styles.row}>
 									<span className={styles.rowLabel}>Total Time:</span>
-									<span className={styles.durationValue}>{formatDuration(entry.durationSec)}</span>
+									<span className={styles.durationValue}>{formatDuration(entry.duration_sec)}</span>
 								</div>
 							</div>
 						</div>

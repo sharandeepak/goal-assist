@@ -1,26 +1,23 @@
-import { Unsubscribe } from "firebase/firestore";
-import { Task } from "@/common/types";
-import { FirebaseMatrixRepository } from "@/features/matrix/repository/firebaseMatrixRepository";
-import type { QuadrantCounts } from "@/features/matrix/repository/matrixRepository";
+import type { SupabaseTask } from "@/common/types";
+import { supabaseMatrixRepository } from "@/features/matrix/repository/supabaseMatrixRepository";
+import type { MatrixRepository, QuadrantCounts } from "@/features/matrix/repository/matrixRepository";
+import { AppError } from "@/common/errors/AppError";
 
-const repository = new FirebaseMatrixRepository();
+const repository: MatrixRepository = supabaseMatrixRepository;
 
 export type QuadrantType = "q1" | "q2" | "q3" | "q4" | "all";
 
 export type { QuadrantCounts } from "@/features/matrix/repository/matrixRepository";
 
 export interface MatrixTasksData {
-  q1: Task[];
-  q2: Task[];
-  q3: Task[];
-  q4: Task[];
-  uncategorized: Task[];
+  q1: SupabaseTask[];
+  q2: SupabaseTask[];
+  q3: SupabaseTask[];
+  q4: SupabaseTask[];
+  uncategorized: SupabaseTask[];
 }
 
-/**
- * Determines which quadrant a task belongs to based on priority and urgency
- */
-export const getTaskQuadrant = (task: Task): QuadrantType | "uncategorized" => {
+export const getTaskQuadrant = (task: SupabaseTask): QuadrantType | "uncategorized" => {
   if (!task.priority || !task.urgency) {
     return "uncategorized";
   }
@@ -28,16 +25,13 @@ export const getTaskQuadrant = (task: Task): QuadrantType | "uncategorized" => {
   const isUrgent = task.urgency === "high";
   const isImportant = task.priority === "high";
 
-  if (isUrgent && isImportant) return "q1"; // Do First
-  if (!isUrgent && isImportant) return "q2"; // Schedule
-  if (isUrgent && !isImportant) return "q3"; // Delegate
-  return "q4"; // Eliminate
+  if (isUrgent && isImportant) return "q1";
+  if (!isUrgent && isImportant) return "q2";
+  if (isUrgent && !isImportant) return "q3";
+  return "q4";
 };
 
-/**
- * Buckets tasks into MatrixTasksData by quadrant
- */
-export const bucketTasksByQuadrant = (tasks: Task[]): MatrixTasksData => {
+export const bucketTasksByQuadrant = (tasks: SupabaseTask[]): MatrixTasksData => {
   const data: MatrixTasksData = {
     q1: [],
     q2: [],
@@ -50,26 +44,19 @@ export const bucketTasksByQuadrant = (tasks: Task[]): MatrixTasksData => {
     const quadrant = getTaskQuadrant(task);
     if (quadrant === "uncategorized") {
       data.uncategorized.push(task);
-    } else {
-      data[quadrant].push(task);
+    } else if (quadrant in data) {
+      data[quadrant as keyof Omit<MatrixTasksData, "uncategorized">].push(task);
     }
   });
 
   return data;
 };
 
-/**
- * Subscribes to tasks for the Eisenhower Matrix with optional date filtering
- * @param dateRange - Optional date range { start: Date, end: Date }
- * @param callback - Function called with categorized tasks
- * @param onError - Error handler
- * @returns Unsubscribe function
- */
 export const subscribeToMatrixTasks = (
   dateRange: { start: Date; end: Date } | null,
   callback: (data: MatrixTasksData) => void,
   onError: (error: Error) => void
-): Unsubscribe => {
+): (() => void) => {
   return repository.subscribeToTasks(
     dateRange,
     (tasks) => {
@@ -79,62 +66,71 @@ export const subscribeToMatrixTasks = (
   );
 };
 
-/**
- * Updates a task's priority and urgency (for drag-and-drop between quadrants)
- */
 export const updateTaskQuadrant = async (
   taskId: string,
   newPriority: "low" | "medium" | "high",
   newUrgency: "low" | "medium" | "high"
 ): Promise<void> => {
-  return repository.updateTaskQuadrant(taskId, newPriority, newUrgency);
+  if (!taskId) {
+    throw AppError.badRequest("TASK_ID_REQUIRED", "Task ID is required to update quadrant.");
+  }
+
+  try {
+    await repository.updateTaskQuadrant(taskId, newPriority, newUrgency);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MATRIX_UPDATE_ERROR", "Failed to update task quadrant.");
+  }
 };
 
-/**
- * Gets the count of tasks in each quadrant
- * @param dateRange - Optional date range filter
- * @returns Promise resolving to quadrant counts
- */
 export const getTaskCountsByQuadrant = async (
   dateRange: { start: Date; end: Date } | null
 ): Promise<QuadrantCounts> => {
-  const tasks = await repository.getTasks(dateRange);
-  const data = bucketTasksByQuadrant(tasks);
+  try {
+    const tasks = await repository.getTasks(dateRange);
+    const data = bucketTasksByQuadrant(tasks);
 
-  return {
-    q1: data.q1.length,
-    q2: data.q2.length,
-    q3: data.q3.length,
-    q4: data.q4.length,
-    uncategorized: data.uncategorized.length,
-  };
+    return {
+      q1: data.q1.length,
+      q2: data.q2.length,
+      q3: data.q3.length,
+      q4: data.q4.length,
+      uncategorized: data.uncategorized.length,
+    };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MATRIX_COUNT_ERROR", "Failed to get task counts by quadrant.");
+  }
 };
 
-/**
- * Bulk update tasks to a new quadrant
- */
 export const bulkUpdateTasksQuadrant = async (
   taskIds: string[],
   priority: "low" | "medium" | "high",
   urgency: "low" | "medium" | "high"
 ): Promise<void> => {
-  return repository.bulkUpdateTasksQuadrant(taskIds, priority, urgency);
+  if (taskIds.length === 0) {
+    return;
+  }
+
+  try {
+    await repository.bulkUpdateTasksQuadrant(taskIds, priority, urgency);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MATRIX_BULK_UPDATE_ERROR", "Failed to bulk update tasks.");
+  }
 };
 
-/**
- * Converts quadrant type to priority and urgency values
- */
 export const quadrantToValues = (
   quadrant: QuadrantType
 ): { priority: "low" | "medium" | "high"; urgency: "low" | "medium" | "high" } => {
   switch (quadrant) {
-    case "q1": // Urgent + Important
+    case "q1":
       return { priority: "high", urgency: "high" };
-    case "q2": // Not Urgent + Important
+    case "q2":
       return { priority: "high", urgency: "low" };
-    case "q3": // Urgent + Not Important
+    case "q3":
       return { priority: "low", urgency: "high" };
-    case "q4": // Not Urgent + Not Important
+    case "q4":
       return { priority: "low", urgency: "low" };
     default:
       return { priority: "medium", urgency: "medium" };

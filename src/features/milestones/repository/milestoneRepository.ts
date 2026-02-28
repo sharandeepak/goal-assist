@@ -1,7 +1,10 @@
-import { Unsubscribe } from "firebase/firestore";
-import { Milestone, PageMilestoneSummary } from "@/common/types";
+import type {
+  SupabaseMilestone,
+  SupabaseMilestoneInsert,
+  SupabaseMilestoneUpdate,
+  PageMilestoneSummary,
+} from "@/common/types";
 
-/** Summary data for the main page's milestone card */
 export interface MilestonePageSummaryData {
   activeCount: number;
   nextDeadlineDays: number | null;
@@ -10,34 +13,34 @@ export interface MilestonePageSummaryData {
 
 export interface MilestoneRepository {
   subscribeToMilestonesByStatus(
-    status: Milestone["status"],
-    callback: (milestones: Milestone[]) => void,
+    status: SupabaseMilestone["status"],
+    callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
-  ): Unsubscribe;
+  ): () => void;
 
   subscribeToActiveMilestonesProgress(
-    callback: (milestones: Milestone[]) => void,
+    callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
-  ): Unsubscribe;
+  ): () => void;
 
   getPageMilestoneSummary(): Promise<MilestonePageSummaryData>;
 
-  getNextActiveMilestone(date: Date): Promise<Milestone | null>;
+  getNextActiveMilestone(date: Date): Promise<SupabaseMilestone | null>;
 
-  getUpcomingActiveMilestones(count: number): Promise<Milestone[]>;
+  getUpcomingActiveMilestones(count: number): Promise<SupabaseMilestone[]>;
 
-  getMilestonesEndingOnDate(date: Date): Promise<Milestone[]>;
+  getMilestonesEndingOnDate(date: Date): Promise<SupabaseMilestone[]>;
 
-  addMilestone(milestoneData: Omit<Milestone, "id">): Promise<string>;
+  addMilestone(milestoneData: SupabaseMilestoneInsert): Promise<SupabaseMilestone>;
 
-  updateMilestone(
+  updateMilestone(milestoneId: string, dataToUpdate: SupabaseMilestoneUpdate): Promise<void>;
+
+  getMilestoneById(milestoneId: string): Promise<SupabaseMilestone | null>;
+
+  updateMilestoneProgress(
     milestoneId: string,
-    dataToUpdate: Partial<Omit<Milestone, "id" | "progress" | "startDate" | "tasks">>
+    data: { progress: number; status?: SupabaseMilestone["status"] }
   ): Promise<void>;
-
-  getMilestoneById(milestoneId: string): Promise<Milestone | null>;
-
-  updateMilestoneProgress(milestoneId: string, data: { progress: number; status?: Milestone["status"] }): Promise<void>;
 
   deleteMilestone(milestoneId: string): Promise<void>;
 

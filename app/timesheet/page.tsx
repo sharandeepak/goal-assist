@@ -118,8 +118,8 @@ export default function TimesheetPage() {
 	};
 
 	const handleEditEntry = (entry: TimeEntry) => {
-		// For duration-based entries without startedAt, use the day field
-		const selectedDate = entry.startedAt ? entry.startedAt.toDate() : new Date(entry.day);
+		// For duration-based entries without started_at, use the day field
+		const selectedDate = entry.started_at ? new Date(entry.started_at) : new Date(entry.day);
 		setSelectedDay(selectedDate);
 		setEditingEntry(entry);
 		setIsAddDialogOpen(true);
@@ -136,8 +136,8 @@ export default function TimesheetPage() {
 	};
 
 	const handleEditFromView = (entry: TimeEntry) => {
-		// For duration-based entries without startedAt, use the day field
-		const selectedDate = entry.startedAt ? entry.startedAt.toDate() : new Date(entry.day);
+		// For duration-based entries without started_at, use the day field
+		const selectedDate = entry.started_at ? new Date(entry.started_at) : new Date(entry.day);
 		setSelectedDay(selectedDate);
 		setEditingEntry(entry);
 		setIsAddDialogOpen(true);
@@ -183,7 +183,7 @@ export default function TimesheetPage() {
 		return `${minutes}m`;
 	};
 
-	const weekTotal = entries.reduce((sum, entry) => sum + entry.durationSec, 0);
+	const weekTotal = entries.reduce((sum, entry) => sum + entry.duration_sec, 0);
 
 	const getFilterLabel = () => {
 		switch (dateFilter) {

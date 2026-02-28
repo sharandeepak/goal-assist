@@ -18,16 +18,15 @@ import {
 import { Skeleton } from "@/common/ui/skeleton";
 import { StandupLog, Task } from "@/common/types";
 import { subscribeToRecentStandups } from "@/features/standup/services/standupService";
+import { getTasksForDate } from "@/features/tasks/services/taskService";
 import { formatRelative, format, subDays, startOfDay, endOfDay } from "date-fns";
 import { Textarea } from "@/common/ui/textarea";
 import { Button } from "@/common/ui/button";
-import { Timestamp, collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { db } from "@/common/lib/db";
 import { cn } from "@/common/lib/utils";
-import styles from "@/features/standup/styles/StandupSummary.module.css";
+import { styles } from "@/features/standup/styles/StandupSummary.styles";
 
-// Helper to format relative date
-const formatRelativeDate = (date: Date) => {
+const formatRelativeDate = (dateStr: string) => {
+	const date = new Date(dateStr);
 	const relative = formatRelative(date, new Date());
 	return relative.charAt(0).toUpperCase() + relative.slice(1).split(" at")[0];
 };
@@ -38,16 +37,13 @@ export default function StandupSummary() {
 	const [errorStandups, setErrorStandups] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<string>("");
 
-	// State for Completed Tasks
 	const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
 	const [loadingTasks, setLoadingTasks] = useState(true);
 	const [errorTasks, setErrorTasks] = useState<string | null>(null);
 
-	// State for Quick Notes
 	const [quickNote, setQuickNote] = useState<string>("");
 	const [isSavingNote, setIsSavingNote] = useState(false);
 
-	// Effect for Standups
 	useEffect(() => {
 		setLoadingStandups(true);
 		setErrorStandups(null);
@@ -71,28 +67,21 @@ export default function StandupSummary() {
 		return () => unsubscribe();
 	}, []);
 
-	// Effect for Completed Tasks
 	useEffect(() => {
 		const fetchCompletedTasks = async () => {
 			setLoadingTasks(true);
 			setErrorTasks(null);
 			try {
 				const today = new Date();
-				const twoDaysAgo = startOfDay(subDays(today, 1));
-				const now = endOfDay(today);
+				const yesterday = subDays(today, 1);
+				const [todayTasks, yesterdayTasks] = await Promise.all([
+					getTasksForDate(today),
+					getTasksForDate(yesterday),
+				]);
 
-				const tasksRef = collection(db, "tasks");
-				const q = query(
-					tasksRef,
-					where("completed", "==", true),
-					where("date", ">=", Timestamp.fromDate(twoDaysAgo)),
-					where("date", "<=", Timestamp.fromDate(now)),
-					orderBy("date", "desc")
-				);
-
-				const querySnapshot = await getDocs(q);
-				const fetchedTasks = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Task));
-				setCompletedTasks(fetchedTasks);
+				const allTasks = [...todayTasks, ...yesterdayTasks];
+				const completed = allTasks.filter((t) => t.completed);
+				setCompletedTasks(completed);
 			} catch (err) {
 				console.error("Failed to fetch completed tasks:", err);
 				setErrorTasks("Could not load completed tasks.");
@@ -103,7 +92,6 @@ export default function StandupSummary() {
 		fetchCompletedTasks();
 	}, []);
 
-	// Effect for Quick Notes
 	useEffect(() => {
 		const savedNote = localStorage.getItem("quickStandupNote");
 		if (savedNote) {
@@ -111,7 +99,6 @@ export default function StandupSummary() {
 		}
 	}, []);
 
-	// Handlers
 	const handleSaveNote = () => {
 		setIsSavingNote(true);
 		try {
@@ -130,7 +117,6 @@ export default function StandupSummary() {
 		localStorage.removeItem("quickStandupNote");
 	};
 
-	// Render Completed Tasks
 	const renderCompletedTasks = () => {
 		return (
 			<Card variant="elevated" className={styles.cardFullHeight}>
@@ -176,7 +162,7 @@ export default function StandupSummary() {
 									<CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
 									<span className="flex-grow text-sm font-medium truncate">{task.title}</span>
 									<span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-background">
-										{task.date ? format(task.date.toDate(), "MMM d") : "N/A"}
+										{task.date ? format(new Date(task.date), "MMM d") : "N/A"}
 									</span>
 								</li>
 							))}
@@ -187,7 +173,6 @@ export default function StandupSummary() {
 		);
 	};
 
-	// Render Quick Notes
 	const renderQuickNotes = () => {
 		return (
 			<Card variant="elevated" className={styles.cardFullHeight}>

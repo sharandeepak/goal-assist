@@ -1,0 +1,17 @@
+export const styles = {
+	runningContainer: "flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-md border border-primary/20",
+	clockIcon: "h-4 w-4 text-primary animate-pulse",
+	runningTextColumn: "flex flex-col",
+	taskTitle: "text-xs font-medium text-primary truncate max-w-[120px]",
+	emoji: "mr-1",
+	elapsedTime: "text-xs text-muted-foreground font-mono",
+	stopButton: "h-7 w-7",
+	stopIcon: "h-3 w-3",
+	startButton: "gap-2",
+	startButtonLabel: "hidden sm:inline",
+	dialogBody: "space-y-4 py-4",
+	dialogTitleRow: "relative",
+	dialogInputRow: "flex gap-2",
+	dialogInputWrapper: "flex-1 flex items-center gap-2",
+	emojiPickerWrapper: "absolute top-full left-0 z-50 mt-1",
+} as const;

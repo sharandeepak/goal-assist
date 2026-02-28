@@ -1,0 +1,42 @@
+---
+description: Project file structure conventions
+alwaysApply: true
+---
+
+# File Structure
+
+```
+app/<route>/                    Next.js App Router pages
+  page.tsx                      Route entry point
+  loading.tsx                   Skeleton (optional)
+
+src/common/                     Shared across all features
+  components/                   Layout, navbar, shared wrappers
+  hooks/                        Custom React hooks
+  lib/                          DB clients (supabase/), utilities
+  providers/                    Context providers (theme, query)
+  repository/                   Base repository classes and types
+  services/                     Base service classes
+  styles/                       Global CSS, design tokens
+  types/                        Domain type definitions
+  ui/                           shadcn/ui primitives
+
+src/features/<feature>/         One folder per feature
+  components/                   React components (kebab-case.tsx)
+  styles/                       PascalCase .styles.ts (1:1 with components)
+  services/                     Business logic layer
+  repository/                   Data access interfaces + implementations
+```
+
+## Naming Rules
+
+- Components: `kebab-case.tsx` (e.g., `task-summary.tsx`)
+- Style files: `PascalCase.styles.ts` (e.g., `TaskSummary.styles.ts`)
+- Services: `camelCase` + `Service` suffix (e.g., `taskService.ts`)
+- Repository interfaces: `camelCaseRepository.ts`
+- Repository implementations: `supabaseXRepository.ts` or `firebaseXRepository.ts`
+- Types: defined in `src/common/types/index.ts`, exported as named interfaces
+
+## Style Convention
+
+Use TypeScript style objects (`export const styles = { ... } as const`), not CSS Modules. Each key maps to a Tailwind class string. Never use `.module.css` files.

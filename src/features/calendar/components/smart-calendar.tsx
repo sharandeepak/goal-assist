@@ -22,12 +22,10 @@ import {
 } from "@/features/milestones/services/milestoneService";
 import { format, startOfDay, differenceInCalendarDays, getDay } from "date-fns";
 import { Button } from "@/common/ui/button";
-import { Timestamp } from "firebase/firestore";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { cn } from "@/common/lib/utils";
-import styles from "../styles/SmartCalendar.module.css";
+import { styles } from "../styles/SmartCalendar.styles";
 
-// Helper function to calculate working days (Mon-Fri)
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
 	let count = 0;
 	const currentDate = new Date(startDate);
@@ -79,8 +77,8 @@ export default function SmartCalendar() {
 				setSelectedDateTasks(fetchedTasks);
 				setSelectedDateMilestones(fetchedMilestones);
 
-				if (nextMilestone && nextMilestone.endDate) {
-					const days = calculateWorkingDays(date, nextMilestone.endDate.toDate());
+				if (nextMilestone && nextMilestone.end_date) {
+					const days = calculateWorkingDays(date, new Date(nextMilestone.end_date));
 					setWorkingDaysToNextMilestone(days);
 				} else {
 					setWorkingDaysToNextMilestone(null);
@@ -105,14 +103,14 @@ export default function SmartCalendar() {
 	};
 
 	const handleAddTaskSubmit = async (formData: TaskFormData) => {
-		const dateToSave = formData.date || (date ? Timestamp.fromDate(startOfDay(date)) : Timestamp.now());
+		const dateToSave = formData.date || (date ? startOfDay(date).toISOString() : new Date().toISOString());
 
-		const taskToAdd: Omit<Task, "id"> = {
+		const taskToAdd = {
 			title: formData.title!,
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
-			createdAt: Timestamp.now(),
+			user_id: "", // will be set by auth context
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -179,7 +177,6 @@ export default function SmartCalendar() {
 						<Card variant="elevated" className="h-full">
 							<CardContent className={styles.cardContent}>
 								<div className={styles.contentInner}>
-									{/* Header */}
 									<div className={styles.header}>
 										<div>
 											<h3 className={styles.headerTitle}>
@@ -200,7 +197,6 @@ export default function SmartCalendar() {
 										)}
 									</div>
 
-									{/* Tasks Section */}
 									<div>
 										<h4 className={styles.sectionTitle}>
 											<div className={styles.iconWrapperPrimary}>
@@ -238,7 +234,6 @@ export default function SmartCalendar() {
 										)}
 									</div>
 
-									{/* Milestones Section */}
 									<div>
 										<h4 className={styles.sectionTitle}>
 											<div className={styles.iconWrapperDestructive}>
@@ -275,7 +270,7 @@ export default function SmartCalendar() {
 				isOpen={isAddTaskDialogOpen}
 				onOpenChange={setIsAddTaskDialogOpen}
 				onSubmit={handleAddTaskSubmit}
-				initialData={date ? { date: Timestamp.fromDate(startOfDay(date)) } : null}
+				initialData={date ? { date: startOfDay(date).toISOString() } : null}
 				dialogTitle={`Add Task for ${date ? format(date, "MMM d") : "Selected Date"}`}
 				dialogDescription="Enter details for the new task. Priority is required."
 			/>

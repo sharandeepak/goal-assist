@@ -1,0 +1,17 @@
+export const styles = {
+	sheetContent: "sm:max-w-[425px] flex flex-col h-full",
+	formBody: "flex-grow py-4 space-y-6 overflow-y-auto",
+	formSection: "grid gap-1.5",
+	formGrid: "grid grid-cols-2 gap-4",
+	dateButton: "flex-1 justify-start text-left font-normal",
+	dateButtonPlaceholder: "flex-1 justify-start text-left font-normal text-muted-foreground",
+	completedDateDisplay: "flex items-center h-10 px-3 rounded-md border border-input bg-muted/50 text-sm text-muted-foreground",
+	inputNoRing: "focus-visible:ring-0 focus-visible:ring-offset-0",
+	selectNoRing: "focus:ring-0 focus:ring-offset-0",
+	errorText: "text-sm text-red-600 text-center pt-2",
+	footer: "pt-4 border-t",
+	addMultipleSection: "flex items-center justify-between py-2",
+	addMultipleLabel: "space-y-0.5",
+	addMultipleTitle: "text-sm font-medium",
+	addMultipleHint: "text-xs text-muted-foreground",
+} as const;

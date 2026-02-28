@@ -1,234 +1,319 @@
-import { Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
-import { TimeEntry } from "@/common/types";
-import { createFirebaseTimeRepository } from "../repository/firebaseTimeRepository";
+import type {
+  SupabaseTimeEntry,
+  SupabaseTimeEntryInsert,
+  SupabaseTimeEntryUpdate,
+} from "@/common/types";
+import { supabaseTimeRepository } from "../repository/supabaseTimeRepository";
+import type { TimeRepository } from "../repository/timeRepository";
+import { AppError } from "@/common/errors/AppError";
 
-const MOCK_USER_ID = "demo-user"; // Replace with actual auth
+const repo: TimeRepository = supabaseTimeRepository;
 
-const repo = createFirebaseTimeRepository();
+/** @deprecated Replace with actual user ID from auth context */
+export const MOCK_USER_ID = "demo-user";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Subscriptions (delegate to repository)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function subscribeToEntriesByDateRange(userId: string, startDay: string, endDay: string, callback: (entries: TimeEntry[]) => void): () => void {
-	return repo.subscribeToEntriesByDateRange(userId, startDay, endDay, callback);
+export function subscribeToEntriesByDateRange(
+  userId: string,
+  startDay: string,
+  endDay: string,
+  callback: (entries: SupabaseTimeEntry[]) => void
+): () => void {
+  return repo.subscribeToEntriesByDateRange(userId, startDay, endDay, callback);
 }
 
-export function subscribeToRunningEntry(userId: string, callback: (entry: TimeEntry | null) => void): () => void {
-	return repo.subscribeToRunningEntry(userId, callback);
+export function subscribeToRunningEntry(
+  userId: string,
+  callback: (entry: SupabaseTimeEntry | null) => void
+): () => void {
+  return repo.subscribeToRunningEntry(userId, callback);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Timer Functions
-// ─────────────────────────────────────────────────────────────────────────────
+export async function startTimer(params: {
+  userId: string;
+  taskId?: string;
+  taskTitle: string;
+  emoji?: string;
+  milestoneId?: string;
+  tags?: string[];
+  note?: string;
+}): Promise<SupabaseTimeEntry> {
+  const { userId, taskId, taskTitle, emoji, milestoneId, tags, note } = params;
 
-/**
- * Start a timer for a task or ad-hoc entry.
- * Only one timer can run at a time per user.
- */
-export async function startTimer(params: { userId: string; taskId?: string; taskTitle: string; emoji?: string; milestoneId?: string; tags?: string[]; note?: string }): Promise<string> {
-	const { userId, taskId, taskTitle, emoji, milestoneId, tags, note } = params;
+  if (!userId) {
+    throw AppError.badRequest("TIME_USER_REQUIRED", "User ID is required to start a timer.");
+  }
+  if (!taskTitle) {
+    throw AppError.badRequest("TIME_TITLE_REQUIRED", "Task title is required to start a timer.");
+  }
 
-	// Stop any running timer first (one-timer-per-user rule)
-	await stopRunningTimer(userId);
+  try {
+    await stopRunningTimer(userId);
 
-	const now = new Date();
-	const dayStr = format(now, "yyyy-MM-dd");
+    const now = new Date();
+    const dayStr = format(now, "yyyy-MM-dd");
 
-	const entry: Omit<TimeEntry, "id"> = {
-		userId,
-		taskId: taskId || null,
-		taskTitleSnapshot: taskTitle,
-		emoji: emoji || null,
-		milestoneIdSnapshot: milestoneId || null,
-		tagsSnapshot: tags || [],
-		note: note || null,
-		source: "timer",
-		startedAt: Timestamp.fromDate(now),
-		endedAt: null,
-		durationSec: 0,
-		day: dayStr,
-		createdAt: Timestamp.now(),
-		updatedAt: Timestamp.now(),
-	};
+    const entry: SupabaseTimeEntryInsert = {
+      user_id: userId,
+      task_id: taskId || null,
+      task_title_snapshot: taskTitle,
+      emoji: emoji || null,
+      milestone_id_snapshot: milestoneId || null,
+      tags_snapshot: tags || [],
+      note: note || null,
+      source: "timer",
+      started_at: now.toISOString(),
+      ended_at: null,
+      duration_sec: 0,
+      day: dayStr,
+    };
 
-	return repo.addEntry(entry);
+    return await repo.addEntry(entry);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_START_TIMER_ERROR", "Failed to start timer.");
+  }
 }
 
-/**
- * Stop the currently running timer for a user.
- */
-export async function stopRunningTimer(userId: string): Promise<TimeEntry | null> {
-	const running = await repo.getRunningEntry(userId);
-	if (!running) return null;
+export async function stopRunningTimer(
+  userId: string
+): Promise<SupabaseTimeEntry | null> {
+  try {
+    const running = await repo.getRunningEntry(userId);
+    if (!running) return null;
 
-	const now = new Date();
-	const startDate = running.startedAt?.toDate() ?? running.createdAt.toDate();
-	const durationSec = Math.floor((now.getTime() - startDate.getTime()) / 1000);
+    const now = new Date();
+    const startDate = running.started_at
+      ? new Date(running.started_at)
+      : new Date(running.created_at);
+    const durationSec = Math.floor(
+      (now.getTime() - startDate.getTime()) / 1000
+    );
 
-	await repo.updateEntry(running.id, {
-		endedAt: Timestamp.fromDate(now),
-		durationSec,
-	});
+    await repo.updateEntry(running.id, {
+      ended_at: now.toISOString(),
+      duration_sec: durationSec,
+    });
 
-	return {
-		...running,
-		endedAt: Timestamp.fromDate(now),
-		durationSec,
-		updatedAt: Timestamp.now(),
-	};
+    return {
+      ...running,
+      ended_at: now.toISOString(),
+      duration_sec: durationSec,
+      updated_at: now.toISOString(),
+    };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_STOP_TIMER_ERROR", "Failed to stop running timer.");
+  }
 }
 
-/**
- * Get the currently running timer entry for a user (if any).
- */
-export async function getRunningEntry(userId: string): Promise<TimeEntry | null> {
-	return repo.getRunningEntry(userId);
+export async function getRunningEntry(
+  userId: string
+): Promise<SupabaseTimeEntry | null> {
+  try {
+    return await repo.getRunningEntry(userId);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_RUNNING_ENTRY_ERROR", "Failed to fetch running entry.");
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Manual Entry Functions
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Log a manual time entry (duration-based or time-based).
- */
 export async function logManualEntry(params: {
-	userId: string;
-	day: string;
-	taskId?: string;
-	adHocTitle?: string;
-	emoji?: string;
-	milestoneId?: string;
-	tags?: string[];
-	note?: string;
-	durationSec?: number;
-	startedAt?: Date;
-	endedAt?: Date;
-}): Promise<string> {
-	const { userId, day, taskId, adHocTitle, emoji, milestoneId, tags, note, durationSec, startedAt, endedAt } = params;
+  userId: string;
+  day: string;
+  taskId?: string;
+  adHocTitle?: string;
+  emoji?: string;
+  milestoneId?: string;
+  tags?: string[];
+  note?: string;
+  durationSec?: number;
+  startedAt?: Date;
+  endedAt?: Date;
+}): Promise<SupabaseTimeEntry> {
+  const {
+    userId,
+    day,
+    taskId,
+    adHocTitle,
+    emoji,
+    milestoneId,
+    tags,
+    note,
+    durationSec,
+    startedAt,
+    endedAt,
+  } = params;
 
-	if (!adHocTitle && !taskId) {
-		throw new Error("Either adHocTitle or taskId must be provided");
-	}
+  if (!adHocTitle && !taskId) {
+    throw AppError.badRequest(
+      "TIME_TITLE_OR_TASK_REQUIRED",
+      "Either adHocTitle or taskId must be provided."
+    );
+  }
 
-	let finalStartedAt: Timestamp | null;
-	let finalEndedAt: Timestamp | null;
-	let finalDurationSec: number;
+  if (!userId) {
+    throw AppError.badRequest("TIME_USER_REQUIRED", "User ID is required.");
+  }
 
-	if (startedAt && endedAt) {
-		finalStartedAt = Timestamp.fromDate(startedAt);
-		finalEndedAt = Timestamp.fromDate(endedAt);
-		finalDurationSec = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
-	} else if (durationSec !== undefined) {
-		finalStartedAt = null;
-		finalEndedAt = null;
-		finalDurationSec = durationSec;
-	} else {
-		throw new Error("Either durationSec or (startedAt and endedAt) must be provided");
-	}
+  let finalStartedAt: string | null;
+  let finalEndedAt: string | null;
+  let finalDurationSec: number;
 
-	const entry: Omit<TimeEntry, "id"> = {
-		userId,
-		taskId: taskId || null,
-		taskTitleSnapshot: adHocTitle || "Untitled Task",
-		emoji: emoji || null,
-		milestoneIdSnapshot: milestoneId || null,
-		tagsSnapshot: tags || [],
-		note: note || null,
-		source: "manual",
-		startedAt: finalStartedAt,
-		endedAt: finalEndedAt,
-		durationSec: finalDurationSec,
-		day,
-		createdAt: Timestamp.now(),
-		updatedAt: Timestamp.now(),
-	};
+  if (startedAt && endedAt) {
+    finalStartedAt = startedAt.toISOString();
+    finalEndedAt = endedAt.toISOString();
+    finalDurationSec = Math.floor(
+      (endedAt.getTime() - startedAt.getTime()) / 1000
+    );
+  } else if (durationSec !== undefined) {
+    finalStartedAt = null;
+    finalEndedAt = null;
+    finalDurationSec = durationSec;
+  } else {
+    throw AppError.badRequest(
+      "TIME_DURATION_REQUIRED",
+      "Either durationSec or (startedAt and endedAt) must be provided."
+    );
+  }
 
-	return repo.addEntry(entry);
+  try {
+    const entry: SupabaseTimeEntryInsert = {
+      user_id: userId,
+      task_id: taskId || null,
+      task_title_snapshot: adHocTitle || "Untitled Task",
+      emoji: emoji || null,
+      milestone_id_snapshot: milestoneId || null,
+      tags_snapshot: tags || [],
+      note: note || null,
+      source: "manual",
+      started_at: finalStartedAt,
+      ended_at: finalEndedAt,
+      duration_sec: finalDurationSec,
+      day,
+    };
+
+    return await repo.addEntry(entry);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_MANUAL_ENTRY_ERROR", "Failed to log manual time entry.");
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CRUD Operations
-// ─────────────────────────────────────────────────────────────────────────────
+export async function updateEntry(params: {
+  entryId: string;
+  fields: SupabaseTimeEntryUpdate;
+}): Promise<void> {
+  const { entryId, fields } = params;
 
-/**
- * Update an existing time entry.
- */
-export async function updateEntry(params: { entryId: string; fields: Partial<Omit<TimeEntry, "id" | "userId" | "createdAt">> }): Promise<void> {
-	const { entryId, fields } = params;
+  if (!entryId) {
+    throw AppError.badRequest("TIME_ENTRY_ID_REQUIRED", "Entry ID is required for update.");
+  }
 
-	// Recalculate duration if start/end times are updated
-	if (fields.startedAt || fields.endedAt) {
-		const entry = await repo.getEntryById(entryId);
-		if (!entry) throw new Error("Entry not found");
+  try {
+    if (fields.started_at || fields.ended_at) {
+      const entry = await repo.getEntryById(entryId);
+      if (!entry) {
+        throw AppError.notFound("TIME_ENTRY_NOT_FOUND", "Time entry not found.");
+      }
 
-		const newStart = fields.startedAt?.toDate() || entry.startedAt?.toDate();
-		const newEnd = fields.endedAt?.toDate() || entry.endedAt?.toDate();
+      const newStart = fields.started_at
+        ? new Date(fields.started_at)
+        : entry.started_at
+          ? new Date(entry.started_at)
+          : null;
+      const newEnd = fields.ended_at
+        ? new Date(fields.ended_at)
+        : entry.ended_at
+          ? new Date(entry.ended_at)
+          : null;
 
-		if (newStart && newEnd) {
-			(fields as Record<string, unknown>).durationSec = Math.floor((newEnd.getTime() - newStart.getTime()) / 1000);
-		}
+      if (newStart && newEnd) {
+        fields.duration_sec = Math.floor(
+          (newEnd.getTime() - newStart.getTime()) / 1000
+        );
+      }
 
-		if (fields.startedAt && newStart) {
-			(fields as Record<string, unknown>).day = format(newStart, "yyyy-MM-dd");
-		}
-	}
+      if (fields.started_at && newStart) {
+        fields.day = format(newStart, "yyyy-MM-dd");
+      }
+    }
 
-	await repo.updateEntry(entryId, fields);
+    await repo.updateEntry(entryId, fields);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_UPDATE_ERROR", "Failed to update time entry.");
+  }
 }
 
-/**
- * Delete a time entry.
- */
 export async function deleteEntry(entryId: string): Promise<void> {
-	await repo.deleteEntry(entryId);
+  if (!entryId) {
+    throw AppError.badRequest("TIME_ENTRY_ID_REQUIRED", "Entry ID is required for deletion.");
+  }
+
+  try {
+    await repo.deleteEntry(entryId);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_DELETE_ERROR", "Failed to delete time entry.");
+  }
 }
 
-/**
- * Get a single time entry by ID.
- */
-export async function getEntryById(entryId: string): Promise<TimeEntry | null> {
-	return repo.getEntryById(entryId);
+export async function getEntryById(
+  entryId: string
+): Promise<SupabaseTimeEntry | null> {
+  try {
+    return await repo.getEntryById(entryId);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TIME_FIND_ERROR", "Failed to find time entry.");
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Query Functions
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get all time entries for a user within a date range.
- */
-export async function getEntriesForDateRange(userId: string, startDay: string, endDay: string): Promise<TimeEntry[]> {
-	return repo.getEntriesForDateRange(userId, startDay, endDay);
+export async function getEntriesForDateRange(
+  userId: string,
+  startDay: string,
+  endDay: string
+): Promise<SupabaseTimeEntry[]> {
+  try {
+    return await repo.getEntriesForDateRange(userId, startDay, endDay);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal(
+      "TIME_FETCH_RANGE_ERROR",
+      "Failed to fetch time entries for date range."
+    );
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Summary & Analytics
-// ─────────────────────────────────────────────────────────────────────────────
+export async function getWeeklySummary(
+  userId: string,
+  weekStart: string,
+  weekEnd: string
+) {
+  try {
+    const entries = await repo.getEntriesForDateRange(userId, weekStart, weekEnd);
 
-/**
- * Get weekly summary for a user.
- */
-export async function getWeeklySummary(userId: string, weekStart: string, weekEnd: string) {
-	const entries = await repo.getEntriesForDateRange(userId, weekStart, weekEnd);
+    const totalSeconds = entries.reduce((sum, e) => sum + e.duration_sec, 0);
+    const taskBreakdown = entries.reduce(
+      (acc, e) => {
+        const key = e.task_title_snapshot;
+        acc[key] = (acc[key] || 0) + e.duration_sec;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-	const totalSeconds = entries.reduce((sum, e) => sum + e.durationSec, 0);
-	const taskBreakdown = entries.reduce(
-		(acc, e) => {
-			const key = e.taskTitleSnapshot;
-			acc[key] = (acc[key] || 0) + e.durationSec;
-			return acc;
-		},
-		{} as Record<string, number>
-	);
-
-	return {
-		totalSeconds,
-		taskBreakdown,
-		entryCount: entries.length,
-	};
+    return {
+      totalSeconds,
+      taskBreakdown,
+      entryCount: entries.length,
+    };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal(
+      "TIME_WEEKLY_SUMMARY_ERROR",
+      "Failed to fetch weekly summary."
+    );
+  }
 }
-
-export { MOCK_USER_ID };

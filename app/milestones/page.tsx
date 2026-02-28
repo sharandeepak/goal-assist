@@ -18,8 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/common/ui
 import { Milestone, Task } from "@/common/types";
 import { subscribeToMilestonesByStatus, addMilestone, deleteMilestone, updateMilestone } from "@/features/milestones/services/milestoneService";
 import { getTasksForMilestone, addTask, updateTaskCompletion, updateTask, deleteTask as deleteTaskService } from "@/features/tasks/services/taskService";
-import { Timestamp } from "firebase/firestore";
-import { startOfDay, differenceInCalendarDays, format, addDays, parseISO, isValid } from "date-fns";
+import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { startOfDay, differenceInCalendarDays, format, addDays } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
@@ -27,10 +27,10 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { useSearchParams } from "next/navigation";
 
 // Helper to calculate days left
-const calculateDaysLeft = (endDate: Timestamp | undefined): number | undefined => {
+const calculateDaysLeft = (endDate: string | null | undefined): number | undefined => {
 	if (!endDate) return undefined;
 	const today = startOfDay(new Date());
-	const end = startOfDay(endDate.toDate());
+	const end = startOfDay(new Date(endDate));
 	const diff = differenceInCalendarDays(end, today);
 	return Math.max(0, diff);
 };
@@ -52,9 +52,14 @@ const getUrgencyColor = (urgency?: string) => {
 };
 
 // Format date nicely
-const formatDate = (timestamp?: Timestamp): string => {
-	if (!timestamp) return "N/A";
-	return format(timestamp.toDate(), "MMM d, yyyy");
+const formatDate = (dateStr?: string | null): string => {
+	if (!dateStr) return "N/A";
+	try {
+		const d = new Date(dateStr);
+		return isNaN(d.getTime()) ? "Invalid Date" : format(d, "MMM d, yyyy");
+	} catch {
+		return "Invalid Date";
+	}
 };
 
 // Colors for priority
@@ -84,12 +89,12 @@ const getPriorityLabel = (priority?: Task["priority"]) => {
 };
 
 // Format date for input type="date"
-const formatDateForInput = (timestamp?: Timestamp): string => {
-	if (!timestamp) return "";
+const formatDateForInput = (dateStr?: string | null): string => {
+	if (!dateStr) return "";
 	try {
-		return format(timestamp.toDate(), "yyyy-MM-dd");
+		const d = new Date(dateStr);
+		return isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
 	} catch {
-		// Handle potential invalid date in Firestore
 		return "";
 	}
 };
@@ -100,7 +105,7 @@ const getTaskAttentionStatus = (task: Task): { needsAttention: boolean; reason: 
 
 	// If task has a due date and is not completed, and due date has passed
 	if (task.date && !task.completed) {
-		const dueDay = startOfDay(task.date.toDate());
+		const dueDay = startOfDay(new Date(task.date));
 		if (dueDay < today) {
 			const daysOverdue = differenceInCalendarDays(today, dueDay);
 			return { needsAttention: true, reason: `${daysOverdue} day${daysOverdue !== 1 ? "s" : ""} overdue` };
@@ -108,9 +113,9 @@ const getTaskAttentionStatus = (task: Task): { needsAttention: boolean; reason: 
 	}
 
 	// If task is completed and has both due date and completed date, check if it was late
-	if (task.completed && task.date && task.completedDate) {
-		const dueDay = startOfDay(task.date.toDate());
-		const completedDay = startOfDay(task.completedDate.toDate());
+	if (task.completed && task.date && task.completed_date) {
+		const dueDay = startOfDay(new Date(task.date));
+		const completedDay = startOfDay(new Date(task.completed_date));
 		if (completedDay > dueDay) {
 			const daysLate = differenceInCalendarDays(completedDay, dueDay);
 			return { needsAttention: true, reason: `Completed ${daysLate} day${daysLate !== 1 ? "s" : ""} late` };
@@ -164,9 +169,9 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 								<CalendarIcon className="h-3 w-3" /> Due: {formatDate(task.date)}
 							</span>
 						)}
-						{task.completedDate && (
+						{task.completed_date && (
 							<span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full bg-green-500/10">
-								<CheckCircle2 className="h-3 w-3" /> Completed: {formatDate(task.completedDate)}
+								<CheckCircle2 className="h-3 w-3" /> Completed: {formatDate(task.completed_date)}
 							</span>
 						)}
 						{attention.needsAttention && (
@@ -221,7 +226,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	const [taskError, setTaskError] = useState<string | null>(null);
 	const [isTasksOpen, setIsTasksOpen] = useState(false);
 	const [editMilestoneOpen, setEditMilestoneOpen] = useState(false);
-	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "startDate" | "tasks">>>({});
+	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "start_date" | "tasks">>>({});
 	const [editMilestoneError, setEditMilestoneError] = useState<string | null>(null);
 	const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 	const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
@@ -249,7 +254,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			description: milestone.description,
 			status: milestone.status,
 			urgency: milestone.urgency,
-			endDate: milestone.endDate,
+			end_date: milestone.end_date,
 		});
 		setEditMilestoneError(null);
 		setEditMilestoneOpen(true);
@@ -274,15 +279,16 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	};
 
 	const handleAddTaskSubmit = async (formData: TaskFormData) => {
-		const dateToSave = formData.date || Timestamp.fromDate(startOfDay(new Date()));
+		const dateToSave = formData.date || startOfDay(new Date()).toISOString();
 
-		const taskToAdd: Omit<Task, "id"> = {
+		const taskToAdd = {
 			title: formData.title!,
 			completed: false,
-			milestoneId: milestone.id,
+			milestone_id: milestone.id,
 			date: dateToSave,
 			priority: formData.priority!,
-			createdAt: Timestamp.now(),
+			user_id: MOCK_USER_ID,
+			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -303,9 +309,9 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 
 	const handleUpdateTaskSubmit = async (formData: TaskFormData) => {
 		if (!editingTask) throw new Error("No task selected for editing.");
-		const dateToSave = formData.date || Timestamp.fromDate(startOfDay(new Date()));
+		const dateToSave = formData.date || startOfDay(new Date()).toISOString();
 
-		const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "createdAt" | "milestoneId">> = {
+		const dataToUpdate: Partial<Omit<Task, "id" | "completed" | "created_at" | "milestone_id">> = {
 			title: formData.title!,
 			priority: formData.priority!,
 			date: dateToSave,
@@ -339,13 +345,13 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		const newCompleted = !currentCompleted;
-		const now = Timestamp.fromDate(startOfDay(new Date()));
+		const now = startOfDay(new Date()).toISOString();
 		try {
 			setTaskError(null);
-			// Optimistic update: set/clear completedDate alongside completed status
+			// Optimistic update: set/clear completed_date alongside completed status
 			setTasks((prevTasks) => prevTasks.map((t) =>
 				t.id === taskId
-					? { ...t, completed: newCompleted, completedDate: newCompleted ? now : undefined }
+					? { ...t, completed: newCompleted, completed_date: newCompleted ? now : null }
 					: t
 			));
 			await updateTaskCompletion(taskId, newCompleted, milestone.id);
@@ -355,7 +361,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			// Revert optimistic update
 			setTasks((prevTasks) => prevTasks.map((t) =>
 				t.id === taskId
-					? { ...t, completed: currentCompleted, completedDate: currentCompleted ? t.completedDate : undefined }
+					? { ...t, completed: currentCompleted, completed_date: currentCompleted ? t.completed_date : null }
 					: t
 			));
 		}
@@ -373,7 +379,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 		}
 	};
 
-	const daysLeft = calculateDaysLeft(milestone.endDate);
+	const daysLeft = calculateDaysLeft(milestone.end_date);
 	const urgencyLabel = milestone.urgency.charAt(0).toUpperCase() + milestone.urgency.slice(1);
 
 	return (
@@ -399,13 +405,13 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								<Label>Deadline</Label>
 								<Popover>
 									<PopoverTrigger asChild>
-										<Button variant={"outline"} className={`w-full justify-start text-left font-normal ${!editMilestoneData.endDate ? "text-muted-foreground" : ""}`}>
+										<Button variant={"outline"} className={`w-full justify-start text-left font-normal ${!editMilestoneData.end_date ? "text-muted-foreground" : ""}`}>
 											<CalendarIcon className="mr-2 h-4 w-4" />
-											{editMilestoneData.endDate ? formatDate(editMilestoneData.endDate) : <span>Pick a date</span>}
+											{editMilestoneData.end_date ? formatDate(editMilestoneData.end_date) : <span>Pick a date</span>}
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent className="w-auto p-0">
-										<ShadCalendar mode="single" selected={editMilestoneData.endDate?.toDate()} onSelect={(date: Date | undefined) => setEditMilestoneData({ ...editMilestoneData, endDate: date ? Timestamp.fromDate(startOfDay(date)) : undefined })} initialFocus />
+										<ShadCalendar mode="single" selected={editMilestoneData.end_date ? new Date(editMilestoneData.end_date) : undefined} onSelect={(date: Date | undefined) => setEditMilestoneData({ ...editMilestoneData, end_date: date ? startOfDay(date).toISOString() : undefined })} initialFocus />
 									</PopoverContent>
 								</Popover>
 							</div>
@@ -526,8 +532,8 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						<div className="max-h-80 overflow-y-auto space-y-2 scrollbar-thin">
 							{[...tasks]
 								.sort((a, b) => {
-									const dateA = a.date?.toMillis() ?? Infinity;
-									const dateB = b.date?.toMillis() ?? Infinity;
+									const dateA = a.date ? new Date(a.date).getTime() : Infinity;
+									const dateB = b.date ? new Date(b.date).getTime() : Infinity;
 									return dateA - dateB;
 								})
 								.map((task) => (
@@ -571,10 +577,10 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			{/* Card Footer */}
 			<CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
 				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
-					<CalendarIcon className="h-3 w-3" /> Start: {formatDate(milestone.startDate)}
+					<CalendarIcon className="h-3 w-3" /> Start: {formatDate(milestone.start_date)}
 				</span>
 				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
-					<Target className="h-3 w-3" /> End: {formatDate(milestone.endDate)}
+					<Target className="h-3 w-3" /> End: {formatDate(milestone.end_date)}
 				</span>
 			</CardFooter>
 		</Card>
@@ -654,17 +660,18 @@ function MilestonesPageContent() {
 			return;
 		}
 
-		const startDate = Timestamp.now();
-		const endDate = Timestamp.fromDate(addDays(startDate.toDate(), daysToComplete));
+		const startDate = new Date().toISOString();
+		const endDate = addDays(new Date(), daysToComplete).toISOString();
 
-		const milestoneToAdd: Omit<Milestone, "id"> = {
+		const milestoneToAdd = {
 			title: newMilestoneData.title.trim(),
 			description: newMilestoneData.description || "",
 			urgency: newMilestoneData.urgency || "medium",
-			status: "active",
+			status: "active" as const,
 			progress: 0,
-			startDate: startDate,
-			endDate: endDate,
+			user_id: MOCK_USER_ID,
+			start_date: startDate,
+			end_date: endDate,
 		};
 
 		try {
@@ -776,7 +783,7 @@ function MilestonesPageContent() {
 								</div>
 								<div className="grid gap-1.5">
 									<Label htmlFor="milestone-description">Description (Optional)</Label>
-									<Textarea id="milestone-description" placeholder="Describe the goal of this milestone" value={newMilestoneData.description} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, description: e.target.value })} />
+									<Textarea id="milestone-description" placeholder="Describe the goal of this milestone" value={newMilestoneData.description ?? ""} onChange={(e) => setNewMilestoneData({ ...newMilestoneData, description: e.target.value })} />
 								</div>
 								<div className="grid grid-cols-2 gap-4">
 									<div className="grid gap-1.5">
