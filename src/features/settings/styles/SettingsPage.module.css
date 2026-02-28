@@ -1,0 +1,54 @@
+/* Settings page - container layouts and section styles */
+
+.wrapper {
+  max-width: 1280px;
+  @apply mx-auto p-4;
+}
+
+.pageTitle {
+  @apply text-2xl font-bold mb-6;
+}
+
+.section {
+  @apply mb-8;
+}
+
+.sectionTitle {
+  @apply text-xl font-semibold mb-3;
+}
+
+.appearanceCard {
+  @apply flex items-center justify-between p-4 border rounded-lg;
+}
+
+.remindersCard {
+  @apply p-4 border rounded-lg space-y-4;
+}
+
+.remindersRow {
+  @apply flex items-center justify-between;
+}
+
+.remindersTimeSection {
+  @apply space-y-2;
+}
+
+.reminderInput {
+  @apply w-full md:w-1/2;
+}
+
+.reminderHelp {
+  @apply text-sm text-muted-foreground;
+}
+
+.accountCard {
+  @apply p-4 border rounded-lg;
+}
+
+.accountSectionTitle {
+  @apply text-lg font-medium;
+}
+
+.accountDescription {
+  @apply text-muted-foreground mt-1 mb-3;
+}

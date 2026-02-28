@@ -1,0 +1,53 @@
+/* Analytics page - container layouts and card styles */
+
+.container {
+  @apply space-y-6;
+}
+
+.header {
+  @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4;
+}
+
+.title {
+  @apply text-3xl font-bold tracking-tight;
+}
+
+.subtitle {
+  @apply text-muted-foreground;
+}
+
+.selectTrigger {
+  @apply w-[180px];
+}
+
+.tabsWrapper {
+  @apply space-y-4;
+}
+
+.tabsContent {
+  @apply space-y-4;
+}
+
+.chartContainer {
+  @apply h-[300px];
+}
+
+.summaryGrid {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.cardHeaderCompact {
+  @apply pb-2;
+}
+
+.cardTitleBase {
+  @apply text-base;
+}
+
+.statValue {
+  @apply text-2xl font-bold;
+}
+
+.statSubtitle {
+  @apply text-xs text-muted-foreground;
+}

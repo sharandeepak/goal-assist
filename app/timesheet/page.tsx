@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay, startOfDay } from "date-fns";
-import { TimeEntry } from "@/types";
-import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/services/timeService";
-import WeekSelector from "@/components/timesheet/week-selector";
-import DayColumn from "@/components/timesheet/day-column";
-import AddEntryDialog from "@/components/timesheet/add-entry-dialog";
-import ViewEntryDialog from "@/components/timesheet/view-entry-dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import TimesheetLoading from "@/app/timesheet/loading";
+import { TimeEntry } from "@/common/types";
+import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import WeekSelector from "@/features/timesheet/components/week-selector";
+import DayColumn from "@/features/timesheet/components/day-column";
+import AddEntryDialog from "@/features/timesheet/components/add-entry-dialog";
+import ViewEntryDialog from "@/features/timesheet/components/view-entry-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/common/ui/alert-dialog";
+import TimesheetLoading from "./loading";
 
 export type DateFilter = "today" | "week" | "month";
 

@@ -1,21 +1,21 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getTodaysTaskSummary } from "@/services/taskService";
-import { getPageMilestoneSummary } from "@/services/milestoneService";
-import { getSatisfactionSummary } from "@/services/satisfactionService";
-import SummaryCard from "@/components/summary-card";
-import TaskSummary from "@/components/task-summary";
-import SatisfactionCalendar from "@/components/satisfaction-calendar";
-import MilestoneProgress from "@/components/milestone-progress";
-import SmartCalendar from "@/components/smart-calendar";
-import StandupSummary from "@/components/standup-summary";
-import { Task, Milestone, SatisfactionSummary as SatisfactionSummaryType } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getTodaysTaskSummary } from "@/features/tasks/services/taskService";
+import { getPageMilestoneSummary } from "@/features/milestones/services/milestoneService";
+import { getSatisfactionSummary } from "@/features/satisfaction/services/satisfactionService";
+import SummaryCard from "@/common/components/summary-card";
+import TaskSummary from "@/features/tasks/components/task-summary";
+import SatisfactionCalendar from "@/features/satisfaction/components/satisfaction-calendar";
+import MilestoneProgress from "@/features/milestones/components/milestone-progress";
+import SmartCalendar from "@/features/calendar/components/smart-calendar";
+import StandupSummary from "@/features/standup/components/standup-summary";
+import { Task, Milestone, SatisfactionSummary as SatisfactionSummaryType } from "@/common/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
+import { Skeleton } from "@/common/ui/skeleton";
 import { CheckCircle2, Target, Smile, Calendar, TrendingUp, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 interface TaskSummaryData {
 	completed: number;

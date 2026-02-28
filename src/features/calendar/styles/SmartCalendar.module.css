@@ -1,0 +1,105 @@
+/* SmartCalendar component styles */
+
+.root {
+  @apply flex flex-col md:flex-row gap-6;
+}
+
+.calendarWrapper {
+  @apply md:w-1/2 flex justify-center;
+}
+
+.calendar {
+  @apply rounded-xl border bg-card p-4;
+}
+
+.detailsColumn {
+  @apply md:w-1/2;
+}
+
+.emptyState {
+  @apply flex flex-col items-center justify-center h-full p-8 border rounded-xl bg-muted/30;
+}
+
+.emptyStateIcon {
+  @apply p-3 rounded-full bg-muted/50 mb-3;
+}
+
+.emptyStateText {
+  @apply text-muted-foreground;
+}
+
+.cardContentLoading {
+  @apply p-5 space-y-4;
+}
+
+.cardContentError {
+  @apply p-5 flex items-center justify-center;
+}
+
+.cardContent {
+  @apply p-5;
+}
+
+.contentInner {
+  @apply space-y-5;
+}
+
+.header {
+  @apply flex justify-between items-start gap-3;
+}
+
+.headerTitle {
+  @apply text-lg font-semibold mb-2;
+}
+
+.badge {
+  @apply gap-1.5;
+}
+
+.addButton {
+  @apply gap-1.5;
+}
+
+.sectionTitle {
+  @apply text-sm font-medium flex items-center gap-2 mb-3;
+}
+
+.iconWrapperPrimary {
+  @apply p-1.5 rounded-lg bg-primary/10;
+}
+
+.iconWrapperDestructive {
+  @apply p-1.5 rounded-lg bg-destructive/10;
+}
+
+.taskList {
+  @apply space-y-2;
+}
+
+.taskItem {
+  @apply flex items-center gap-3 p-3 rounded-xl transition-colors;
+}
+
+.milestoneList {
+  @apply space-y-2;
+}
+
+.milestoneItem {
+  @apply flex items-center gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/10;
+}
+
+.emptyList {
+  @apply flex items-center justify-center py-6 rounded-xl bg-muted/20;
+}
+
+.emptyListText {
+  @apply text-sm text-muted-foreground;
+}
+
+.errorWrapper {
+  @apply flex items-center gap-2 text-destructive;
+}
+
+.errorText {
+  @apply text-sm;
+}

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
+import { Calendar } from "@/common/ui/calendar";
+import { Badge } from "@/common/ui/badge";
 import { CheckCircle2, Clock, Target, AlertTriangle, Calendar as CalendarIcon, Plus } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Task, Milestone } from "@/types";
-import { getTasksForDate, addTask } from "@/services/taskService";
-import { getMilestonesEndingOnDate, getNextActiveMilestone, getUpcomingActiveMilestones } from "@/services/milestoneService";
+import { Skeleton } from "@/common/ui/skeleton";
+import { Task, Milestone } from "@/common/types";
+import { getTasksForDate, addTask } from "@/features/tasks/services/taskService";
+import { getMilestonesEndingOnDate, getNextActiveMilestone, getUpcomingActiveMilestones } from "@/features/milestones/services/milestoneService";
 import { format, startOfDay, endOfDay, differenceInCalendarDays, getDay, addDays } from "date-fns";
 import { Timestamp, collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Button } from "@/components/ui/button";
-import { TaskFormDialog, TaskFormData } from "@/components/task-form-dialog";
+import { db } from "@/common/lib/db";
+import { Button } from "@/common/ui/button";
+import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 
 // Helper function to calculate working days (Mon-Fri)
 // Could be moved to a utils file if used elsewhere

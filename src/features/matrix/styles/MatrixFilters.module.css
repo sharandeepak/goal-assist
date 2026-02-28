@@ -1,0 +1,29 @@
+/* MatrixFilters component styles */
+
+.triggerButton {
+  @apply w-auto justify-start text-left font-normal;
+}
+
+.calendarIcon {
+  @apply mr-2 h-4 w-4;
+}
+
+.popoverContent {
+  @apply w-auto p-0;
+}
+
+.presetSection {
+  @apply p-3 border-b;
+}
+
+.presetButtonsRow {
+  @apply flex gap-2;
+}
+
+.presetButton {
+  @apply flex-1;
+}
+
+.calendarWrapper {
+  @apply p-3;
+}

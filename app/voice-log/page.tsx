@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
+import { Button } from "@/common/ui/button";
+import { Textarea } from "@/common/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
 import { Mic, MicOff, Save, Trash2 } from "lucide-react";
 
 export default function VoiceLog() {

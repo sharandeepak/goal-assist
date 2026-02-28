@@ -1,0 +1,12 @@
+.skeleton {
+  @apply h-40 w-full;
+}
+
+.errorText {
+  @apply text-red-500;
+}
+
+.chartContainer {
+  @apply w-full;
+  height: 200px;
+}

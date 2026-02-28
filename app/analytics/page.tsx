@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select"
 import {
   LineChart,
   BarChart,
@@ -16,7 +16,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltipContent } from "@/common/ui/chart"
 
 // Sample data for charts
 const satisfactionData = [

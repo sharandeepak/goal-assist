@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MatrixGrid } from "@/components/matrix/matrix-grid";
-import { MatrixFilters } from "@/components/matrix/matrix-filters";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { MatrixGrid } from "@/features/matrix/components/matrix-grid";
+import { MatrixFilters } from "@/features/matrix/components/matrix-filters";
+import { Input } from "@/common/ui/input";
+import { Button } from "@/common/ui/button";
 import { Plus } from "lucide-react";
-import { TaskFormDialog, TaskFormData } from "@/components/task-form-dialog";
-import { subscribeToMatrixTasks, updateTaskQuadrant, QuadrantType, MatrixTasksData } from "@/services/matrixService";
-import { Task } from "@/types";
-import { addTask, updateTaskCompletion, deleteTask, updateTask } from "@/services/taskService";
+import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
+import { subscribeToMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
+import { Task } from "@/common/types";
+import { addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
 import { Timestamp } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/common/ui/skeleton";
+import { useToast } from "@/common/hooks/use-toast";
 
 export default function MatrixPage() {
 	const [tasks, setTasks] = useState<MatrixTasksData>({
@@ -234,21 +234,6 @@ export default function MatrixPage() {
 			// Reset prefilled values when dialog closes
 			setPrefilledPriority(undefined);
 			setPrefilledUrgency(undefined);
-		}
-	};
-
-	const quadrantToValues = (quadrant: QuadrantType): { priority: "low" | "medium" | "high"; urgency: "low" | "medium" | "high" } => {
-		switch (quadrant) {
-			case "q1":
-				return { priority: "high", urgency: "high" };
-			case "q2":
-				return { priority: "high", urgency: "low" };
-			case "q3":
-				return { priority: "low", urgency: "high" };
-			case "q4":
-				return { priority: "low", urgency: "low" };
-			default:
-				return { priority: "medium", urgency: "medium" };
 		}
 	};
 

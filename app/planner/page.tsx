@@ -1,25 +1,25 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
+import { Button } from "@/common/ui/button";
+import { Input } from "@/common/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
+import { Badge } from "@/common/ui/badge";
+import { Checkbox } from "@/common/ui/checkbox";
 import { Calendar, CheckCircle2, Clock, Plus, Tag, Trash2, Loader2, Edit, Flag } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Task } from "@/types";
-import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask } from "@/services/taskService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/common/ui/dialog";
+import { Label } from "@/common/ui/label";
+import { Skeleton } from "@/common/ui/skeleton";
+import { Task } from "@/common/types";
+import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
 import { startOfDay, endOfDay, addDays, format } from "date-fns";
 import { Timestamp } from "firebase/firestore";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as ShadCalendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
+import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { AlertTriangle } from "lucide-react";
-import { TaskFormDialog, TaskFormData } from "@/components/task-form-dialog";
+import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { useSearchParams } from "next/navigation";
 
 const getPriorityColor = (priority?: Task["priority"]) => {

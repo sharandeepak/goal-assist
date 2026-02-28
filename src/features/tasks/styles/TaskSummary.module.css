@@ -1,0 +1,52 @@
+/* TaskSummary component styles */
+
+.container {
+  @apply mt-4 space-y-2;
+}
+
+.skeletonContainer {
+  @apply mt-4 space-y-3;
+}
+
+.skeletonItem {
+  @apply flex items-center gap-3 py-2.5 px-3 rounded-xl bg-muted/30 animate-fade-up;
+}
+
+.errorState {
+  @apply mt-4 flex items-center gap-2 p-4 rounded-xl bg-destructive/5 text-destructive;
+}
+
+.emptyState {
+  @apply mt-4 flex flex-col items-center justify-center py-8 text-center;
+}
+
+.emptyIcon {
+  @apply p-3 rounded-full bg-muted/50 mb-3;
+}
+
+.emptyText {
+  @apply text-sm text-muted-foreground;
+}
+
+.toggleError {
+  @apply flex items-center gap-2 p-2 rounded-lg bg-destructive/5 text-destructive mb-2;
+}
+
+.taskItem {
+  @apply flex items-center gap-3 text-sm py-2.5 px-3 rounded-xl transition-all duration-200;
+  @apply bg-muted/30 hover:bg-muted/50 cursor-pointer;
+  @apply animate-fade-up;
+}
+
+.taskTitle {
+  @apply flex-grow truncate font-medium;
+}
+
+.taskTitleCompleted {
+  @apply flex-grow truncate font-medium line-through text-muted-foreground;
+}
+
+.viewAllLink {
+  @apply flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary;
+  @apply text-center py-3 rounded-xl hover:bg-muted/30 transition-colors;
+}

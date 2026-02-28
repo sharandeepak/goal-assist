@@ -1,12 +1,12 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, DM_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import "./globals.css";
-import Navbar from "@/components/navbar";
-import Spotlight from "@/components/spotlight";
-import NavigationProgress from "@/components/navigation-progress";
-import { ThemeProvider } from "@/components/theme-provider";
-import { QueryProvider } from "@/components/providers/query-provider";
+import "../src/common/styles/globals.css";
+import Navbar from "@/common/components/navbar";
+import Spotlight from "@/common/components/spotlight";
+import NavigationProgress from "@/common/components/navigation-progress";
+import { ThemeProvider } from "@/common/providers/theme-provider";
+import { QueryProvider } from "@/common/providers/query-provider";
 import { StagewiseToolbar } from "@stagewise/toolbar-next";
 import { ReactPlugin } from "@stagewise-plugins/react";
 

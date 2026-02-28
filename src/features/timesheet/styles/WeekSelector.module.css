@@ -1,0 +1,19 @@
+.root {
+  @apply flex items-center justify-between py-4 flex-wrap gap-4;
+}
+
+.navGroup {
+  @apply flex items-center gap-2;
+}
+
+.displayBox {
+  @apply min-w-[200px] text-center;
+}
+
+.displayText {
+  @apply text-lg font-semibold;
+}
+
+.selectTrigger {
+  @apply w-[150px];
+}

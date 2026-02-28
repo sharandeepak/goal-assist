@@ -1,5 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/common/ui/skeleton";
+import { Card, CardContent, CardFooter, CardHeader } from "@/common/ui/card";
 
 export default function MilestonesLoading() {
 	return (

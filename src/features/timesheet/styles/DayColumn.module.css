@@ -1,0 +1,51 @@
+.card {
+  @apply flex flex-col;
+}
+
+.cardToday {
+  @apply border-primary border-2;
+}
+
+.header {
+  @apply pb-3 flex-shrink-0;
+}
+
+.headerRow {
+  @apply flex items-center justify-between;
+}
+
+.headerLeft {
+  @apply flex-1 min-w-0;
+}
+
+.dayTitle {
+  @apply text-sm font-medium;
+}
+
+.totalText {
+  @apply text-xs text-muted-foreground mt-1;
+}
+
+.headerActions {
+  @apply flex items-center gap-1;
+}
+
+.headerButton {
+  @apply h-7 w-7;
+}
+
+.headerIcon {
+  @apply h-3 w-3;
+}
+
+.content {
+  @apply flex-1 overflow-y-auto space-y-2 min-h-0;
+}
+
+.emptyState {
+  @apply text-center py-8 text-sm text-muted-foreground;
+}
+
+.emptyButton {
+  @apply block mx-auto mt-2;
+}
