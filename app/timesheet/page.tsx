@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay, startOfDay } from "date-fns";
 import { TimeEntry } from "@/common/types";
-import { subscribeToEntriesByDateRange, deleteEntry, MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { subscribeToEntriesByDateRange, deleteEntry } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import WeekSelector from "@/features/timesheet/components/week-selector";
 import DayColumn from "@/features/timesheet/components/day-column";
 import AddEntryDialog from "@/features/timesheet/components/add-entry-dialog";
@@ -15,6 +16,7 @@ import TimesheetLoading from "./loading";
 export type DateFilter = "today" | "week" | "month";
 
 export default function TimesheetPage() {
+	const { employeeId } = useRequiredAuth();
 	const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
 	const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 	const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -63,7 +65,7 @@ export default function TimesheetPage() {
 		const endDay = format(dateRangeEnd, "yyyy-MM-dd");
 
 		try {
-			const unsubscribe = subscribeToEntriesByDateRange(MOCK_USER_ID, startDay, endDay, (fetchedEntries) => {
+			const unsubscribe = subscribeToEntriesByDateRange(employeeId, startDay, endDay, (fetchedEntries) => {
 				setEntries(fetchedEntries);
 				setLoading(false);
 			});

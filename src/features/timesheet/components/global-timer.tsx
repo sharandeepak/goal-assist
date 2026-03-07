@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/common/ui/button";
-import { Play, Square, Clock, Smile } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay, faSquare, faClock, faSmile } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import EmojiPicker from "emoji-picker-react";
-import { startTimer, stopRunningTimer, subscribeToRunningEntry, MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { startTimer, stopRunningTimer, subscribeToRunningEntry } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { TimeEntry } from "@/common/types";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/common/ui/dialog";
 import { Input } from "@/common/ui/input";
@@ -14,6 +16,7 @@ import { Textarea } from "@/common/ui/textarea";
 import { styles } from "../styles/GlobalTimer.styles";
 
 export default function GlobalTimer() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [runningEntry, setRunningEntry] = useState<TimeEntry | null>(null);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
@@ -27,12 +30,12 @@ export default function GlobalTimer() {
 
 	// Subscribe to running entry
 	useEffect(() => {
-		const unsubscribe = subscribeToRunningEntry(MOCK_USER_ID, (entry) => {
+		const unsubscribe = subscribeToRunningEntry(employeeId, (entry) => {
 			setRunningEntry(entry);
 		});
 
 		return () => unsubscribe();
-	}, []);
+	}, [employeeId]);
 
 	// Update elapsed time every second
 	useEffect(() => {
@@ -70,7 +73,9 @@ export default function GlobalTimer() {
 		setLoading(true);
 		try {
 			await startTimer({
-				userId: MOCK_USER_ID,
+				userId,
+				companyId,
+				employeeId,
 				taskTitle: taskTitle.trim(),
 				emoji: emoji || undefined,
 				note: note.trim() || undefined,
@@ -91,7 +96,7 @@ export default function GlobalTimer() {
 
 		setLoading(true);
 		try {
-			await stopRunningTimer(MOCK_USER_ID);
+			await stopRunningTimer(employeeId);
 		} catch (error) {
 			console.error("Error stopping timer:", error);
 		} finally {
@@ -102,7 +107,7 @@ export default function GlobalTimer() {
 	if (runningEntry) {
 		return (
 			<div className={styles.runningContainer}>
-				<Clock className={styles.clockIcon} />
+				<FontAwesomeIcon icon={faClock} className={styles.clockIcon} />
 				<div className={styles.runningTextColumn}>
 					<span className={styles.taskTitle}>
 						{runningEntry.emoji && <span className={styles.emoji}>{runningEntry.emoji}</span>}
@@ -111,7 +116,7 @@ export default function GlobalTimer() {
 					<span className={styles.elapsedTime}>{formatTime(elapsedSeconds)}</span>
 				</div>
 				<Button variant="ghost" size="icon" className={styles.stopButton} onClick={handleStopTimer} disabled={loading}>
-					<Square className={styles.stopIcon} />
+					<FontAwesomeIcon icon={faSquare} className={styles.stopIcon} />
 				</Button>
 			</div>
 		);
@@ -120,7 +125,7 @@ export default function GlobalTimer() {
 	return (
 		<>
 			<Button variant="outline" size="sm" onClick={() => setIsStartDialogOpen(true)} className={styles.startButton}>
-				<Play className="h-4 w-4" />
+				<FontAwesomeIcon icon={faPlay} className="h-4 w-4" />
 				<span className={styles.startButtonLabel}>Start Timer</span>
 			</Button>
 
@@ -137,7 +142,7 @@ export default function GlobalTimer() {
 								<div className={styles.dialogInputRow}>
 									<div className={styles.dialogInputWrapper}>
 										<Button type="button" variant="outline" size="sm" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={emoji ? "text-primary" : ""}>
-											{emoji || <Smile className="h-4 w-4" />}
+											{emoji || <FontAwesomeIcon icon={faSmile} className="h-4 w-4" />}
 										</Button>
 										<Input
 											id="timer-task-title"
@@ -177,7 +182,7 @@ export default function GlobalTimer() {
 							Cancel
 						</Button>
 						<Button onClick={handleStartTimer} disabled={!taskTitle.trim() || loading}>
-							<Play className="h-4 w-4 mr-2" />
+							<FontAwesomeIcon icon={faPlay} className="h-4 w-4 mr-2" />
 							Start Timer
 						</Button>
 					</DialogFooter>

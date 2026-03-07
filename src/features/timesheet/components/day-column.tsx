@@ -2,7 +2,8 @@
 
 import { TimeEntry } from "@/common/types";
 import { format, isSameDay } from "date-fns";
-import { Plus, Copy, Check, Trash2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faCopy, faCheck, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/ui/card";
 import EntryRow from "./entry-row";
@@ -130,13 +131,13 @@ export default function DayColumn({ day, entries, onAddEntry, onEditEntry, onDel
 					</div>
 					<div className={styles.headerActions}>
 						<Button variant="ghost" size="icon" className={styles.headerButton} onClick={handleDeleteAll} disabled={dayEntries.length === 0} title="Delete all entries">
-							<Trash2 className={`${styles.headerIcon} text-destructive`} />
+							<FontAwesomeIcon icon={faTrash} className={`${styles.headerIcon} text-destructive`} />
 						</Button>
 						<Button variant="ghost" size="icon" className={styles.headerButton} onClick={handleCopy} disabled={dayEntries.length === 0} title="Copy day entries">
-							{copied ? <Check className={`${styles.headerIcon} text-green-500`} /> : <Copy className={styles.headerIcon} />}
+							{copied ? <FontAwesomeIcon icon={faCheck} className={`${styles.headerIcon} text-green-500`} /> : <FontAwesomeIcon icon={faCopy} className={styles.headerIcon} />}
 						</Button>
 						<Button variant="ghost" size="icon" className={styles.headerButton} onClick={() => onAddEntry(day)}>
-							<Plus className="h-4 w-4" />
+							<FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
 						</Button>
 					</div>
 				</div>

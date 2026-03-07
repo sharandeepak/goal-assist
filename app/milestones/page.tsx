@@ -8,7 +8,8 @@ import { Textarea } from "@/common/ui/textarea";
 import { Badge } from "@/common/ui/badge";
 import { Progress } from "@/common/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
-import { Calendar as CalendarIcon, CheckCircle2, Clock, Plus, Target, Trash2, AlertTriangle, Loader2, ListTodo, ChevronDown, ChevronRight, Edit, Flag, AlertCircle } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar, faCircleCheck, faClock, faPlus, faBullseye, faTrash, faTriangleExclamation, faSpinner, faListCheck, faChevronDown, faChevronRight, faPen, faFlag, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/common/ui/dialog";
 import { Label } from "@/common/ui/label";
@@ -18,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/common/ui
 import { Milestone, Task } from "@/common/types";
 import { subscribeToMilestonesByStatus, addMilestone, deleteMilestone, updateMilestone } from "@/features/milestones/services/milestoneService";
 import { getTasksForMilestone, addTask, updateTaskCompletion, updateTask, deleteTask as deleteTaskService } from "@/features/tasks/services/taskService";
-import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { startOfDay, differenceInCalendarDays, format, addDays } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
@@ -151,7 +152,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 					<div className="flex items-center gap-2">
 						{attention.needsAttention && (
 							<span title={attention.reason} className="flex-shrink-0">
-								<AlertCircle className="h-4 w-4 text-destructive" />
+								<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4 text-destructive" />
 							</span>
 						)}
 						<label 
@@ -166,12 +167,12 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 					<div className="flex flex-wrap items-center gap-2">
 						{task.date && (
 							<span className="inline-flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-background/50">
-								<CalendarIcon className="h-3 w-3" /> Due: {formatDate(task.date)}
+								<FontAwesomeIcon icon={faCalendar} className="h-3 w-3" /> Due: {formatDate(task.date)}
 							</span>
 						)}
 						{task.completed_date && (
 							<span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full bg-green-500/10">
-								<CheckCircle2 className="h-3 w-3" /> Completed: {formatDate(task.completed_date)}
+								<FontAwesomeIcon icon={faCircleCheck} className="h-3 w-3" /> Completed: {formatDate(task.completed_date)}
 							</span>
 						)}
 						{attention.needsAttention && (
@@ -186,7 +187,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 				{/* Show Priority */}
 				{task.priority && (
 					<div className={`p-1 rounded ${task.priority === 'high' ? 'bg-red-500/10' : task.priority === 'medium' ? 'bg-yellow-500/10' : 'bg-green-500/10'}`}>
-						<Flag className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />
+						<FontAwesomeIcon icon={faFlag} className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />
 					</div>
 				)}
 				{/* Edit Button */}
@@ -196,7 +197,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 					onClick={() => onEditRequest(task)} 
 					className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
 				>
-					<Edit className="h-3.5 w-3.5" />
+					<FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
 					<span className="sr-only">Edit Task</span>
 				</Button>
 				{/* Delete Button */}
@@ -206,7 +207,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 					onClick={() => onDelete(task.id, milestoneId)} 
 					className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
 				>
-					<Trash2 className="h-3.5 w-3.5" />
+					<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
 					<span className="sr-only">Delete Task</span>
 				</Button>
 			</div>
@@ -287,7 +288,9 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			milestone_id: milestone.id,
 			date: dateToSave,
 			priority: formData.priority!,
-			user_id: MOCK_USER_ID,
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
@@ -406,7 +409,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								<Popover>
 									<PopoverTrigger asChild>
 										<Button variant={"outline"} className={`w-full justify-start text-left font-normal ${!editMilestoneData.end_date ? "text-muted-foreground" : ""}`}>
-											<CalendarIcon className="mr-2 h-4 w-4" />
+											<FontAwesomeIcon icon={faCalendar} className="mr-2 h-4 w-4" />
 											{editMilestoneData.end_date ? formatDate(editMilestoneData.end_date) : <span>Pick a date</span>}
 										</Button>
 									</PopoverTrigger>
@@ -465,7 +468,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 							onClick={openEditMilestoneDialog} 
 							className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
 						>
-							<Edit className="h-4 w-4" />
+							<FontAwesomeIcon icon={faPen} className="h-4 w-4" />
 							<span className="sr-only">Edit Milestone</span>
 						</Button>
 						{/* Delete Milestone Button */}
@@ -475,7 +478,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 							onClick={() => onDelete(milestone.id, false)} 
 							className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
 						>
-							<Trash2 className="h-4 w-4" />
+							<FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
 							<span className="sr-only">Delete Milestone</span>
 						</Button>
 					</div>
@@ -497,14 +500,14 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						size="sm" 
 						className="w-full justify-start px-3 py-2 h-auto text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted/50"
 					>
-						{isTasksOpen ? <ChevronDown className="h-4 w-4 mr-2 transition-transform" /> : <ChevronRight className="h-4 w-4 mr-2 transition-transform" />}
-						<ListTodo className="h-4 w-4 mr-2" /> 
+						{isTasksOpen ? <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 mr-2 transition-transform" /> : <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4 mr-2 transition-transform" />}
+						<FontAwesomeIcon icon={faListCheck} className="h-4 w-4 mr-2" /> 
 						<span className="font-medium">Tasks ({tasks.length})</span>
 						{(() => {
 							const attentionCount = tasks.filter((t) => getTaskAttentionStatus(t).needsAttention).length;
 							return attentionCount > 0 ? (
 								<Badge variant="destructive" size="sm" className="ml-auto">
-									<AlertCircle className="h-3 w-3 mr-1" />{attentionCount} need attention
+									<FontAwesomeIcon icon={faCircleExclamation} className="h-3 w-3 mr-1" />{attentionCount} need attention
 								</Badge>
 							) : null;
 						})()}
@@ -514,17 +517,17 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						{/* Task List */}
 						{loadingTasks ? (
 							<div className="flex items-center justify-center py-6">
-								<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+								<FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin text-muted-foreground" />
 							</div>
 						) : taskError ? (
 							<div className="flex items-center justify-center gap-2 py-4 px-3 rounded-xl bg-destructive/5">
-								<AlertCircle className="h-4 w-4 text-destructive" />
+								<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4 text-destructive" />
 								<p className="text-xs text-destructive">{taskError}</p>
 							</div>
 						) : tasks.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-6 text-center">
 								<div className="p-2 rounded-full bg-muted/50 mb-2">
-									<ListTodo className="h-5 w-5 text-muted-foreground" />
+									<FontAwesomeIcon icon={faListCheck} className="h-5 w-5 text-muted-foreground" />
 								</div>
 								<p className="text-xs text-muted-foreground">No tasks added yet</p>
 							</div>
@@ -550,7 +553,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								onClick={openAddTaskDialog} 
 								disabled={loadingTasks}
 							>
-								<Plus className="h-4 w-4 mr-2" />
+								<FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2" />
 								Add Task
 							</Button>
 						</div>
@@ -568,7 +571,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 					</Badge>
 					{daysLeft !== undefined && milestone.status === "active" && (
 						<Badge variant="outline" size="sm" className="gap-1.5">
-							<Clock className="h-3 w-3" /> 
+							<FontAwesomeIcon icon={faClock} className="h-3 w-3" /> 
 							{daysLeft} day{daysLeft !== 1 ? "s" : ""} left
 						</Badge>
 					)}
@@ -577,10 +580,10 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			{/* Card Footer */}
 			<CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
 				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
-					<CalendarIcon className="h-3 w-3" /> Start: {formatDate(milestone.start_date)}
+					<FontAwesomeIcon icon={faCalendar} className="h-3 w-3" /> Start: {formatDate(milestone.start_date)}
 				</span>
 				<span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50">
-					<Target className="h-3 w-3" /> End: {formatDate(milestone.end_date)}
+					<FontAwesomeIcon icon={faBullseye} className="h-3 w-3" /> End: {formatDate(milestone.end_date)}
 				</span>
 			</CardFooter>
 		</Card>
@@ -589,6 +592,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 
 // --- Main Page Component ---
 function MilestonesPageContent() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [activeMilestones, setActiveMilestones] = useState<Milestone[]>([]);
 	const [completedMilestones, setCompletedMilestones] = useState<Milestone[]>([]);
 	const [loadingActive, setLoadingActive] = useState(true);
@@ -669,7 +673,9 @@ function MilestonesPageContent() {
 			urgency: newMilestoneData.urgency || "medium",
 			status: "active" as const,
 			progress: 0,
-			user_id: MOCK_USER_ID,
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			start_date: startDate,
 			end_date: endDate,
 		};
@@ -739,7 +745,7 @@ function MilestonesPageContent() {
 			const type = isActiveTab ? "active" : "completed";
 			return (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
-					<Target className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+					<FontAwesomeIcon icon={faBullseye} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 					<h3 className="font-medium text-lg">{trimmedQuery ? "No matching milestones" : `No ${type} milestones`}</h3>
 					{!trimmedQuery && type === "active" && <p className="text-sm text-muted-foreground">Add a new milestone to get started.</p>}
 				</div>
@@ -826,7 +832,7 @@ function MilestonesPageContent() {
 			{error && !newMilestoneOpen && (
 				<Card className="border-destructive bg-destructive/10">
 					<CardContent className="p-4 text-center text-destructive flex items-center justify-center gap-2">
-						<AlertTriangle className="h-4 w-4" /> {error}
+						<FontAwesomeIcon icon={faTriangleExclamation} className="h-4 w-4" /> {error}
 					</CardContent>
 				</Card>
 			)}

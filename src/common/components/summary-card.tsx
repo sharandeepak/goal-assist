@@ -1,16 +1,17 @@
 "use client";
 
 import { Card, CardContent } from "@/common/ui/card";
-import { ArrowUp, ArrowDown, Minus, TrendingUp, TrendingDown } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUp, faArrowDown, faMinus, faArrowTrendUp, faArrowTrendDown } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/common/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 interface SummaryCardProps {
 	title: string;
 	value: string | number;
 	description: string;
 	change?: number | null;
-	icon?: LucideIcon;
+	icon?: IconDefinition;
 	trend?: "up" | "down" | "neutral";
 	accentColor?: "primary" | "accent" | "destructive" | "success";
 	className?: string;
@@ -46,11 +47,11 @@ export default function SummaryCard({
 				)}
 			>
 				{isPositive ? (
-					<TrendingUp className="h-3 w-3" />
+					<FontAwesomeIcon icon={faArrowTrendUp} className="h-3 w-3" />
 				) : isNegative ? (
-					<TrendingDown className="h-3 w-3" />
+					<FontAwesomeIcon icon={faArrowTrendDown} className="h-3 w-3" />
 				) : (
-					<Minus className="h-3 w-3" />
+					<FontAwesomeIcon icon={faMinus} className="h-3 w-3" />
 				)}
 				<span>{isPositive ? "+" : ""}{change.toFixed(1)}</span>
 			</div>
@@ -96,7 +97,7 @@ export default function SummaryCard({
 									"transition-colors duration-300"
 								)}
 							>
-								<Icon className="h-5 w-5" />
+								<FontAwesomeIcon icon={Icon} className="h-5 w-5" />
 							</div>
 						)}
 						<span className="stat-label">{title}</span>
@@ -153,9 +154,9 @@ export function SummaryCardCompact({
 				)}
 			>
 				{isPositive ? (
-					<ArrowUp className="h-3 w-3 inline" />
+					<FontAwesomeIcon icon={faArrowUp} className="h-3 w-3 inline" />
 				) : isNegative ? (
-					<ArrowDown className="h-3 w-3 inline" />
+					<FontAwesomeIcon icon={faArrowDown} className="h-3 w-3 inline" />
 				) : null}
 				{Math.abs(change).toFixed(1)}
 			</span>
@@ -207,7 +208,7 @@ export function BentoStatCard({
 					{Icon && (
 						<div className="mb-4">
 							<div className="inline-flex p-3 rounded-2xl bg-primary/10 text-primary">
-								<Icon className="h-6 w-6" />
+								<FontAwesomeIcon icon={Icon} className="h-6 w-6" />
 							</div>
 						</div>
 					)}

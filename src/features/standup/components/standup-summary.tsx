@@ -3,18 +3,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/common/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-	CheckCircle2,
-	AlertCircle,
-	Clock,
-	Loader2,
-	ListChecks,
-	NotebookPen,
-	Save,
-	Trash2,
-	CalendarCheck,
-	Sparkles,
-} from "lucide-react";
+	faCircleCheck,
+	faCircleExclamation,
+	faClock,
+	faSpinner,
+	faListCheck,
+	faPenToSquare,
+	faFloppyDisk,
+	faTrash,
+	faCalendarCheck,
+	faWandMagicSparkles,
+} from "@fortawesome/free-solid-svg-icons";
 import { Skeleton } from "@/common/ui/skeleton";
 import { StandupLog, Task } from "@/common/types";
 import { subscribeToRecentStandups } from "@/features/standup/services/standupService";
@@ -123,7 +124,7 @@ export default function StandupSummary() {
 				<CardHeader className={styles.cardHeader}>
 					<CardTitle className={styles.cardTitleRow}>
 						<div className={styles.iconBadgeGreen}>
-							<ListChecks className="h-4 w-4 text-green-600 dark:text-green-400" />
+							<FontAwesomeIcon icon={faListCheck} className="h-4 w-4 text-green-600 dark:text-green-400" />
 						</div>
 						<span>Completed Tasks (Last 2 Days)</span>
 					</CardTitle>
@@ -141,13 +142,13 @@ export default function StandupSummary() {
 						</div>
 					) : errorTasks ? (
 						<div className={styles.errorState}>
-							<AlertCircle className="h-4 w-4" />
+							<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4" />
 							<p className="text-sm">{errorTasks}</p>
 						</div>
 					) : completedTasks.length === 0 ? (
 						<div className={styles.emptyState}>
 							<div className={styles.emptyStateIcon}>
-								<CalendarCheck className="h-6 w-6 text-muted-foreground" />
+								<FontAwesomeIcon icon={faCalendarCheck} className="h-6 w-6 text-muted-foreground" />
 							</div>
 							<p className="text-sm text-muted-foreground">No tasks completed recently.</p>
 						</div>
@@ -159,7 +160,7 @@ export default function StandupSummary() {
 									className={cn(styles.taskItem, "animate-fade-up")}
 									style={{ animationDelay: `${index * 50}ms` }}
 								>
-									<CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+									<FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5 text-green-500 flex-shrink-0" />
 									<span className="flex-grow text-sm font-medium truncate">{task.title}</span>
 									<span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-background">
 										{task.date ? format(new Date(task.date), "MMM d") : "N/A"}
@@ -179,7 +180,7 @@ export default function StandupSummary() {
 				<CardHeader className={styles.cardHeader}>
 					<CardTitle className={styles.cardTitleRow}>
 						<div className={styles.iconBadgePrimary}>
-							<NotebookPen className="h-4 w-4 text-primary" />
+							<FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4 text-primary" />
 						</div>
 						<span>Quick Notes</span>
 					</CardTitle>
@@ -201,7 +202,7 @@ export default function StandupSummary() {
 						disabled={!quickNote}
 						className="gap-2"
 					>
-						<Trash2 className="h-3.5 w-3.5" />
+						<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
 						Clear
 					</Button>
 					<Button
@@ -211,9 +212,9 @@ export default function StandupSummary() {
 						className="gap-2"
 					>
 						{isSavingNote ? (
-							<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							<FontAwesomeIcon icon={faSpinner} className="h-3.5 w-3.5 animate-spin" />
 						) : (
-							<Save className="h-3.5 w-3.5" />
+							<FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
 						)}
 						{isSavingNote ? "Saving..." : "Save"}
 					</Button>

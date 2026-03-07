@@ -9,7 +9,8 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Label } from "@/common/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
-import { Calendar as CalendarIcon, Loader2, X } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar, faSpinner, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Task } from "@/common/types";
 import { startOfDay, format } from "date-fns";
 import { Switch } from "@/common/ui/switch";
@@ -177,7 +178,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 							<Popover>
 								<PopoverTrigger asChild>
 									<Button id="task-form-date" variant={"outline"} className={!formData.date ? styles.dateButtonPlaceholder : styles.dateButton} disabled={isSubmitting}>
-										<CalendarIcon className="mr-2 h-4 w-4" />
+										<FontAwesomeIcon icon={faCalendar} className="mr-2 h-4 w-4" />
 										{formData.date ? formatDate(formData.date) : <span>Pick a date</span>}
 									</Button>
 								</PopoverTrigger>
@@ -211,7 +212,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 					<div className={styles.formSection}>
 						<Label>Completed Date</Label>
 						<div className={styles.completedDateDisplay}>
-							<CalendarIcon className="mr-2 h-4 w-4" />
+							<FontAwesomeIcon icon={faCalendar} className="mr-2 h-4 w-4" />
 							{formatDate(formData.completed_date)}
 						</div>
 					</div>
@@ -253,7 +254,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 
 				<SheetFooter className={styles.footer}>
 					<Button onClick={handleSubmit} disabled={isSubmitting}>
-						{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+						{isSubmitting ? <FontAwesomeIcon icon={faSpinner} className="mr-2 h-4 w-4 animate-spin" /> : null}
 						{initialData && "title" in initialData ? "Save Changes" : "Add Task"}
 					</Button>
 				</SheetFooter>

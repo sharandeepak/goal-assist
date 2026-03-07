@@ -2,7 +2,8 @@
 
 import { TimeEntry } from "@/common/types";
 import { format } from "date-fns";
-import { Clock, Edit2, Trash2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faClock, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Badge } from "@/common/ui/badge";
 import { styles } from "../styles/EntryRow.styles";
@@ -55,7 +56,7 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 						)} */}
 					</div>
 					<div className={styles.timeRow}>
-						<Clock className={styles.actionIcon} />
+						<FontAwesomeIcon icon={faClock} className={styles.actionIcon} />
 						{isDurationOnly ? (
 							<span className="font-medium">{formatDuration(entry.duration_sec)}</span>
 						) : (
@@ -78,7 +79,7 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 							onEdit(entry);
 						}}
 					>
-						<Edit2 className={styles.actionIcon} />
+						<FontAwesomeIcon icon={faPen} className={styles.actionIcon} />
 					</Button>
 					<Button
 						variant="ghost"
@@ -89,7 +90,7 @@ export default function EntryRow({ entry, onEdit, onDelete, onView }: EntryRowPr
 							onDelete(entry.id);
 						}}
 					>
-						<Trash2 className={styles.actionIcon} />
+						<FontAwesomeIcon icon={faTrash} className={styles.actionIcon} />
 					</Button>
 				</div>
 			</div>

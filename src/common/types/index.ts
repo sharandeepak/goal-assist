@@ -2,6 +2,14 @@ import type { Database } from "./database.types";
 
 // ─── Supabase Types (primary types used throughout the application) ───
 
+export type SupabaseCompany = Database["public"]["Tables"]["companies"]["Row"];
+export type SupabaseCompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
+export type SupabaseCompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
+
+export type SupabaseEmployee = Database["public"]["Tables"]["employees"]["Row"];
+export type SupabaseEmployeeInsert = Database["public"]["Tables"]["employees"]["Insert"];
+export type SupabaseEmployeeUpdate = Database["public"]["Tables"]["employees"]["Update"];
+
 export type SupabaseTask = Database["public"]["Tables"]["tasks"]["Row"];
 export type SupabaseTaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 export type SupabaseTaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
@@ -38,6 +46,14 @@ export interface PageMilestoneSummary {
 export interface SatisfactionSummary {
   currentScore: number | null;
   change: number | null;
+}
+
+// ─── Auth Context Types ───
+
+export interface AuthContext {
+  userId: string;
+  companyId: string;
+  employeeId: string;
 }
 
 // ─── Legacy type aliases (for backward compatibility with components) ───

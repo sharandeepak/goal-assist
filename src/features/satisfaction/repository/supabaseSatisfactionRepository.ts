@@ -84,7 +84,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
     try {
       const { data: existing, error: findError } = await this.table
         .select("*")
-        .eq("user_id", logData.user_id)
+        .eq("employee_id", logData.employee_id)
         .eq("log_date", logData.log_date)
         .maybeSingle();
       if (findError) throw AppError.internal("SATISFACTION_SAVE_ERROR", "Failed to save satisfaction entry.");

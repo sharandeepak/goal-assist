@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, ChevronDown, Home, Mic, Settings, Target, Clock, Grid3x3, Command } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar, faChevronDown, faHome, faMicrophone, faGear, faBullseye, faClock, faTh, faTerminal } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/common/ui/sheet";
 import { cn } from "@/common/lib/utils";
@@ -10,46 +11,14 @@ import { ModeToggle } from "./mode-toggle";
 import GlobalTimer from "@/features/timesheet/components/global-timer";
 
 const routes = [
-	{
-		name: "Dashboard",
-		path: "/",
-		icon: Home,
-	},
-	{
-		name: "Planner",
-		path: "/planner",
-		icon: Calendar,
-	},
-	{
-		name: "Matrix",
-		path: "/matrix",
-		icon: Grid3x3,
-	},
-	{
-		name: "Voice Log",
-		path: "/voice-log",
-		icon: Mic,
-	},
-	{
-		name: "Milestones",
-		path: "/milestones",
-		icon: Target,
-	},
-	{
-		name: "Timesheet",
-		path: "/timesheet",
-		icon: Clock,
-	},
-	{
-		name: "Calendar",
-		path: "/calendar",
-		icon: Calendar,
-	},
-	{
-		name: "Settings",
-		path: "/settings",
-		icon: Settings,
-	},
+	{ name: "Dashboard", path: "/", icon: faHome },
+	{ name: "Planner", path: "/planner", icon: faCalendar },
+	{ name: "Matrix", path: "/matrix", icon: faTh },
+	{ name: "Voice Log", path: "/voice-log", icon: faMicrophone },
+	{ name: "Milestones", path: "/milestones", icon: faBullseye },
+	{ name: "Timesheet", path: "/timesheet", icon: faClock },
+	{ name: "Calendar", path: "/calendar", icon: faCalendar },
+	{ name: "Settings", path: "/settings", icon: faGear },
 ];
 
 export default function Navbar() {
@@ -67,7 +36,7 @@ export default function Navbar() {
 						<div className="relative">
 							<div className="absolute inset-0 bg-primary/20 rounded-lg blur-md group-hover:bg-primary/30 transition-colors" />
 							<div className="relative p-1.5 bg-primary rounded-lg text-primary-foreground">
-								<Target className="h-5 w-5" />
+								<FontAwesomeIcon icon={faBullseye} className="h-5 w-5" />
 							</div>
 						</div>
 						<span className="hidden sm:inline gradient-text">Goal Assist</span>
@@ -117,7 +86,7 @@ export default function Navbar() {
 							document.dispatchEvent(event);
 						}}
 					>
-						<Command className="h-3.5 w-3.5" />
+						<FontAwesomeIcon icon={faTerminal} className="h-3.5 w-3.5" />
 						<span className="text-xs">Search</span>
 						<kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground ml-1">
 							<span className="text-xs">⌘</span>K
@@ -130,7 +99,7 @@ export default function Navbar() {
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button variant="outline" size="icon" className="lg:hidden">
-								<ChevronDown className="h-4 w-4" />
+								<FontAwesomeIcon icon={faChevronDown} className="h-4 w-4" />
 								<span className="sr-only">Toggle menu</span>
 							</Button>
 						</SheetTrigger>
@@ -150,7 +119,7 @@ export default function Navbar() {
 													: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 											)}
 										>
-											<route.icon className="h-5 w-5" />
+											<FontAwesomeIcon icon={route.icon} className="h-5 w-5" />
 											{route.name}
 										</Link>
 									);

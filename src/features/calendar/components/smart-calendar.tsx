@@ -5,16 +5,18 @@ import { Calendar } from "@/common/ui/calendar";
 import { Card, CardContent } from "@/common/ui/card";
 import { Badge } from "@/common/ui/badge";
 import { Skeleton } from "@/common/ui/skeleton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-	CheckCircle2,
-	Target,
-	Plus,
-	CalendarDays,
-	Clock,
-	AlertCircle,
-	Circle,
-} from "lucide-react";
+	faCircleCheck,
+	faBullseye,
+	faPlus,
+	faCalendarDays,
+	faClock,
+	faCircleExclamation,
+	faCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import { Task, Milestone } from "@/common/types";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { getTasksForDate, addTask } from "@/features/tasks/services/taskService";
 import {
 	getMilestonesEndingOnDate,
@@ -46,6 +48,7 @@ function calculateWorkingDays(startDate: Date, endDate: Date): number {
 }
 
 export default function SmartCalendar() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [date, setDate] = useState<Date | undefined>(new Date());
 	const [selectedDateTasks, setSelectedDateTasks] = useState<Task[]>([]);
 	const [selectedDateMilestones, setSelectedDateMilestones] = useState<Milestone[]>([]);
@@ -110,7 +113,9 @@ export default function SmartCalendar() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
-			user_id: "", // will be set by auth context
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -146,7 +151,7 @@ export default function SmartCalendar() {
 					{!date ? (
 						<div className={styles.emptyState}>
 							<div className={styles.emptyStateIcon}>
-								<CalendarDays className="h-6 w-6 text-muted-foreground" />
+								<FontAwesomeIcon icon={faCalendarDays} className="h-6 w-6 text-muted-foreground" />
 							</div>
 							<p className={styles.emptyStateText}>Select a date to view details</p>
 						</div>
@@ -168,7 +173,7 @@ export default function SmartCalendar() {
 						<Card variant="elevated" className="h-full">
 							<CardContent className={styles.cardContentError}>
 								<div className={styles.errorWrapper}>
-									<AlertCircle className="h-4 w-4" />
+									<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4" />
 									<p className={styles.errorText}>{errorDetails}</p>
 								</div>
 							</CardContent>
@@ -183,7 +188,7 @@ export default function SmartCalendar() {
 												{format(date, "EEEE, MMMM d")}
 											</h3>
 											<Badge variant="soft" size="lg" className={styles.badge}>
-												<Clock className="h-3 w-3" />
+												<FontAwesomeIcon icon={faClock} className="h-3 w-3" />
 												{workingDaysToNextMilestone !== null
 													? `${workingDaysToNextMilestone} working day${workingDaysToNextMilestone !== 1 ? "s" : ""} until milestone`
 													: "No upcoming milestones"}
@@ -191,7 +196,7 @@ export default function SmartCalendar() {
 										</div>
 										{date && (
 											<Button onClick={openAddTaskDialog} size="sm" className={styles.addButton}>
-												<Plus className="h-4 w-4" />
+												<FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
 												Add Task
 											</Button>
 										)}
@@ -200,7 +205,7 @@ export default function SmartCalendar() {
 									<div>
 										<h4 className={styles.sectionTitle}>
 											<div className={styles.iconWrapperPrimary}>
-												<CheckCircle2 className="h-4 w-4 text-primary" />
+												<FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4 text-primary" />
 											</div>
 											Tasks ({selectedDateTasks.length})
 										</h4>
@@ -212,9 +217,9 @@ export default function SmartCalendar() {
 														className={cn(styles.taskItem, "bg-muted/30 hover:bg-muted/50")}
 													>
 														{task.completed ? (
-															<CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+															<FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4 text-green-500 flex-shrink-0" />
 														) : (
-															<Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+															<FontAwesomeIcon icon={faCircle} className="h-4 w-4 text-muted-foreground flex-shrink-0" />
 														)}
 														<span
 															className={cn(
@@ -237,7 +242,7 @@ export default function SmartCalendar() {
 									<div>
 										<h4 className={styles.sectionTitle}>
 											<div className={styles.iconWrapperDestructive}>
-												<Target className="h-4 w-4 text-destructive" />
+												<FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-destructive" />
 											</div>
 											Milestones Due ({selectedDateMilestones.length})
 										</h4>
@@ -248,7 +253,7 @@ export default function SmartCalendar() {
 														key={milestone.id}
 														className={styles.milestoneItem}
 													>
-														<Target className="h-4 w-4 text-destructive flex-shrink-0" />
+														<FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-destructive flex-shrink-0" />
 														<span className="text-sm font-medium">{milestone.title}</span>
 													</li>
 												))}

@@ -7,18 +7,18 @@ import { Input } from "@/common/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { Badge } from "@/common/ui/badge";
 import { Checkbox } from "@/common/ui/checkbox";
-import { Calendar, CheckCircle2, Clock, Plus, Tag, Trash2, Loader2, Edit, Flag } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar, faCircleCheck, faClock, faPlus, faTrash, faSpinner, faPen, faFlag, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/common/ui/dialog";
 import { Label } from "@/common/ui/label";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
 import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
-import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { startOfDay, endOfDay, addDays, format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
-import { AlertTriangle } from "lucide-react";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { useSearchParams } from "next/navigation";
 
@@ -71,6 +71,7 @@ const formatDateForInput = (dateStr?: string | null): string => {
 };
 
 function DayPlannerContent() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [todayTasks, setTodayTasks] = useState<Task[]>([]);
 	const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 	const [allTasks, setAllTasks] = useState<Task[]>([]);
@@ -186,7 +187,9 @@ function DayPlannerContent() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
-			user_id: MOCK_USER_ID,
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
@@ -266,7 +269,7 @@ function DayPlannerContent() {
 		if (filteredTasks.length === 0) {
 			return (
 				<div className="flex flex-col items-center justify-center py-8 text-center">
-					<CheckCircle2 className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+					<FontAwesomeIcon icon={faCircleCheck} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 					<h3 className="font-medium text-lg">No tasks</h3>
 					<p className="text-sm text-muted-foreground">{trimmedQuery ? "No matching tasks for your search." : "No tasks scheduled for this period."}</p>
 				</div>
@@ -296,22 +299,22 @@ function DayPlannerContent() {
 						<div className="flex items-center gap-1.5 flex-shrink-0">
 							{task.priority && (
 								<Badge variant="outline" className={`${getPriorityColor(task.priority)} border-current w-[70px] justify-center px-1 py-0.5 text-xs`}>
-									<Flag className={`h-3 w-3 mr-1 ${getPriorityColor(task.priority)}`} />
+									<FontAwesomeIcon icon={faFlag} className={`h-3 w-3 mr-1 ${getPriorityColor(task.priority)}`} />
 									{getPriorityLabel(task.priority)}
 								</Badge>
 							)}
 							{task.date && (
 								<Badge variant="outline" className="w-[95px] justify-center px-1 py-0.5 text-xs">
-									<Calendar className="h-3 w-3 mr-1" />
+									<FontAwesomeIcon icon={faCalendar} className="h-3 w-3 mr-1" />
 									{formatDate(task.date)}
 								</Badge>
 							)}
 							<Button variant="ghost" size="icon" onClick={() => openEditTaskDialog(task)} className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
-								<Edit className="h-3.5 w-3.5" />
+								<FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
 								<span className="sr-only">Edit Task</span>
 							</Button>
 							<Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
-								<Trash2 className="h-3.5 w-3.5" />
+								<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
 								<span className="sr-only">Delete Task</span>
 							</Button>
 						</div>
@@ -331,7 +334,7 @@ function DayPlannerContent() {
 				<div className="flex items-center gap-2 w-full sm:w-auto">
 					<Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks by title..." aria-label="Search tasks by title" className="w-full sm:w-[240px] md:w-[320px]" />
 					<Button onClick={openAddTaskDialog}>
-						<Plus className="mr-2 h-4 w-4" />
+						<FontAwesomeIcon icon={faPlus} className="mr-2 h-4 w-4" />
 						Add Task
 					</Button>
 				</div>
@@ -344,7 +347,7 @@ function DayPlannerContent() {
 			{error && (
 				<Card className="border-destructive bg-destructive/10 mt-4">
 					<CardContent className="p-4 text-center text-destructive flex items-center justify-center gap-2">
-						<AlertTriangle className="h-4 w-4" /> {error}
+						<FontAwesomeIcon icon={faTriangleExclamation} className="h-4 w-4" /> {error}
 					</CardContent>
 				</Card>
 			)}

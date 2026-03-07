@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/common/ui/button";
 import { styles } from "../styles/SatisfactionCalendar.styles";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronLeft, faChevronRight, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, getYear, getMonth, addWeeks } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
 import Lottie from "lottie-react";
 import type { SupabaseSatisfactionLog } from "@/common/types";
-
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { subscribeToSatisfactionForMonth, saveSatisfactionEntry } from "@/features/satisfaction/services/satisfactionService";
 
 import happyAnimation from "../../../../public/lottie/happy_green.json";
@@ -26,6 +27,7 @@ interface SatisfactionEntry {
 }
 
 export default function SatisfactionCalendar() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [currentMonth, setCurrentMonth] = useState(new Date());
 	const [satisfactionData, setSatisfactionData] = useState<SatisfactionEntry[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,7 +95,9 @@ export default function SatisfactionCalendar() {
 		try {
 			const logDate = format(selectedDate, "yyyy-MM-dd");
 			await saveSatisfactionEntry({
-				user_id: "",
+				user_id: userId,
+				company_id: companyId,
+				employee_id: employeeId,
 				log_date: logDate,
 				score,
 				notes: mood,
@@ -187,18 +191,18 @@ export default function SatisfactionCalendar() {
 				</div>
 				<div className="flex items-center gap-1">
 					<Button variant="ghost" size="icon" onClick={handlePreviousMonth}>
-						<ChevronLeft className="h-4 w-4" />
+						<FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
 					</Button>
 					<span className="text-sm font-medium min-w-[120px] text-center">{format(currentMonth, "MMMM yyyy")}</span>
 					<Button variant="ghost" size="icon" onClick={handleNextMonth}>
-						<ChevronRight className="h-4 w-4" />
+						<FontAwesomeIcon icon={faChevronRight} className="h-4 w-4" />
 					</Button>
 				</div>
 			</CardHeader>
 			<CardContent>
 				{loading ? (
 					<div className="flex items-center justify-center py-12">
-						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<FontAwesomeIcon icon={faSpinner} className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
 				) : error ? (
 					<div className="flex items-center justify-center py-12">
@@ -234,7 +238,11 @@ export default function SatisfactionCalendar() {
 										`}
 									>
 										<span className={`text-xs ${isToday ? "font-bold" : ""}`}>{format(day, "d")}</span>
-										{mood && isCurrentMonth && <span className="text-base leading-none mt-0.5">{getMoodEmoji(mood)}</span>}
+										{mood && isCurrentMonth && (
+											<div className="w-8 h-8 mt-0.5 flex items-center justify-center">
+												<Lottie animationData={moodAnimationData[mood as keyof typeof moodAnimationData]} loop={true} style={{ width: '100%', height: '100%' }} />
+											</div>
+										)}
 									</button>
 								);
 							})}
@@ -251,7 +259,9 @@ export default function SatisfactionCalendar() {
 								<div className="grid grid-cols-4 gap-3">
 									{(["happy", "cool", "okay", "angry"] as const).map((mood) => (
 										<button key={mood} onClick={() => handleMoodSelect(mood)} className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-muted transition-colors">
-											<span className="text-2xl">{getMoodEmoji(mood)}</span>
+											<div className="w-12 h-12">
+												<Lottie animationData={moodAnimationData[mood]} loop={true} style={{ width: '100%', height: '100%' }} />
+											</div>
 											<span className="text-xs capitalize">{mood}</span>
 										</button>
 									))}

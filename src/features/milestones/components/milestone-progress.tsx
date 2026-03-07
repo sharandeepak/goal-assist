@@ -5,7 +5,8 @@ import { Progress } from "@/common/ui/progress";
 import { Skeleton } from "@/common/ui/skeleton";
 import { MilestoneProgressData } from "@/common/types";
 import { subscribeToActiveMilestonesProgress } from "@/features/milestones/services/milestoneService";
-import { Target, Clock, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBullseye, faClock, faTriangleExclamation, faCircleCheck, faArrowTrendUp } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/common/lib/utils";
 import { styles } from "../styles/MilestoneProgress.styles";
 
@@ -62,7 +63,7 @@ export default function MilestoneProgress() {
 	if (error) {
 		return (
 			<div className={styles.errorRoot}>
-				<AlertTriangle className="h-5 w-5" />
+				<FontAwesomeIcon icon={faTriangleExclamation} className="h-5 w-5" />
 				<p className={styles.errorText}>{error}</p>
 			</div>
 		);
@@ -72,7 +73,7 @@ export default function MilestoneProgress() {
 		return (
 			<div className={styles.emptyRoot}>
 				<div className={styles.emptyIconWrapper}>
-					<Target className="h-8 w-8 text-muted-foreground" />
+					<FontAwesomeIcon icon={faBullseye} className="h-8 w-8 text-muted-foreground" />
 				</div>
 				<p className={styles.emptyTitle}>No active milestones</p>
 				<p className={styles.emptySubtitle}>Create your first milestone to track progress</p>
@@ -107,7 +108,7 @@ export default function MilestoneProgress() {
 						<div className={styles.cardHeader}>
 							<div className={styles.cardLeft}>
 								<div className={cn(styles.iconWrapper, iconWrapperClass)}>
-									<Target className={iconClass} />
+									<FontAwesomeIcon icon={faBullseye} className={iconClass} />
 								</div>
 								<div className="min-w-0">
 									<h3 className={styles.title} title={milestone.title}>
@@ -115,7 +116,7 @@ export default function MilestoneProgress() {
 									</h3>
 									{milestone.daysLeft !== undefined && (
 										<div className={styles.daysLeftRow}>
-											<Clock className="h-3.5 w-3.5 text-muted-foreground" />
+											<FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5 text-muted-foreground" />
 											<span className={styles.daysLeftText}>
 												{milestone.daysLeft === 0
 													? "Due today"
@@ -133,9 +134,9 @@ export default function MilestoneProgress() {
 								)}
 							>
 								{milestone.progress === 100 ? (
-									<CheckCircle2 className="h-4 w-4" />
+									<FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" />
 								) : (
-									<TrendingUp className="h-4 w-4" />
+									<FontAwesomeIcon icon={faArrowTrendUp} className="h-4 w-4" />
 								)}
 								{milestone.progress}%
 							</div>

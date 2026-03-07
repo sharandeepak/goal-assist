@@ -9,6 +9,63 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      companies: {
+        Row: {
+          id: string;
+          name: string;
+          creator_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          creator_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          creator_id?: string;
+          updated_at?: string;
+        };
+      };
+      employees: {
+        Row: {
+          id: string;
+          company_id: string;
+          user_id: string | null;
+          first_name: string;
+          last_name: string | null;
+          email: string;
+          role: "admin" | "member" | "manager";
+          status: "invited" | "active";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          user_id?: string | null;
+          first_name: string;
+          last_name?: string | null;
+          email: string;
+          role?: "admin" | "member" | "manager";
+          status?: "invited" | "active";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          user_id?: string | null;
+          first_name?: string;
+          last_name?: string | null;
+          email?: string;
+          role?: "admin" | "member" | "manager";
+          status?: "invited" | "active";
+          updated_at?: string;
+        };
+      };
       users: {
         Row: {
           id: string;
@@ -38,6 +95,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           title: string;
           completed: boolean;
           date: string | null;
@@ -52,6 +111,8 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           title: string;
           completed?: boolean;
           date?: string | null;
@@ -65,6 +126,8 @@ export interface Database {
         };
         Update: {
           user_id?: string;
+          company_id?: string;
+          employee_id?: string;
           title?: string;
           completed?: boolean;
           date?: string | null;
@@ -80,6 +143,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           title: string;
           description: string | null;
           progress: number;
@@ -93,6 +158,8 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           title: string;
           description?: string | null;
           progress?: number;
@@ -105,6 +172,8 @@ export interface Database {
         };
         Update: {
           user_id?: string;
+          company_id?: string;
+          employee_id?: string;
           title?: string;
           description?: string | null;
           progress?: number;
@@ -119,6 +188,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           log_date: string;
           score: number;
           notes: string | null;
@@ -127,6 +198,8 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           log_date: string;
           score: number;
           notes?: string | null;
@@ -134,6 +207,8 @@ export interface Database {
         };
         Update: {
           user_id?: string;
+          company_id?: string;
+          employee_id?: string;
           log_date?: string;
           score?: number;
           notes?: string | null;
@@ -143,6 +218,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           log_date: string;
           completed_items: string[];
           blockers: string[];
@@ -153,6 +230,8 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           log_date: string;
           completed_items?: string[];
           blockers?: string[];
@@ -162,6 +241,8 @@ export interface Database {
         };
         Update: {
           user_id?: string;
+          company_id?: string;
+          employee_id?: string;
           log_date?: string;
           completed_items?: string[];
           blockers?: string[];
@@ -173,6 +254,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           task_id: string | null;
           task_title_snapshot: string;
           emoji: string | null;
@@ -190,6 +273,8 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          company_id: string;
+          employee_id: string;
           task_id?: string | null;
           task_title_snapshot: string;
           emoji?: string | null;
@@ -206,6 +291,8 @@ export interface Database {
         };
         Update: {
           user_id?: string;
+          company_id?: string;
+          employee_id?: string;
           task_id?: string | null;
           task_title_snapshot?: string;
           emoji?: string | null;

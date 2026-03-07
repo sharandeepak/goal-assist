@@ -5,16 +5,16 @@ import { MatrixGrid } from "@/features/matrix/components/matrix-grid";
 import { MatrixFilters } from "@/features/matrix/components/matrix-filters";
 import { Input } from "@/common/ui/input";
 import { Button } from "@/common/ui/button";
-import { Plus } from "lucide-react";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { subscribeToMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
 import { Task } from "@/common/types";
 import { addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
-import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { Skeleton } from "@/common/ui/skeleton";
 import { useToast } from "@/common/hooks/use-toast";
 
 export default function MatrixPage() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [tasks, setTasks] = useState<MatrixTasksData>({
 		q1: [],
 		q2: [],
@@ -142,7 +142,9 @@ export default function MatrixPage() {
 			date: formData.date || new Date().toISOString(),
 			priority: formData.priority,
 			urgency: formData.urgency,
-			user_id: MOCK_USER_ID,
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString

@@ -5,7 +5,8 @@ import { styles } from "../styles/MatrixTaskCard.styles";
 import { Badge } from "@/common/ui/badge";
 import { Button } from "@/common/ui/button";
 import { Checkbox } from "@/common/ui/checkbox";
-import { Calendar, Edit, Trash2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -83,7 +84,7 @@ export function MatrixTaskCard({ task, onToggleComplete, onEdit, onDelete, isOve
 						{/* Date */}
 						{task.date && (
 							<div className={styles.dateRow}>
-								<Calendar className="h-3 w-3" />
+								<FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
 								<span>{formatDate(task.date)}</span>
 							</div>
 						)}
@@ -92,11 +93,11 @@ export function MatrixTaskCard({ task, onToggleComplete, onEdit, onDelete, isOve
 					{/* Action Buttons - group-hover must stay inline */}
 					<div className={`${styles.actions} opacity-0 group-hover:opacity-100 focus-within:opacity-100`}>
 						<Button variant="ghost" size="icon" onClick={() => onEdit(task)} className="h-7 w-7 text-muted-foreground hover:text-primary">
-							<Edit className="h-3.5 w-3.5" />
+							<FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
 							<span className="sr-only">Edit Task</span>
 						</Button>
 						<Button variant="ghost" size="icon" onClick={() => onDelete(task.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive">
-							<Trash2 className="h-3.5 w-3.5" />
+							<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
 							<span className="sr-only">Delete Task</span>
 						</Button>
 					</div>

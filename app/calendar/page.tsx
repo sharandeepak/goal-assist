@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
 import { Calendar } from "@/common/ui/calendar";
 import { Badge } from "@/common/ui/badge";
-import { CheckCircle2, Clock, Target, AlertTriangle, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck, faClock, faBullseye, faTriangleExclamation, faCalendar, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task, Milestone } from "@/common/types";
 import { getTasksForDate, addTask, getTasksByDateRange } from "@/features/tasks/services/taskService";
 import { getMilestonesEndingOnDate, getNextActiveMilestone, getUpcomingActiveMilestones } from "@/features/milestones/services/milestoneService";
 import { format, startOfDay, endOfDay, differenceInCalendarDays, getDay, addDays } from "date-fns";
-import { MOCK_USER_ID } from "@/features/timesheet/services/timeService";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { Button } from "@/common/ui/button";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 
@@ -41,6 +42,7 @@ interface UpcomingDeadline {
 }
 
 export default function SmartCalendarPage() {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [date, setDate] = useState<Date | undefined>(new Date());
 	const [selectedDateTasks, setSelectedDateTasks] = useState<Task[]>([]);
 	const [selectedDateMilestones, setSelectedDateMilestones] = useState<Milestone[]>([]);
@@ -151,7 +153,9 @@ export default function SmartCalendarPage() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
-			user_id: MOCK_USER_ID,
+			user_id: userId,
+			company_id: companyId,
+			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
@@ -186,7 +190,7 @@ export default function SmartCalendarPage() {
 			{error && (
 				<Card className="border-destructive bg-destructive/10">
 					<CardContent className="p-4 text-center text-destructive flex items-center justify-center gap-2">
-						<AlertTriangle className="h-4 w-4" /> {error}
+						<FontAwesomeIcon icon={faTriangleExclamation} className="h-4 w-4" /> {error}
 					</CardContent>
 				</Card>
 			)}
@@ -218,7 +222,7 @@ export default function SmartCalendarPage() {
 						</div>
 						{date && (
 							<Button onClick={openAddTaskDialog} size="sm">
-								<Plus className="h-4 w-4 mr-1" />
+								<FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-1" />
 								Add Task
 							</Button>
 						)}
@@ -233,13 +237,13 @@ export default function SmartCalendarPage() {
 							</div>
 						) : !date ? (
 							<div className="flex flex-col items-center justify-center py-8 text-center">
-								<Clock className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+								<FontAwesomeIcon icon={faClock} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 								<h3 className="font-medium text-lg">No date selected</h3>
 								<p className="text-sm text-muted-foreground">Select a date to view details</p>
 							</div>
 						) : selectedDateTasks.length === 0 && selectedDateMilestones.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-8 text-center">
-								<Clock className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+								<FontAwesomeIcon icon={faClock} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 								<h3 className="font-medium text-lg">No events</h3>
 								<p className="text-sm text-muted-foreground">No tasks or milestones for this date</p>
 							</div>
@@ -248,7 +252,7 @@ export default function SmartCalendarPage() {
 								{selectedDateTasks.length > 0 && (
 									<div className="space-y-3">
 										<h3 className="text-sm font-medium flex items-center gap-2">
-											<CheckCircle2 className="h-4 w-4" />
+											<FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" />
 											Tasks
 										</h3>
 										<div className="space-y-2">
@@ -265,7 +269,7 @@ export default function SmartCalendarPage() {
 								{selectedDateMilestones.length > 0 && (
 									<div className="space-y-3">
 										<h3 className="text-sm font-medium flex items-center gap-2">
-											<Target className="h-4 w-4" />
+											<FontAwesomeIcon icon={faBullseye} className="h-4 w-4" />
 											Milestones Due
 										</h3>
 										<div className="space-y-2">
@@ -308,7 +312,7 @@ export default function SmartCalendarPage() {
 						</div>
 					) : upcomingDeadlines.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<CalendarIcon className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+							<FontAwesomeIcon icon={faCalendar} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 							<h3 className="font-medium text-lg">No upcoming deadlines</h3>
 							<p className="text-sm text-muted-foreground">Looks like your schedule is clear.</p>
 						</div>
@@ -325,12 +329,12 @@ export default function SmartCalendarPage() {
 										<div className="flex flex-wrap gap-1 mt-1">
 											{event.tasks.map((task) => (
 												<Badge key={task.id} variant="outline" className="bg-secondary text-xs">
-													<CheckCircle2 className="h-3 w-3 mr-1" /> {task.title}
+													<FontAwesomeIcon icon={faCircleCheck} className="h-3 w-3 mr-1" /> {task.title}
 												</Badge>
 											))}
 											{event.milestones.map((milestone) => (
 												<Badge key={milestone.id} variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 text-xs">
-													<Target className="h-3 w-3 mr-1" /> {milestone.title}
+													<FontAwesomeIcon icon={faBullseye} className="h-3 w-3 mr-1" /> {milestone.title}
 												</Badge>
 											))}
 											{event.tasks.length === 0 && event.milestones.length === 0 && <span className="text-xs text-muted-foreground">No specific items due</span>}

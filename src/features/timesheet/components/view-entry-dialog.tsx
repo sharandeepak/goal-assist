@@ -5,7 +5,8 @@ import { format as formatDate } from "date-fns";
 
 // Alias to avoid conflict with variable name
 const format = formatDate;
-import { Clock, Calendar, Edit2, Copy, Check, Timer } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faClock, faCalendar, faPen, faCopy, faCheck, faStopwatch } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/common/ui/sheet";
 import { styles } from "../styles/ViewEntryDialog.styles";
@@ -104,7 +105,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 						</span>
 						{entry.source === "timer" && (
 							<Badge variant="outline" className={styles.badge}>
-								<Timer className="h-3 w-3 mr-1" />
+								<FontAwesomeIcon icon={faStopwatch} className="h-3 w-3 mr-1" />
 								Timer
 							</Badge>
 						)}
@@ -115,7 +116,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 						)}
 					</SheetTitle>
 					<SheetDescription className={styles.descriptionRow}>
-						<Calendar className="h-4 w-4" />
+						<FontAwesomeIcon icon={faCalendar} className="h-4 w-4" />
 						{entry.started_at ? formatFullDate(entry.started_at) : format(new Date(entry.day), "EEEE, MMMM d, yyyy")}
 					</SheetDescription>
 				</SheetHeader>
@@ -125,7 +126,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					{(entry.started_at || entry.ended_at) && (
 						<div className="space-y-3">
 							<div className={styles.sectionHeader}>
-								<Clock className="h-4 w-4" />
+								<FontAwesomeIcon icon={faClock} className="h-4 w-4" />
 								Time Details
 							</div>
 							<div className={styles.sectionContent}>
@@ -154,7 +155,7 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					{!entry.started_at && !entry.ended_at && (
 						<div className="space-y-3">
 							<div className={styles.sectionHeader}>
-								<Clock className="h-4 w-4" />
+								<FontAwesomeIcon icon={faClock} className="h-4 w-4" />
 								Duration
 							</div>
 							<div className={styles.sectionContentSingle}>
@@ -190,18 +191,18 @@ export default function ViewEntryDialog({ isOpen, onOpenChange, entry, onEdit }:
 					<Button variant="outline" onClick={handleCopy} disabled={copied} className={styles.footerButton}>
 						{copied ? (
 							<>
-								<Check className="mr-2 h-4 w-4 text-green-500" />
+								<FontAwesomeIcon icon={faCheck} className="mr-2 h-4 w-4 text-green-500" />
 								Copied!
 							</>
 						) : (
 							<>
-								<Copy className="mr-2 h-4 w-4" />
+								<FontAwesomeIcon icon={faCopy} className="mr-2 h-4 w-4" />
 							Copy Details
 						</>
 						)}
 					</Button>
 					<Button onClick={handleEdit} className={styles.footerButton}>
-						<Edit2 className="mr-2 h-4 w-4" />
+						<FontAwesomeIcon icon={faPen} className="mr-2 h-4 w-4" />
 						Edit Entry
 					</Button>
 				</SheetFooter>

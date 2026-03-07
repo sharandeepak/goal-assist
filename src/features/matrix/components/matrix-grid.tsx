@@ -4,7 +4,7 @@ import { useState } from "react";
 import { styles } from "../styles/MatrixGrid.styles";
 import { Task } from "@/common/types";
 import { MatrixQuadrant, QuadrantConfig } from "./matrix-quadrant";
-import { AlertCircle, Clock, Users, Archive } from "lucide-react";
+import { faCircleExclamation, faClock, faUsers, faBoxArchive } from "@fortawesome/free-solid-svg-icons";
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay, closestCenter, pointerWithin, DragOverlay as DndDragOverlay } from "@dnd-kit/core";
 import { MatrixTaskCard } from "./matrix-task-card";
 import { QuadrantType, quadrantToValues } from "@/features/matrix/services/matrixService";
@@ -29,7 +29,7 @@ const quadrantConfigs: Record<ActualQuadrant, QuadrantConfig> = {
 		id: "q1",
 		title: "Urgent & Important",
 		subtitle: "Do First",
-		icon: AlertCircle,
+		icon: faCircleExclamation,
 		colorClasses: {
 			bg: "bg-card",
 			border: "border-red-500/20",
@@ -42,7 +42,7 @@ const quadrantConfigs: Record<ActualQuadrant, QuadrantConfig> = {
 		id: "q2",
 		title: "Not Urgent & Important",
 		subtitle: "Schedule",
-		icon: Clock,
+		icon: faClock,
 		colorClasses: {
 			bg: "bg-card",
 			border: "border-amber-500/20",
@@ -55,7 +55,7 @@ const quadrantConfigs: Record<ActualQuadrant, QuadrantConfig> = {
 		id: "q3",
 		title: "Urgent & Unimportant",
 		subtitle: "Delegate",
-		icon: Users,
+		icon: faUsers,
 		colorClasses: {
 			bg: "bg-card",
 			border: "border-blue-500/20",
@@ -68,7 +68,7 @@ const quadrantConfigs: Record<ActualQuadrant, QuadrantConfig> = {
 		id: "q4",
 		title: "Not Urgent & Unimportant",
 		subtitle: "Eliminate",
-		icon: Archive,
+		icon: faBoxArchive,
 		colorClasses: {
 			bg: "bg-card",
 			border: "border-green-500/20",

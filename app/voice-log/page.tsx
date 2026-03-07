@@ -6,7 +6,8 @@ import { Button } from "@/common/ui/button";
 import { Textarea } from "@/common/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
-import { Mic, MicOff, Save, Trash2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMicrophone, faMicrophoneSlash, faFloppyDisk, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 export default function VoiceLog() {
 	const [isRecording, setIsRecording] = useState(false);
@@ -189,7 +190,7 @@ export default function VoiceLog() {
 				<CardContent className="space-y-4">
 					<div className="flex justify-center">
 						<Button size="lg" className={`rounded-full w-16 h-16 ${isRecording ? "bg-red-500 hover:bg-red-600" : ""}`} onClick={toggleRecording}>
-							{isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+							{isRecording ? <FontAwesomeIcon icon={faMicrophoneSlash} className="h-6 w-6" /> : <FontAwesomeIcon icon={faMicrophone} className="h-6 w-6" />}
 							<span className="sr-only">{isRecording ? "Stop Recording" : "Start Recording"}</span>
 						</Button>
 					</div>
@@ -220,7 +221,7 @@ export default function VoiceLog() {
 								</Select>
 
 								<Button onClick={handleSave} disabled={!editedTranscript.trim()}>
-									<Save className="mr-2 h-4 w-4" />
+									<FontAwesomeIcon icon={faFloppyDisk} className="mr-2 h-4 w-4" />
 									Save
 								</Button>
 							</div>
@@ -238,7 +239,7 @@ export default function VoiceLog() {
 					{logs.length === 0 ? (
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-8 text-center">
-								<Mic className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+								<FontAwesomeIcon icon={faMicrophone} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 								<h3 className="font-medium text-lg">No logs yet</h3>
 								<p className="text-sm text-muted-foreground">Start recording to create your first log</p>
 							</CardContent>
@@ -253,7 +254,7 @@ export default function VoiceLog() {
 											<CardDescription>Saved as: {log.type.charAt(0).toUpperCase() + log.type.slice(1)}</CardDescription>
 										</div>
 										<Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)}>
-											<Trash2 className="h-4 w-4" />
+											<FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
 											<span className="sr-only">Delete log</span>
 										</Button>
 									</div>
@@ -275,7 +276,7 @@ export default function VoiceLog() {
 					{logs.filter((log) => log.type === "standup").length === 0 ? (
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-8 text-center">
-								<Mic className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+								<FontAwesomeIcon icon={faMicrophone} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 								<h3 className="font-medium text-lg">No standup notes yet</h3>
 								<p className="text-sm text-muted-foreground">Record your standup notes to see them here</p>
 							</CardContent>
@@ -292,7 +293,7 @@ export default function VoiceLog() {
 												<CardDescription>Standup Note</CardDescription>
 											</div>
 											<Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)}>
-												<Trash2 className="h-4 w-4" />
+												<FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
 												<span className="sr-only">Delete log</span>
 											</Button>
 										</div>

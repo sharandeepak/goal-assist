@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { TimeEntry } from "@/common/types";
 import { format } from "date-fns";
-import { Loader2, Clock, Smile } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner, faClock, faSmile } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import EmojiPicker from "emoji-picker-react";
 import { Button } from "@/common/ui/button";
@@ -15,8 +16,7 @@ import { styles } from "../styles/AddEntryDialog.styles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { Switch } from "@/common/ui/switch";
 import { logManualEntry, updateEntry } from "@/features/timesheet/services/timeService";
-
-const MOCK_USER_ID = "demo-user";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 interface AddEntryDialogProps {
 	isOpen: boolean;
@@ -26,6 +26,7 @@ interface AddEntryDialogProps {
 }
 
 export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, editingEntry }: AddEntryDialogProps) {
+	const { userId, companyId, employeeId } = useRequiredAuth();
 	const [taskTitle, setTaskTitle] = useState("");
 	const [hours, setHours] = useState("");
 	const [minutes, setMinutes] = useState("");
@@ -124,7 +125,9 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					} else {
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
-							userId: MOCK_USER_ID,
+							userId,
+							companyId,
+							employeeId,
 							day: dayStr,
 							adHocTitle: taskTitle.trim(),
 							emoji: emoji || undefined,
@@ -157,7 +160,9 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					} else if (selectedDay) {
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
-							userId: MOCK_USER_ID,
+							userId,
+							companyId,
+							employeeId,
 							day: dayStr,
 							adHocTitle: taskTitle.trim(),
 							emoji: emoji || undefined,
@@ -228,7 +233,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 							<div className={styles.titleInputRow}>
 								<div className={styles.titleInputWrapper}>
 									<Button type="button" variant="outline" size="sm" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={emoji ? "text-primary" : ""}>
-										{emoji || <Smile className="h-4 w-4" />}
+										{emoji || <FontAwesomeIcon icon={faSmile} className="h-4 w-4" />}
 									</Button>
 									<Input id="task-title" placeholder="What did you work on?" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} autoFocus className={emoji ? "pl-8" : ""} />
 								</div>
@@ -251,7 +256,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						<TabsList className={styles.tabsList}>
 							<TabsTrigger value="duration">Duration</TabsTrigger>
 							<TabsTrigger value="time">
-								<Clock className="h-3 w-3 mr-1" />
+								<FontAwesomeIcon icon={faClock} className="h-3 w-3 mr-1" />
 								Start/End Time
 							</TabsTrigger>
 						</TabsList>
@@ -314,7 +319,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 				</div>
 				<SheetFooter className={styles.footer}>
 					<Button onClick={() => handleSubmit(!addMoreEntries)} disabled={loading}>
-						{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+						{loading && <FontAwesomeIcon icon={faSpinner} className="mr-2 h-4 w-4 animate-spin" />}
 						{editingEntry ? "Save Changes" : "Add Entry"}
 					</Button>
 				</SheetFooter>

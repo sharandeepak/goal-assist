@@ -21,7 +21,7 @@ export class SupabaseTimeRepository
   }
 
   subscribeToEntriesByDateRange(
-    userId: string,
+    employeeId: string,
     startDay: string,
     endDay: string,
     callback: (entries: SupabaseTimeEntry[]) => void
@@ -30,7 +30,7 @@ export class SupabaseTimeRepository
       try {
         const { data, error } = await this.table
           .select("*")
-          .eq("user_id", userId)
+          .eq("employee_id", employeeId)
           .gte("day", startDay)
           .lte("day", endDay)
           .order("started_at", { ascending: false });
@@ -41,18 +41,18 @@ export class SupabaseTimeRepository
       }
     };
     fetchAndCallback();
-    return this.subscribe("*", () => fetchAndCallback(), `user_id=eq.${userId}`);
+    return this.subscribe("*", () => fetchAndCallback(), `employee_id=eq.${employeeId}`);
   }
 
   subscribeToRunningEntry(
-    userId: string,
+    employeeId: string,
     callback: (entry: SupabaseTimeEntry | null) => void
   ): () => void {
     const fetchAndCallback = async () => {
       try {
         const { data, error } = await this.table
           .select("*")
-          .eq("user_id", userId)
+          .eq("employee_id", employeeId)
           .is("ended_at", null)
           .eq("source", "timer")
           .maybeSingle();
@@ -63,18 +63,18 @@ export class SupabaseTimeRepository
       }
     };
     fetchAndCallback();
-    return this.subscribe("*", () => fetchAndCallback(), `user_id=eq.${userId}`);
+    return this.subscribe("*", () => fetchAndCallback(), `employee_id=eq.${employeeId}`);
   }
 
   async getEntriesForDateRange(
-    userId: string,
+    employeeId: string,
     startDay: string,
     endDay: string
   ): Promise<SupabaseTimeEntry[]> {
     try {
       const { data, error } = await this.table
         .select("*")
-        .eq("user_id", userId)
+        .eq("employee_id", employeeId)
         .gte("day", startDay)
         .lte("day", endDay)
         .order("started_at", { ascending: false });
@@ -88,11 +88,11 @@ export class SupabaseTimeRepository
     }
   }
 
-  async getRunningEntry(userId: string): Promise<SupabaseTimeEntry | null> {
+  async getRunningEntry(employeeId: string): Promise<SupabaseTimeEntry | null> {
     try {
       const { data, error } = await this.table
         .select("*")
-        .eq("user_id", userId)
+        .eq("employee_id", employeeId)
         .is("ended_at", null)
         .eq("source", "timer")
         .maybeSingle();

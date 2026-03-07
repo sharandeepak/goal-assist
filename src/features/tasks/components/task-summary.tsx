@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, Circle, AlertCircle, ListTodo, ArrowRight } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck, faCircle, faCircleExclamation, faListCheck, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
 import { subscribeToTaskSummary, updateTaskCompletion } from "@/features/tasks/services/taskService";
@@ -63,7 +64,7 @@ export default function TaskSummary() {
 	if (error) {
 		return (
 			<div className={styles.errorState}>
-				<AlertCircle className="h-4 w-4" />
+				<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4" />
 				<p className="text-sm">{error}</p>
 			</div>
 		);
@@ -73,47 +74,66 @@ export default function TaskSummary() {
 		return (
 			<div className={styles.emptyState}>
 				<div className={styles.emptyIcon}>
-					<ListTodo className="h-6 w-6 text-muted-foreground" />
+					<FontAwesomeIcon icon={faListCheck} className="h-6 w-6 text-muted-foreground" />
 				</div>
 				<p className={styles.emptyText}>No tasks found for today</p>
 			</div>
 		);
 	}
 
+	// Array of colors/icons for aesthetics
+	const taskAesthetics = [
+		{ bg: "bg-blue-500/10", text: "text-blue-500", icon: faCircle },
+		{ bg: "bg-teal-500/10", text: "text-teal-500", icon: faCircle },
+		{ bg: "bg-green-500/10", text: "text-green-500", icon: faCircle },
+		{ bg: "bg-orange-500/10", text: "text-orange-500", icon: faCircle },
+		{ bg: "bg-purple-500/10", text: "text-purple-500", icon: faCircle },
+	];
+
 	return (
 		<div className={styles.container}>
 			{toggleError && (
 				<div className={styles.toggleError}>
-					<AlertCircle className="h-3 w-3" />
+					<FontAwesomeIcon icon={faCircleExclamation} className="h-3 w-3" />
 					<p className="text-xs">{toggleError}</p>
 				</div>
 			)}
-			{tasks.slice(0, 7).map((task, index) => (
-				<div
-					key={task.id}
-					className={`${styles.taskItem} group`}
-					style={{ animationDelay: `${index * 30}ms` }}
-					onClick={() => handleTaskToggle(task.id, task.completed)}
-				>
-					<button
-						aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`}
-						className="p-0 m-0 bg-transparent border-none cursor-pointer flex items-center flex-shrink-0"
+			{tasks.slice(0, 7).map((task, index) => {
+				const aesthetic = taskAesthetics[index % taskAesthetics.length];
+				const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+				
+				return (
+					<div
+						key={task.id}
+						className={`${styles.taskItem} group`}
+						style={{ animationDelay: `${index * 30}ms` }}
+						onClick={() => handleTaskToggle(task.id, task.completed)}
 					>
-						{task.completed ? (
-							<CheckCircle2 className="h-5 w-5 text-green-500" />
-						) : (
-							<Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-						)}
-					</button>
-					<span className={task.completed ? styles.taskTitleCompleted : styles.taskTitle}>
-						{task.title}
-					</span>
-				</div>
-			))}
+						<button
+							aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`}
+							className={`p-0 m-0 cursor-pointer flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-colors ${task.completed ? "bg-green-500/10 text-green-500" : aesthetic.bg + " " + aesthetic.text}`}
+						>
+							{task.completed ? (
+								<FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" />
+							) : (
+								<FontAwesomeIcon icon={aesthetic.icon} className="h-4 w-4 opacity-70 group-hover:opacity-100" />
+							)}
+						</button>
+						<div className={styles.taskContent}>
+							<span className={task.completed ? styles.taskTitleCompleted : styles.taskTitle}>
+								{task.title}
+							</span>
+							<span className={styles.taskSubtext}>
+								Due date: {dueDate}
+							</span>
+						</div>
+					</div>
+				);
+			})}
 			{tasks.length > 5 && (
 				<Link href="/planner?tab=all" className={`${styles.viewAllLink} group`}>
 					<span>View all tasks</span>
-					<ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+					<FontAwesomeIcon icon={faArrowRight} className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
 				</Link>
 			)}
 		</div>

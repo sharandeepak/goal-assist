@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/common/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { format, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
 import { styles } from "../styles/WeekSelector.styles";
@@ -76,13 +77,13 @@ export default function WeekSelector({ currentWeekStart, onWeekChange, dateFilte
 		<div className={styles.root}>
 			<div className={styles.navGroup}>
 				<Button variant="outline" size="icon" onClick={goToPrev}>
-					<ChevronLeft className="h-4 w-4" />
+					<FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
 				</Button>
 				<div className={styles.displayBox}>
 					<h2 className={styles.displayText}>{getDisplayText()}</h2>
 				</div>
 				<Button variant="outline" size="icon" onClick={goToNext}>
-					<ChevronRight className="h-4 w-4" />
+					<FontAwesomeIcon icon={faChevronRight} className="h-4 w-4" />
 				</Button>
 			</div>
 			<Select value={dateFilter} onValueChange={handleFilterChange}>
