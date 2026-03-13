@@ -25,10 +25,10 @@ import { useAuth } from "@/common/hooks/use-auth";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 // useAuth — may return nulls (use in loading-aware components)
-const { user, employee, company, isLoading, signOut } = useAuth();
+const { authUser, user, workspace, isLoading, signOut } = useAuth();
 
 // useRequiredAuth — throws if not authenticated; use inside protected pages
-const { userId, companyId, employeeId } = useRequiredAuth();
+const { userId, workspaceId } = useRequiredAuth();
 ```
 
 ## Supabase Clients

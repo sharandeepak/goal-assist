@@ -1,7 +1,7 @@
 # Feature: satisfaction
 
 ## Purpose
-Daily mood/satisfaction tracking (score 1–10) with a 7-day rolling view, monthly calendar heatmap, and trend chart. Each employee logs one score per day.
+Daily mood/satisfaction tracking (score 1–10) with a 7-day rolling view, monthly calendar heatmap, and trend chart. Each user logs one score per day.
 
 ## Key Files
 - `services/satisfactionService.ts` — All satisfaction logic
@@ -15,8 +15,8 @@ Daily mood/satisfaction tracking (score 1–10) with a 7-day rolling view, month
 // From @/common/types
 SupabaseSatisfactionLog = {
   id: string;
-  company_id: string;
-  employee_id: string;
+  workspace_id: string;
+  user_id: string;
   score: number;        // 1–10
   note?: string;
   log_date: string;     // ISO date "YYYY-MM-DD"

@@ -2,10 +2,10 @@ import { createClient } from "@/common/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/common/types/database.types";
 import type {
-  SupabaseCompany,
-  SupabaseCompanyInsert,
-  SupabaseEmployee,
-  SupabaseEmployeeInsert,
+  SupabaseWorkspace,
+  SupabaseWorkspaceInsert,
+  SupabaseUser,
+  SupabaseUserInsert,
 } from "@/common/types";
 import type { AuthRepository } from "./authRepository";
 import { AppError } from "@/common/errors/AppError";
@@ -20,138 +20,143 @@ function getClient(): SupabaseClient<Database> {
 }
 
 export class SupabaseAuthRepository implements AuthRepository {
-  async createCompany(data: SupabaseCompanyInsert): Promise<SupabaseCompany> {
+  async createWorkspace(data: SupabaseWorkspaceInsert): Promise<SupabaseWorkspace> {
     try {
-      const { data: company, error } = await getClient()
-        .from("companies")
+      const { data: workspace, error } = await getClient()
+        .from("workspaces")
         .insert(data)
         .select()
         .single();
 
       if (error)
-        throw AppError.internal("COMPANY_CREATE_ERROR", error.message);
-      if (!company)
+        throw AppError.internal("WORKSPACE_CREATE_ERROR", error.message);
+      if (!workspace)
         throw AppError.internal(
-          "COMPANY_CREATE_ERROR",
+          "WORKSPACE_CREATE_ERROR",
           "No data returned on insert."
         );
-      return company as SupabaseCompany;
+      return workspace as SupabaseWorkspace;
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw AppError.internal("COMPANY_CREATE_ERROR", "Failed to create company.");
+      throw AppError.internal("WORKSPACE_CREATE_ERROR", "Failed to create workspace.");
     }
   }
 
-  async createEmployee(
-    data: SupabaseEmployeeInsert
-  ): Promise<SupabaseEmployee> {
+  async createUser(
+    data: SupabaseUserInsert
+  ): Promise<SupabaseUser> {
     try {
-      const { data: employee, error } = await getClient()
-        .from("employees")
+      const { data: user, error } = await getClient()
+        .from("users")
         .insert(data)
         .select()
         .single();
 
       if (error)
-        throw AppError.internal("EMPLOYEE_CREATE_ERROR", error.message);
-      if (!employee)
+        throw AppError.internal("USER_CREATE_ERROR", error.message);
+      if (!user)
         throw AppError.internal(
-          "EMPLOYEE_CREATE_ERROR",
+          "USER_CREATE_ERROR",
           "No data returned on insert."
         );
-      return employee as SupabaseEmployee;
+      return user as SupabaseUser;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw AppError.internal(
-        "EMPLOYEE_CREATE_ERROR",
-        "Failed to create employee."
+        "USER_CREATE_ERROR",
+        "Failed to create user."
       );
     }
   }
 
-  async createEmployeesBatch(
-    employees: SupabaseEmployeeInsert[]
-  ): Promise<SupabaseEmployee[]> {
+  async createUsersBatch(
+    users: SupabaseUserInsert[]
+  ): Promise<SupabaseUser[]> {
     try {
-      if (employees.length === 0) return [];
+      if (users.length === 0) return [];
 
       const { data, error } = await getClient()
-        .from("employees")
-        .insert(employees)
+        .from("users")
+        .insert(users)
         .select();
 
       if (error)
-        throw AppError.internal("EMPLOYEES_BATCH_ERROR", error.message);
-      return (data ?? []) as SupabaseEmployee[];
+        throw AppError.internal("USERS_BATCH_ERROR", error.message);
+      return (data ?? []) as SupabaseUser[];
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw AppError.internal(
-        "EMPLOYEES_BATCH_ERROR",
-        "Failed to create employees."
+        "USERS_BATCH_ERROR",
+        "Failed to create users."
       );
     }
   }
 
-  async getEmployeeByUserId(
-    userId: string
-  ): Promise<SupabaseEmployee | null> {
+  async getUserByAuthId(
+    authId: string,
+    workspaceId?: string
+  ): Promise<SupabaseUser | null> {
+    try {
+      let query = getClient()
+        .from("users")
+        .select("*")
+        .eq("auth_id", authId)
+        .eq("status", "active");
+
+      if (workspaceId) {
+        query = query.eq("workspace_id", workspaceId);
+      }
+
+      const { data, error } = await query.limit(1).single();
+
+      if (error && error.code !== "PGRST116") {
+        throw AppError.internal("USER_FETCH_ERROR", error.message);
+      }
+      return (data as SupabaseUser) ?? null;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal(
+        "USER_FETCH_ERROR",
+        "Failed to fetch user."
+      );
+    }
+  }
+
+  async getWorkspaceById(workspaceId: string): Promise<SupabaseWorkspace | null> {
     try {
       const { data, error } = await getClient()
-        .from("employees")
+        .from("workspaces")
         .select("*")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .limit(1)
+        .eq("id", workspaceId)
         .single();
 
       if (error && error.code !== "PGRST116") {
-        throw AppError.internal("EMPLOYEE_FETCH_ERROR", error.message);
+        throw AppError.internal("WORKSPACE_FETCH_ERROR", error.message);
       }
-      return (data as SupabaseEmployee) ?? null;
+      return (data as SupabaseWorkspace) ?? null;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw AppError.internal(
-        "EMPLOYEE_FETCH_ERROR",
-        "Failed to fetch employee."
+        "WORKSPACE_FETCH_ERROR",
+        "Failed to fetch workspace."
       );
     }
   }
 
-  async getCompanyById(companyId: string): Promise<SupabaseCompany | null> {
-    try {
-      const { data, error } = await getClient()
-        .from("companies")
-        .select("*")
-        .eq("id", companyId)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        throw AppError.internal("COMPANY_FETCH_ERROR", error.message);
-      }
-      return (data as SupabaseCompany) ?? null;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw AppError.internal(
-        "COMPANY_FETCH_ERROR",
-        "Failed to fetch company."
-      );
-    }
-  }
-
-  async activateEmployee(employeeId: string, userId: string): Promise<void> {
+  async activateUser(userId: string, authId: string): Promise<void> {
     try {
       const { error } = await getClient()
-        .from("employees")
-        .update({ user_id: userId, status: "active" as const })
-        .eq("id", employeeId);
+        .from("users")
+        .update({ auth_id: authId, status: "active" as const })
+        .eq("id", userId);
 
       if (error)
-        throw AppError.internal("EMPLOYEE_ACTIVATE_ERROR", error.message);
+        throw AppError.internal("USER_ACTIVATE_ERROR", error.message);
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw AppError.internal(
-        "EMPLOYEE_ACTIVATE_ERROR",
-        "Failed to activate employee."
+        "USER_ACTIVATE_ERROR",
+        "Failed to activate user."
       );
     }
   }

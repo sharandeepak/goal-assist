@@ -16,7 +16,7 @@ import { Textarea } from "@/common/ui/textarea";
 import { styles } from "../styles/GlobalTimer.styles";
 
 export default function GlobalTimer() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [runningEntry, setRunningEntry] = useState<TimeEntry | null>(null);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
@@ -28,14 +28,15 @@ export default function GlobalTimer() {
 	const { theme } = useTheme();
 	const isDarkTheme = theme !== "light";
 
-	// Subscribe to running entry
 	useEffect(() => {
-		const unsubscribe = subscribeToRunningEntry(employeeId, (entry) => {
+		if (!userId) return;
+
+		const unsubscribe = subscribeToRunningEntry(userId, (entry) => {
 			setRunningEntry(entry);
 		});
 
 		return () => unsubscribe();
-	}, [employeeId]);
+	}, [userId]);
 
 	// Update elapsed time every second
 	useEffect(() => {
@@ -73,9 +74,8 @@ export default function GlobalTimer() {
 		setLoading(true);
 		try {
 			await startTimer({
+				workspaceId,
 				userId,
-				companyId,
-				employeeId,
 				taskTitle: taskTitle.trim(),
 				emoji: emoji || undefined,
 				note: note.trim() || undefined,
@@ -96,7 +96,7 @@ export default function GlobalTimer() {
 
 		setLoading(true);
 		try {
-			await stopRunningTimer(employeeId);
+			await stopRunningTimer(userId);
 		} catch (error) {
 			console.error("Error stopping timer:", error);
 		} finally {

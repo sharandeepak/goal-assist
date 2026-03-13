@@ -1,7 +1,7 @@
 # Feature: standup
 
 ## Purpose
-Daily standup log — employees record what they did yesterday, what they plan today, and any blockers. Shown as a summary on the dashboard.
+Daily standup log — users record what they did yesterday, what they plan today, and any blockers. Shown as a summary on the dashboard.
 
 ## Key Files
 - `services/standupService.ts` — Standup CRUD and validation
@@ -13,8 +13,8 @@ Daily standup log — employees record what they did yesterday, what they plan t
 // From @/common/types
 SupabaseStandupLog = {
   id: string;
-  company_id: string;
-  employee_id: string;
+  workspace_id: string;
+  user_id: string;
   log_date: string;        // ISO date — required
   yesterday?: string;
   today?: string;
@@ -37,7 +37,7 @@ standupService.deleteAllUserStandupLogs()
 ```
 
 ## Validation
-Both `log_date` and `employee_id` are required. Error codes: `STANDUP_DATE_REQUIRED`, `STANDUP_EMPLOYEE_REQUIRED`.
+Both `log_date` and `user_id` are required. Error codes: `STANDUP_DATE_REQUIRED`, `STANDUP_USER_REQUIRED`.
 
 ## Dependencies
 - Depends on: none

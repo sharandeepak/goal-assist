@@ -14,7 +14,7 @@ import { Skeleton } from "@/common/ui/skeleton";
 import { useToast } from "@/common/hooks/use-toast";
 
 export default function MatrixPage() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [tasks, setTasks] = useState<MatrixTasksData>({
 		q1: [],
 		q2: [],
@@ -142,9 +142,8 @@ export default function MatrixPage() {
 			date: formData.date || new Date().toISOString(),
 			priority: formData.priority,
 			urgency: formData.urgency,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString

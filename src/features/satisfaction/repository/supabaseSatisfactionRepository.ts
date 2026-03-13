@@ -1,5 +1,6 @@
 import { BaseRepository } from "@/common/repository/base.repository";
 import { createClient } from "@/common/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/common/types/database.types";
 import type { SupabaseSatisfactionLog, SupabaseSatisfactionLogInsert } from "@/common/types";
 import { AppError } from "@/common/errors/AppError";
@@ -7,8 +8,13 @@ import { format, subDays } from "date-fns";
 
 type SatisfactionRow = Database["public"]["Tables"]["satisfaction_logs"]["Row"];
 
-function getClient() {
-  return createClient();
+let clientInstance: SupabaseClient<Database> | null = null;
+
+function getClient(): SupabaseClient<Database> {
+  if (!clientInstance) {
+    clientInstance = createClient();
+  }
+  return clientInstance;
 }
 
 export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction_logs"> {
@@ -84,7 +90,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
     try {
       const { data: existing, error: findError } = await this.table
         .select("*")
-        .eq("employee_id", logData.employee_id)
+        .eq("user_id", logData.user_id)
         .eq("log_date", logData.log_date)
         .maybeSingle();
       if (findError) throw AppError.internal("SATISFACTION_SAVE_ERROR", "Failed to save satisfaction entry.");

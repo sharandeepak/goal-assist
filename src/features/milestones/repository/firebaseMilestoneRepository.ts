@@ -18,14 +18,25 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { startOfDay, endOfDay } from "date-fns";
-import { Milestone } from "@/common/types";
-import {
-  MilestoneRepository,
-  MilestonePageSummaryData,
-} from "./milestoneRepository";
+import type { Milestone } from "@/common/types";
+
+interface FirebaseMilestoneDoc {
+  id?: string;
+  title: string;
+  description?: string;
+  progress: number;
+  urgency: "low" | "medium" | "high";
+  status: "planned" | "active" | "completed" | "on_hold";
+  startDate?: unknown;
+  endDate?: string | null;
+  tasks?: string[];
+  [key: string]: unknown;
+}
+import type { MilestonePageSummaryData } from "./milestoneRepository";
 import { calculateDaysLeft } from "../utils";
 
-export class FirebaseMilestoneRepository implements MilestoneRepository {
+/** @deprecated Legacy Firebase implementation — not used. Supabase is the active backend. */
+export class FirebaseMilestoneRepository {
   subscribeToMilestonesByStatus(
     status: Milestone["status"],
     callback: (milestones: Milestone[]) => void,
@@ -112,12 +123,12 @@ export class FirebaseMilestoneRepository implements MilestoneRepository {
     const topUpcoming: MilestonePageSummaryData["topUpcoming"] = [];
 
     if (!upcomingSnapshot.empty) {
-      const firstUpcoming = upcomingSnapshot.docs[0].data() as Milestone;
-      nextDeadlineDays = calculateDaysLeft(firstUpcoming.endDate) ?? null;
+      const firstUpcoming = upcomingSnapshot.docs[0].data() as FirebaseMilestoneDoc;
+      nextDeadlineDays = calculateDaysLeft(firstUpcoming.endDate ?? null) ?? null;
 
       upcomingSnapshot.docs.slice(0, 2).forEach((docSnap) => {
-        const data = docSnap.data() as Milestone;
-        const daysLeft = calculateDaysLeft(data.endDate);
+        const data = docSnap.data() as FirebaseMilestoneDoc;
+        const daysLeft = calculateDaysLeft(data.endDate ?? null);
         topUpcoming.push({
           id: docSnap.id,
           title: data.title,
@@ -206,9 +217,9 @@ export class FirebaseMilestoneRepository implements MilestoneRepository {
     return { id: snapshot.id, ...snapshot.data() } as Milestone;
   }
 
-  async addMilestone(milestoneData: Omit<Milestone, "id">): Promise<string> {
+  async addMilestone(milestoneData: Record<string, unknown>): Promise<string> {
     const milestonesCollection = collection(db, "milestones");
-    const dataToAdd = { ...milestoneData };
+    const dataToAdd: Record<string, unknown> = { ...milestoneData };
     if (!dataToAdd.startDate) {
       dataToAdd.startDate = Timestamp.now();
     }
@@ -228,7 +239,8 @@ export class FirebaseMilestoneRepository implements MilestoneRepository {
 
   async updateMilestone(
     milestoneId: string,
-    dataToUpdate: Partial<Omit<Milestone, "id" | "progress" | "startDate" | "tasks">>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dataToUpdate: Record<string, any>
   ): Promise<void> {
     if (Object.keys(dataToUpdate).length === 0) return;
 

@@ -71,7 +71,7 @@ const formatDateForInput = (dateStr?: string | null): string => {
 };
 
 function DayPlannerContent() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [todayTasks, setTodayTasks] = useState<Task[]>([]);
 	const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 	const [allTasks, setAllTasks] = useState<Task[]>([]);
@@ -187,9 +187,8 @@ function DayPlannerContent() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString

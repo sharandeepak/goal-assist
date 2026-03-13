@@ -141,13 +141,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 	return (
 		<div className={`flex items-start justify-between gap-3 py-3 px-4 rounded-xl group transition-all duration-200 ${attention.needsAttention ? "bg-destructive/5 border border-destructive/20" : "bg-muted/30 hover:bg-muted/50"}`}>
 			<div className="flex items-start gap-3 flex-1 min-w-0">
-				<Checkbox 
-					id={`task-${task.id}`} 
-					checked={task.completed} 
-					onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} 
-					className="h-5 w-5 mt-0.5 rounded-md" 
-					aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} 
-				/>
+				<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => onToggle(task.id, task.completed, milestoneId)} className="h-5 w-5 mt-0.5 rounded-md" aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} />
 				<div className="flex flex-col min-w-0 flex-1 gap-1.5">
 					<div className="flex items-center gap-2">
 						{attention.needsAttention && (
@@ -155,11 +149,7 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 								<FontAwesomeIcon icon={faCircleExclamation} className="h-4 w-4 text-destructive" />
 							</span>
 						)}
-						<label 
-							htmlFor={`task-${task.id}`} 
-							className={`text-sm font-medium leading-tight ${task.completed ? "line-through text-muted-foreground" : ""}`} 
-							title={task.title}
-						>
+						<label htmlFor={`task-${task.id}`} className={`text-sm font-medium leading-tight ${task.completed ? "line-through text-muted-foreground" : ""}`} title={task.title}>
 							{task.title}
 						</label>
 					</div>
@@ -175,38 +165,24 @@ function MilestoneTaskItem({ task, milestoneId, onToggle, onDelete, onEditReques
 								<FontAwesomeIcon icon={faCircleCheck} className="h-3 w-3" /> Completed: {formatDate(task.completed_date)}
 							</span>
 						)}
-						{attention.needsAttention && (
-							<span className="text-xs font-medium text-destructive px-2 py-0.5 rounded-full bg-destructive/10">
-								{attention.reason}
-							</span>
-						)}
+						{attention.needsAttention && <span className="text-xs font-medium text-destructive px-2 py-0.5 rounded-full bg-destructive/10">{attention.reason}</span>}
 					</div>
 				</div>
 			</div>
 			<div className="flex items-center gap-1 flex-shrink-0">
 				{/* Show Priority */}
 				{task.priority && (
-					<div className={`p-1 rounded ${task.priority === 'high' ? 'bg-red-500/10' : task.priority === 'medium' ? 'bg-yellow-500/10' : 'bg-green-500/10'}`}>
+					<div className={`p-1 rounded ${task.priority === "high" ? "bg-red-500/10" : task.priority === "medium" ? "bg-yellow-500/10" : "bg-green-500/10"}`}>
 						<FontAwesomeIcon icon={faFlag} className={`h-3.5 w-3.5 ${getPriorityColor(task.priority)}`} />
 					</div>
 				)}
 				{/* Edit Button */}
-				<Button 
-					variant="ghost" 
-					size="icon" 
-					onClick={() => onEditRequest(task)} 
-					className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-				>
+				<Button variant="ghost" size="icon" onClick={() => onEditRequest(task)} className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
 					<FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
 					<span className="sr-only">Edit Task</span>
 				</Button>
 				{/* Delete Button */}
-				<Button 
-					variant="ghost" 
-					size="icon" 
-					onClick={() => onDelete(task.id, milestoneId)} 
-					className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-				>
+				<Button variant="ghost" size="icon" onClick={() => onDelete(task.id, milestoneId)} className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
 					<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
 					<span className="sr-only">Delete Task</span>
 				</Button>
@@ -222,6 +198,7 @@ interface MilestoneCardProps {
 }
 
 function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
+	const { userId, workspaceId } = useRequiredAuth();
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loadingTasks, setLoadingTasks] = useState(true);
 	const [taskError, setTaskError] = useState<string | null>(null);
@@ -288,9 +265,8 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			milestone_id: milestone.id,
 			date: dateToSave,
 			priority: formData.priority!,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
@@ -352,21 +328,13 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 		try {
 			setTaskError(null);
 			// Optimistic update: set/clear completed_date alongside completed status
-			setTasks((prevTasks) => prevTasks.map((t) =>
-				t.id === taskId
-					? { ...t, completed: newCompleted, completed_date: newCompleted ? now : null }
-					: t
-			));
+			setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? { ...t, completed: newCompleted, completed_date: newCompleted ? now : null } : t)));
 			await updateTaskCompletion(taskId, newCompleted, milestone.id);
 		} catch (err) {
 			console.error("Failed to toggle task:", err);
 			setTaskError("Failed to update task status.");
 			// Revert optimistic update
-			setTasks((prevTasks) => prevTasks.map((t) =>
-				t.id === taskId
-					? { ...t, completed: currentCompleted, completed_date: currentCompleted ? t.completed_date : null }
-					: t
-			));
+			setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? { ...t, completed: currentCompleted, completed_date: currentCompleted ? t.completed_date : null } : t)));
 		}
 	};
 
@@ -456,28 +424,16 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 						<CardTitle className="text-lg font-semibold truncate mb-1" title={milestone.title}>
 							{milestone.title}
 						</CardTitle>
-						{milestone.description && (
-							<CardDescription className="line-clamp-2">{milestone.description}</CardDescription>
-						)}
+						{milestone.description && <CardDescription className="line-clamp-2">{milestone.description}</CardDescription>}
 					</div>
 					<div className="flex flex-shrink-0 gap-1">
 						{/* Edit Milestone Button */}
-						<Button 
-							variant="ghost" 
-							size="icon" 
-							onClick={openEditMilestoneDialog} 
-							className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-						>
+						<Button variant="ghost" size="icon" onClick={openEditMilestoneDialog} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10">
 							<FontAwesomeIcon icon={faPen} className="h-4 w-4" />
 							<span className="sr-only">Edit Milestone</span>
 						</Button>
 						{/* Delete Milestone Button */}
-						<Button 
-							variant="ghost" 
-							size="icon" 
-							onClick={() => onDelete(milestone.id, false)} 
-							className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-						>
+						<Button variant="ghost" size="icon" onClick={() => onDelete(milestone.id, false)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
 							<FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
 							<span className="sr-only">Delete Milestone</span>
 						</Button>
@@ -493,26 +449,23 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 				</div>
 
 				{/* Tasks Collapsible Section */}
-			<Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
-				<CollapsibleTrigger asChild>
-					<Button 
-						variant="ghost" 
-						size="sm" 
-						className="w-full justify-start px-3 py-2 h-auto text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted/50"
-					>
-						{isTasksOpen ? <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 mr-2 transition-transform" /> : <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4 mr-2 transition-transform" />}
-						<FontAwesomeIcon icon={faListCheck} className="h-4 w-4 mr-2" /> 
-						<span className="font-medium">Tasks ({tasks.length})</span>
-						{(() => {
-							const attentionCount = tasks.filter((t) => getTaskAttentionStatus(t).needsAttention).length;
-							return attentionCount > 0 ? (
-								<Badge variant="destructive" size="sm" className="ml-auto">
-									<FontAwesomeIcon icon={faCircleExclamation} className="h-3 w-3 mr-1" />{attentionCount} need attention
-								</Badge>
-							) : null;
-						})()}
-					</Button>
-				</CollapsibleTrigger>
+				<Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
+					<CollapsibleTrigger asChild>
+						<Button variant="ghost" size="sm" className="w-full justify-start px-3 py-2 h-auto text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted/50">
+							{isTasksOpen ? <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 mr-2 transition-transform" /> : <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4 mr-2 transition-transform" />}
+							<FontAwesomeIcon icon={faListCheck} className="h-4 w-4 mr-2" />
+							<span className="font-medium">Tasks ({tasks.length})</span>
+							{(() => {
+								const attentionCount = tasks.filter((t) => getTaskAttentionStatus(t).needsAttention).length;
+								return attentionCount > 0 ? (
+									<Badge variant="destructive" size="sm" className="ml-auto">
+										<FontAwesomeIcon icon={faCircleExclamation} className="h-3 w-3 mr-1" />
+										{attentionCount} need attention
+									</Badge>
+								) : null;
+							})()}
+						</Button>
+					</CollapsibleTrigger>
 					<CollapsibleContent className="pt-3 space-y-2">
 						{/* Task List */}
 						{loadingTasks ? (
@@ -532,27 +485,21 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								<p className="text-xs text-muted-foreground">No tasks added yet</p>
 							</div>
 						) : (
-						<div className="max-h-80 overflow-y-auto space-y-2 scrollbar-thin">
-							{[...tasks]
-								.sort((a, b) => {
-									const dateA = a.date ? new Date(a.date).getTime() : Infinity;
-									const dateB = b.date ? new Date(b.date).getTime() : Infinity;
-									return dateA - dateB;
-								})
-								.map((task) => (
-									<MilestoneTaskItem key={task.id} task={task} milestoneId={milestone.id} onToggle={handleTaskToggle} onDelete={handleDeleteTask} onEditRequest={openEditTaskDialog} />
-								))}
-						</div>
+							<div className="max-h-80 overflow-y-auto space-y-2 scrollbar-thin">
+								{[...tasks]
+									.sort((a, b) => {
+										const dateA = a.date ? new Date(a.date).getTime() : Infinity;
+										const dateB = b.date ? new Date(b.date).getTime() : Infinity;
+										return dateA - dateB;
+									})
+									.map((task) => (
+										<MilestoneTaskItem key={task.id} task={task} milestoneId={milestone.id} onToggle={handleTaskToggle} onDelete={handleDeleteTask} onEditRequest={openEditTaskDialog} />
+									))}
+							</div>
 						)}
 						{/* Add Task Button */}
 						<div className="pt-3">
-							<Button 
-								variant="outline" 
-								size="sm" 
-								className="w-full rounded-xl border-dashed hover:border-primary hover:bg-primary/5" 
-								onClick={openAddTaskDialog} 
-								disabled={loadingTasks}
-							>
+							<Button variant="outline" size="sm" className="w-full rounded-xl border-dashed hover:border-primary hover:bg-primary/5" onClick={openAddTaskDialog} disabled={loadingTasks}>
 								<FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2" />
 								Add Task
 							</Button>
@@ -562,16 +509,12 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 
 				{/* Badges and Deadline */}
 				<div className="flex flex-wrap items-center gap-2 pt-2">
-					<Badge 
-						variant={milestone.urgency === 'high' ? 'destructive' : milestone.urgency === 'medium' ? 'warning' : 'success'} 
-						size="sm"
-						className="font-medium"
-					>
+					<Badge variant={milestone.urgency === "high" ? "destructive" : milestone.urgency === "medium" ? "warning" : "success"} size="sm" className="font-medium">
 						{urgencyLabel}
 					</Badge>
 					{daysLeft !== undefined && milestone.status === "active" && (
 						<Badge variant="outline" size="sm" className="gap-1.5">
-							<FontAwesomeIcon icon={faClock} className="h-3 w-3" /> 
+							<FontAwesomeIcon icon={faClock} className="h-3 w-3" />
 							{daysLeft} day{daysLeft !== 1 ? "s" : ""} left
 						</Badge>
 					)}
@@ -592,7 +535,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 
 // --- Main Page Component ---
 function MilestonesPageContent() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [activeMilestones, setActiveMilestones] = useState<Milestone[]>([]);
 	const [completedMilestones, setCompletedMilestones] = useState<Milestone[]>([]);
 	const [loadingActive, setLoadingActive] = useState(true);
@@ -632,7 +575,7 @@ function MilestonesPageContent() {
 				console.error("Error loading active milestones:", err);
 				setError("Failed to load active milestones.");
 				setLoadingActive(false);
-			}
+			},
 		);
 		return () => unsubscribe();
 	}, []);
@@ -649,7 +592,7 @@ function MilestonesPageContent() {
 				console.error("Error loading completed milestones:", err);
 				setError((prev) => (prev ? prev + " Failed to load completed milestones." : "Failed to load completed milestones."));
 				setLoadingCompleted(false);
-			}
+			},
 		);
 		return () => unsubscribe();
 	}, []);
@@ -673,9 +616,8 @@ function MilestonesPageContent() {
 			urgency: newMilestoneData.urgency || "medium",
 			status: "active" as const,
 			progress: 0,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			start_date: startDate,
 			end_date: endDate,
 		};
@@ -773,7 +715,7 @@ function MilestonesPageContent() {
 					<Sheet open={newMilestoneOpen} onOpenChange={setNewMilestoneOpen}>
 						<SheetTrigger asChild>
 							<Button>
-								<Plus className="mr-2 h-4 w-4" />
+								<FontAwesomeIcon icon={faPlus} className="mr-2 h-4 w-4" />
 								Add Milestone
 							</Button>
 						</SheetTrigger>

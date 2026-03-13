@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/common/ui/button";
 import { styles } from "../styles/SatisfactionCalendar.styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,7 +26,7 @@ interface SatisfactionEntry {
 }
 
 export default function SatisfactionCalendar() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [currentMonth, setCurrentMonth] = useState(new Date());
 	const [satisfactionData, setSatisfactionData] = useState<SatisfactionEntry[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,8 +34,6 @@ export default function SatisfactionCalendar() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [playingMoodAnimation, setPlayingMoodAnimation] = useState<"happy" | "cool" | "angry" | "okay" | null>(null);
-	const queryClient = useQueryClient();
-
 	useEffect(() => {
 		setLoading(true);
 		setError(null);
@@ -95,9 +92,8 @@ export default function SatisfactionCalendar() {
 		try {
 			const logDate = format(selectedDate, "yyyy-MM-dd");
 			await saveSatisfactionEntry({
+				workspace_id: workspaceId,
 				user_id: userId,
-				company_id: companyId,
-				employee_id: employeeId,
 				log_date: logDate,
 				score,
 				notes: mood,
@@ -114,7 +110,6 @@ export default function SatisfactionCalendar() {
 				return [...prev, newEntry];
 			});
 
-			queryClient.invalidateQueries({ queryKey: ["satisfactionSummary"] });
 		} catch (err) {
 			console.error("Failed to save satisfaction entry:", err);
 		}

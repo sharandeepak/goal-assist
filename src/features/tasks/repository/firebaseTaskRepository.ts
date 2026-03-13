@@ -18,9 +18,10 @@ import {
 } from "firebase/firestore";
 import { Task } from "@/common/types";
 import { startOfDay, endOfDay } from "date-fns";
-import { TaskRepository, TaskSummaryData } from "./taskRepository";
+import type { TaskSummaryData } from "./taskRepository";
 
-export class FirebaseTaskRepository implements TaskRepository {
+/** @deprecated Legacy Firebase implementation — not used. Supabase is the active backend. */
+export class FirebaseTaskRepository {
   subscribeTasks(
     startDate: Date,
     endDate: Date,
@@ -167,13 +168,13 @@ export class FirebaseTaskRepository implements TaskRepository {
     };
   }
 
-  async addTask(taskData: Omit<Task, "id">): Promise<string> {
+  async addTask(taskData: Record<string, unknown>): Promise<string> {
     const tasksCollection = collection(db, "tasks");
-    const dataToAdd: Omit<Task, "id"> & { createdAt: Timestamp } = {
+    const dataToAdd = {
       ...taskData,
       completed: taskData.completed ?? false,
       tags: taskData.tags ?? [],
-      createdAt: taskData.createdAt ?? Timestamp.now(),
+      createdAt: taskData.createdAt ?? taskData.created_at ?? Timestamp.now(),
     };
 
     const docRef = await addDoc(tasksCollection, dataToAdd);
@@ -182,9 +183,8 @@ export class FirebaseTaskRepository implements TaskRepository {
 
   async updateTask(
     taskId: string,
-    dataToUpdate: Partial<
-      Omit<Task, "id" | "completed" | "createdAt" | "milestoneId">
-    >
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dataToUpdate: Record<string, any>
   ): Promise<void> {
     if (Object.keys(dataToUpdate).length === 0) return;
 
@@ -194,13 +194,13 @@ export class FirebaseTaskRepository implements TaskRepository {
 
   async updateTaskCompletion(
     taskId: string,
-    completed: boolean,
-    completedDate: Timestamp | null
+    completed: boolean
   ): Promise<void> {
     const taskDocRef = doc(db, "tasks", taskId);
-    const updateData: Record<string, boolean | typeof completedDate> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = {
       completed,
-      completedDate,
+      completedDate: completed ? Timestamp.now() : null,
     };
     await updateDoc(taskDocRef, updateData);
   }

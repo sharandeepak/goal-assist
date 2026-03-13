@@ -1,11 +1,11 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, getDocs, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/common/lib/db";
 import { TimeEntry } from "@/common/types";
-import type { TimeRepository } from "./timeRepository";
 
 const TIME_ENTRIES_COLLECTION = "timeEntries";
 
-export function createFirebaseTimeRepository(): TimeRepository {
+/** @deprecated Legacy Firebase implementation — not used. Supabase is the active backend. */
+export function createFirebaseTimeRepository() {
 	return {
 		subscribeToEntriesByDateRange(userId: string, startDay: string, endDay: string, callback: (entries: TimeEntry[]) => void): () => void {
 			const q = query(

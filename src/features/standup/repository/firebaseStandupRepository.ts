@@ -12,9 +12,8 @@ import {
 } from "firebase/firestore";
 import type { StandupLog } from "@/common/types";
 import type { Unsubscribe } from "@/common/repository/types";
-import type { StandupRepository } from "./standupRepository";
-
-export class FirebaseStandupRepository implements StandupRepository {
+/** @deprecated Legacy Firebase implementation — not used. Supabase is the active backend. */
+export class FirebaseStandupRepository {
 	subscribeToRecentStandups(
 		limitCount: number,
 		callback: (logs: StandupLog[]) => void,
@@ -41,12 +40,13 @@ export class FirebaseStandupRepository implements StandupRepository {
 		return unsubscribe;
 	}
 
-	async addStandupLog(logData: Omit<StandupLog, "id">): Promise<string> {
+	async addStandupLog(logData: Record<string, unknown>): Promise<string> {
 		const logsCollection = collection(db, "standup_logs");
+		const rawDate = logData.date ?? logData.log_date;
 		const dataToAdd = {
 			...logData,
-			date: logData.date instanceof Timestamp ? logData.date : Timestamp.fromDate(new Date(logData.date)),
-			notes: logData.notes ?? "",
+			date: rawDate instanceof Timestamp ? rawDate : Timestamp.fromDate(new Date(rawDate as string)),
+			notes: (logData.notes as string) ?? "",
 		};
 		const docRef = await addDoc(logsCollection, dataToAdd);
 		return docRef.id;

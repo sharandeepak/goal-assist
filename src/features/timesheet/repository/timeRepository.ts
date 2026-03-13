@@ -2,14 +2,14 @@ import type { SupabaseTimeEntry, SupabaseTimeEntryInsert, SupabaseTimeEntryUpdat
 
 export interface TimeRepository {
   subscribeToEntriesByDateRange(
-    employeeId: string,
+    userId: string,
     startDay: string,
     endDay: string,
     callback: (entries: SupabaseTimeEntry[]) => void
   ): () => void;
 
   subscribeToRunningEntry(
-    employeeId: string,
+    userId: string,
     callback: (entry: SupabaseTimeEntry | null) => void
   ): () => void;
 
@@ -22,10 +22,10 @@ export interface TimeRepository {
   getEntryById(entryId: string): Promise<SupabaseTimeEntry | null>;
 
   getEntriesForDateRange(
-    employeeId: string,
+    userId: string,
     startDay: string,
     endDay: string
   ): Promise<SupabaseTimeEntry[]>;
 
-  getRunningEntry(employeeId: string): Promise<SupabaseTimeEntry | null>;
+  getRunningEntry(userId: string): Promise<SupabaseTimeEntry | null>;
 }

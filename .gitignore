@@ -32,3 +32,5 @@ next-env.d.ts
 # functions
 functions/lib/
 functions/node_modules/
+
+.CLAUDE

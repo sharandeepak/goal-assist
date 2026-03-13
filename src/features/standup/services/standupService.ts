@@ -12,10 +12,10 @@ function validateStandupLog(logData: SupabaseStandupLogInsert): void {
       "Date is required for a standup log."
     );
   }
-  if (!logData.employee_id) {
+  if (!logData.user_id) {
     throw AppError.badRequest(
-      "STANDUP_EMPLOYEE_REQUIRED",
-      "Employee ID is required for a standup log."
+      "STANDUP_USER_REQUIRED",
+      "User ID is required for a standup log."
     );
   }
 }

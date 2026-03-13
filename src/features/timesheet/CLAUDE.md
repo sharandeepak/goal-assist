@@ -1,7 +1,7 @@
 # Feature: timesheet
 
 ## Purpose
-Time tracking with a live running timer and weekly timesheet view. Employees start/stop timers linked to tasks, log time entries manually, and review totals by week.
+Time tracking with a live running timer and weekly timesheet view. Users start/stop timers linked to tasks, log time entries manually, and review totals by week.
 
 ## Key Files
 - `services/timeService.ts` — Timer operations and entry management
@@ -17,9 +17,8 @@ Time tracking with a live running timer and weekly timesheet view. Employees sta
 // From @/common/types
 SupabaseTimeEntry = {
   id: string;
-  company_id: string;
+  workspace_id: string;
   user_id: string;
-  employee_id: string;
   task_id?: string;
   task_title: string;
   emoji?: string;
@@ -38,11 +37,11 @@ SupabaseTimeEntry = {
 import * as timeService from "@/features/timesheet/services/timeService";
 
 // Real-time subscriptions
-timeService.subscribeToEntriesByDateRange(employeeId, startDay, endDay, callback)
-timeService.subscribeToRunningEntry(employeeId, callback)  // null when no timer running
+timeService.subscribeToEntriesByDateRange(userId, startDay, endDay, callback)
+timeService.subscribeToRunningEntry(userId, callback)  // null when no timer running
 
 // Timer operations
-timeService.startTimer({ userId, companyId, employeeId, taskTitle, taskId?, emoji?, milestoneId?, tags?, note? })
+timeService.startTimer({ userId, workspaceId, taskTitle, taskId?, emoji?, milestoneId?, tags?, note? })
 timeService.stopTimer(entryId)
 
 // Manual entries
@@ -52,7 +51,7 @@ timeService.deleteEntry(id)
 ```
 
 ## Timer Rules
-- Only one running timer per employee at a time (`end_time IS NULL`)
+- Only one running timer per user at a time (`end_time IS NULL`)
 - `startTimer` should stop any existing running entry before creating a new one
 - Duration is calculated as `end_time - start_time` in seconds when stopping
 

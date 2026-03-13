@@ -3,9 +3,8 @@ import { getSequelize } from "../config";
 
 interface TimeEntryAttributes {
   id: string;
+  workspace_id: string;
   user_id: string;
-  company_id: string;
-  employee_id: string;
   task_id: string | null;
   task_title_snapshot: string;
   emoji: string | null;
@@ -41,9 +40,8 @@ export class TimeEntry
   implements TimeEntryAttributes
 {
   declare id: string;
+  declare workspace_id: string;
   declare user_id: string;
-  declare company_id: string;
-  declare employee_id: string;
   declare task_id: string | null;
   declare task_title_snapshot: string;
   declare emoji: string | null;
@@ -67,20 +65,15 @@ export function initTimeEntryModel(): typeof TimeEntry {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+      workspace_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: "workspaces", key: "id" },
+      },
       user_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: { model: "users", key: "id" },
-      },
-      company_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "companies", key: "id" },
-      },
-      employee_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "employees", key: "id" },
       },
       task_id: {
         type: DataTypes.UUID,

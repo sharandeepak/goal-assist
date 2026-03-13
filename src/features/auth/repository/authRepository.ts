@@ -1,22 +1,22 @@
 import type {
-  SupabaseCompany,
-  SupabaseCompanyInsert,
-  SupabaseEmployee,
-  SupabaseEmployeeInsert,
+  SupabaseWorkspace,
+  SupabaseWorkspaceInsert,
+  SupabaseUser,
+  SupabaseUserInsert,
 } from "@/common/types";
 
 export interface AuthRepository {
-  createCompany(data: SupabaseCompanyInsert): Promise<SupabaseCompany>;
+  createWorkspace(data: SupabaseWorkspaceInsert): Promise<SupabaseWorkspace>;
 
-  createEmployee(data: SupabaseEmployeeInsert): Promise<SupabaseEmployee>;
+  createUser(data: SupabaseUserInsert): Promise<SupabaseUser>;
 
-  createEmployeesBatch(
-    employees: SupabaseEmployeeInsert[]
-  ): Promise<SupabaseEmployee[]>;
+  createUsersBatch(
+    users: SupabaseUserInsert[]
+  ): Promise<SupabaseUser[]>;
 
-  getEmployeeByUserId(userId: string): Promise<SupabaseEmployee | null>;
+  getUserByAuthId(authId: string, workspaceId?: string): Promise<SupabaseUser | null>;
 
-  getCompanyById(companyId: string): Promise<SupabaseCompany | null>;
+  getWorkspaceById(workspaceId: string): Promise<SupabaseWorkspace | null>;
 
-  activateEmployee(employeeId: string, userId: string): Promise<void>;
+  activateUser(userId: string, authId: string): Promise<void>;
 }

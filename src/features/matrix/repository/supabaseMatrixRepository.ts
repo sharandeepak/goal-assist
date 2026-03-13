@@ -1,12 +1,19 @@
 import { BaseRepository } from "@/common/repository/base.repository";
 import { createClient } from "@/common/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/common/types/database.types";
 import type { SupabaseTask } from "@/common/types";
 import type { MatrixRepository } from "./matrixRepository";
 import { AppError } from "@/common/errors/AppError";
 import { startOfDay, endOfDay } from "date-fns";
 
-function getClient() {
-  return createClient();
+let clientInstance: SupabaseClient<Database> | null = null;
+
+function getClient(): SupabaseClient<Database> {
+  if (!clientInstance) {
+    clientInstance = createClient();
+  }
+  return clientInstance;
 }
 
 export class SupabaseMatrixRepository extends BaseRepository<"tasks"> implements MatrixRepository {

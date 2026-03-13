@@ -1,7 +1,7 @@
 import { DataTypes, Model, type Optional } from "sequelize";
 import { getSequelize } from "../config";
 
-interface CompanyAttributes {
+interface WorkspaceAttributes {
   id: string;
   name: string;
   creator_id: string;
@@ -9,9 +9,9 @@ interface CompanyAttributes {
   updated_at: Date;
 }
 
-type CompanyCreationAttributes = Optional<CompanyAttributes, "id" | "created_at" | "updated_at">;
+type WorkspaceCreationAttributes = Optional<WorkspaceAttributes, "id" | "created_at" | "updated_at">;
 
-export class Company extends Model<CompanyAttributes, CompanyCreationAttributes> implements CompanyAttributes {
+export class Workspace extends Model<WorkspaceAttributes, WorkspaceCreationAttributes> implements WorkspaceAttributes {
   declare id: string;
   declare name: string;
   declare creator_id: string;
@@ -19,8 +19,8 @@ export class Company extends Model<CompanyAttributes, CompanyCreationAttributes>
   declare updated_at: Date;
 }
 
-export function initCompanyModel(): typeof Company {
-  Company.init(
+export function initWorkspaceModel(): typeof Workspace {
+  Workspace.init(
     {
       id: {
         type: DataTypes.UUID,
@@ -34,7 +34,6 @@ export function initCompanyModel(): typeof Company {
       creator_id: {
         type: DataTypes.UUID,
         allowNull: false,
-        references: { model: "users", key: "id" },
       },
       created_at: {
         type: DataTypes.DATE,
@@ -47,11 +46,11 @@ export function initCompanyModel(): typeof Company {
     },
     {
       sequelize: getSequelize(),
-      tableName: "companies",
+      tableName: "workspaces",
       schema: "public",
       timestamps: false,
     }
   );
 
-  return Company;
+  return Workspace;
 }

@@ -11,25 +11,24 @@ import { AppError } from "@/common/errors/AppError";
 const repo: TimeRepository = supabaseTimeRepository;
 
 export function subscribeToEntriesByDateRange(
-  employeeId: string,
+  userId: string,
   startDay: string,
   endDay: string,
   callback: (entries: SupabaseTimeEntry[]) => void
 ): () => void {
-  return repo.subscribeToEntriesByDateRange(employeeId, startDay, endDay, callback);
+  return repo.subscribeToEntriesByDateRange(userId, startDay, endDay, callback);
 }
 
 export function subscribeToRunningEntry(
-  employeeId: string,
+  userId: string,
   callback: (entry: SupabaseTimeEntry | null) => void
 ): () => void {
-  return repo.subscribeToRunningEntry(employeeId, callback);
+  return repo.subscribeToRunningEntry(userId, callback);
 }
 
 export async function startTimer(params: {
+  workspaceId: string;
   userId: string;
-  companyId: string;
-  employeeId: string;
   taskId?: string;
   taskTitle: string;
   emoji?: string;
@@ -37,25 +36,24 @@ export async function startTimer(params: {
   tags?: string[];
   note?: string;
 }): Promise<SupabaseTimeEntry> {
-  const { userId, companyId, employeeId, taskId, taskTitle, emoji, milestoneId, tags, note } = params;
+  const { workspaceId, userId, taskId, taskTitle, emoji, milestoneId, tags, note } = params;
 
-  if (!employeeId) {
-    throw AppError.badRequest("TIME_EMPLOYEE_REQUIRED", "Employee ID is required to start a timer.");
+  if (!userId) {
+    throw AppError.badRequest("TIME_USER_REQUIRED", "User ID is required to start a timer.");
   }
   if (!taskTitle) {
     throw AppError.badRequest("TIME_TITLE_REQUIRED", "Task title is required to start a timer.");
   }
 
   try {
-    await stopRunningTimer(employeeId);
+    await stopRunningTimer(userId);
 
     const now = new Date();
     const dayStr = format(now, "yyyy-MM-dd");
 
     const entry: SupabaseTimeEntryInsert = {
+      workspace_id: workspaceId,
       user_id: userId,
-      company_id: companyId,
-      employee_id: employeeId,
       task_id: taskId || null,
       task_title_snapshot: taskTitle,
       emoji: emoji || null,
@@ -77,10 +75,10 @@ export async function startTimer(params: {
 }
 
 export async function stopRunningTimer(
-  employeeId: string
+  userId: string
 ): Promise<SupabaseTimeEntry | null> {
   try {
-    const running = await repo.getRunningEntry(employeeId);
+    const running = await repo.getRunningEntry(userId);
     if (!running) return null;
 
     const now = new Date();
@@ -109,10 +107,10 @@ export async function stopRunningTimer(
 }
 
 export async function getRunningEntry(
-  employeeId: string
+  userId: string
 ): Promise<SupabaseTimeEntry | null> {
   try {
-    return await repo.getRunningEntry(employeeId);
+    return await repo.getRunningEntry(userId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TIME_RUNNING_ENTRY_ERROR", "Failed to fetch running entry.");
@@ -120,9 +118,8 @@ export async function getRunningEntry(
 }
 
 export async function logManualEntry(params: {
+  workspaceId: string;
   userId: string;
-  companyId: string;
-  employeeId: string;
   day: string;
   taskId?: string;
   adHocTitle?: string;
@@ -135,9 +132,8 @@ export async function logManualEntry(params: {
   endedAt?: Date;
 }): Promise<SupabaseTimeEntry> {
   const {
+    workspaceId,
     userId,
-    companyId,
-    employeeId,
     day,
     taskId,
     adHocTitle,
@@ -157,8 +153,8 @@ export async function logManualEntry(params: {
     );
   }
 
-  if (!employeeId) {
-    throw AppError.badRequest("TIME_EMPLOYEE_REQUIRED", "Employee ID is required.");
+  if (!userId) {
+    throw AppError.badRequest("TIME_USER_REQUIRED", "User ID is required.");
   }
 
   let finalStartedAt: string | null;
@@ -184,9 +180,8 @@ export async function logManualEntry(params: {
 
   try {
     const entry: SupabaseTimeEntryInsert = {
+      workspace_id: workspaceId,
       user_id: userId,
-      company_id: companyId,
-      employee_id: employeeId,
       task_id: taskId || null,
       task_title_snapshot: adHocTitle || "Untitled Task",
       emoji: emoji || null,
@@ -278,12 +273,12 @@ export async function getEntryById(
 }
 
 export async function getEntriesForDateRange(
-  employeeId: string,
+  userId: string,
   startDay: string,
   endDay: string
 ): Promise<SupabaseTimeEntry[]> {
   try {
-    return await repo.getEntriesForDateRange(employeeId, startDay, endDay);
+    return await repo.getEntriesForDateRange(userId, startDay, endDay);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal(
@@ -294,12 +289,12 @@ export async function getEntriesForDateRange(
 }
 
 export async function getWeeklySummary(
-  employeeId: string,
+  userId: string,
   weekStart: string,
   weekEnd: string
 ) {
   try {
-    const entries = await repo.getEntriesForDateRange(employeeId, weekStart, weekEnd);
+    const entries = await repo.getEntriesForDateRange(userId, weekStart, weekEnd);
 
     const totalSeconds = entries.reduce((sum, e) => sum + e.duration_sec, 0);
     const taskBreakdown = entries.reduce(

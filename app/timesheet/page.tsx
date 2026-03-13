@@ -16,7 +16,7 @@ import TimesheetLoading from "./loading";
 export type DateFilter = "today" | "week" | "month";
 
 export default function TimesheetPage() {
-	const { employeeId } = useRequiredAuth();
+	const { userId } = useRequiredAuth();
 	const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
 	const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 	const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -65,7 +65,7 @@ export default function TimesheetPage() {
 		const endDay = format(dateRangeEnd, "yyyy-MM-dd");
 
 		try {
-			const unsubscribe = subscribeToEntriesByDateRange(employeeId, startDay, endDay, (fetchedEntries) => {
+			const unsubscribe = subscribeToEntriesByDateRange(userId, startDay, endDay, (fetchedEntries) => {
 				setEntries(fetchedEntries);
 				setLoading(false);
 			});

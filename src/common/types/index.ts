@@ -2,13 +2,13 @@ import type { Database } from "./database.types";
 
 // ─── Supabase Types (primary types used throughout the application) ───
 
-export type SupabaseCompany = Database["public"]["Tables"]["companies"]["Row"];
-export type SupabaseCompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
-export type SupabaseCompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
+export type SupabaseWorkspace = Database["public"]["Tables"]["workspaces"]["Row"];
+export type SupabaseWorkspaceInsert = Database["public"]["Tables"]["workspaces"]["Insert"];
+export type SupabaseWorkspaceUpdate = Database["public"]["Tables"]["workspaces"]["Update"];
 
-export type SupabaseEmployee = Database["public"]["Tables"]["employees"]["Row"];
-export type SupabaseEmployeeInsert = Database["public"]["Tables"]["employees"]["Insert"];
-export type SupabaseEmployeeUpdate = Database["public"]["Tables"]["employees"]["Update"];
+export type SupabaseUser = Database["public"]["Tables"]["users"]["Row"];
+export type SupabaseUserInsert = Database["public"]["Tables"]["users"]["Insert"];
+export type SupabaseUserUpdate = Database["public"]["Tables"]["users"]["Update"];
 
 export type SupabaseTask = Database["public"]["Tables"]["tasks"]["Row"];
 export type SupabaseTaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
@@ -27,8 +27,6 @@ export type SupabaseStandupLogInsert = Database["public"]["Tables"]["standup_log
 export type SupabaseTimeEntry = Database["public"]["Tables"]["time_entries"]["Row"];
 export type SupabaseTimeEntryInsert = Database["public"]["Tables"]["time_entries"]["Insert"];
 export type SupabaseTimeEntryUpdate = Database["public"]["Tables"]["time_entries"]["Update"];
-
-export type SupabaseUser = Database["public"]["Tables"]["users"]["Row"];
 
 // ─── Domain Interfaces ───
 
@@ -51,9 +49,15 @@ export interface SatisfactionSummary {
 // ─── Auth Context Types ───
 
 export interface AuthContext {
+  workspaceId: string;
   userId: string;
-  companyId: string;
-  employeeId: string;
+}
+
+// ─── Auth API Response Types ───
+
+export interface AccountInfo {
+  workspaceId: string;
+  workspaceName: string;
 }
 
 // ─── Legacy type aliases (for backward compatibility with components) ───

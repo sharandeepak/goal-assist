@@ -6,69 +6,84 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/common/lib/supabase/client";
-import type { SupabaseEmployee, SupabaseCompany } from "@/common/types";
+import type { SupabaseUser, SupabaseWorkspace } from "@/common/types";
+
+const SELECTED_WORKSPACE_KEY = "goal_assist_selected_workspace_id";
 
 interface AuthState {
-  user: User | null;
-  employee: SupabaseEmployee | null;
-  company: SupabaseCompany | null;
+  authUser: User | null;
+  user: SupabaseUser | null;
+  workspace: SupabaseWorkspace | null;
   isLoading: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  companyId: string | null;
-  employeeId: string | null;
+  workspaceId: string | null;
   userId: string | null;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  switchWorkspace: (workspaceId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
+    authUser: null,
     user: null,
-    employee: null,
-    company: null,
+    workspace: null,
     isLoading: true,
   });
 
+  const signingOutRef = useRef(false);
+  const currentAuthIdRef = useRef<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
   const fetchProfile = useCallback(
-    async (userId: string) => {
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .limit(1)
-        .single();
+    async (authUserId: string) => {
+      currentAuthIdRef.current = authUserId;
 
-      if (!employee) {
+      const selectedWorkspaceId =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem(SELECTED_WORKSPACE_KEY)
+          : null;
+
+      const { data: allUsers } = await supabase
+        .from("users")
+        .select("*")
+        .eq("auth_id", authUserId)
+        .eq("status", "active");
+
+      const users = (allUsers ?? []) as SupabaseUser[];
+      const user = selectedWorkspaceId
+        ? (users.find((u) => u.workspace_id === selectedWorkspaceId) ?? users[0])
+        : users[0];
+
+      if (!user) {
         setState((prev) => ({
           ...prev,
-          employee: null,
-          company: null,
+          user: null,
+          workspace: null,
           isLoading: false,
         }));
         return;
       }
 
-      const { data: company } = await supabase
-        .from("companies")
+      const { data: workspace } = await supabase
+        .from("workspaces")
         .select("*")
-        .eq("id", employee.company_id)
+        .eq("id", user.workspace_id)
         .single();
 
       setState((prev) => ({
         ...prev,
-        employee: employee as SupabaseEmployee,
-        company: company as SupabaseCompany | null,
+        user: user as SupabaseUser,
+        workspace: workspace as SupabaseWorkspace | null,
         isLoading: false,
       }));
     },
@@ -80,12 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setState((prev) => ({ ...prev, user }));
 
       if (user) {
+        setState((prev) => ({ ...prev, authUser: user, isLoading: true }));
         await fetchProfile(user.id);
       } else {
-        setState((prev) => ({ ...prev, isLoading: false }));
+        setState((prev) => ({ ...prev, authUser: null, isLoading: false }));
       }
     };
 
@@ -93,17 +108,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user ?? null;
-      setState((prev) => ({ ...prev, user }));
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (signingOutRef.current) return;
 
-      if (user) {
-        await fetchProfile(user.id);
+      const authUser = session?.user ?? null;
+
+      if (authUser) {
+        // Skip redundant refetch on token refresh if identity hasn't changed
+        if (event === "TOKEN_REFRESHED" && authUser.id === currentAuthIdRef.current) {
+          setState((prev) => ({ ...prev, authUser }));
+          return;
+        }
+        setState((prev) => ({ ...prev, authUser, isLoading: true }));
+        await fetchProfile(authUser.id);
       } else {
+        currentAuthIdRef.current = null;
         setState((prev) => ({
           ...prev,
-          employee: null,
-          company: null,
+          authUser: null,
+          user: null,
+          workspace: null,
           isLoading: false,
         }));
       }
@@ -113,26 +137,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, fetchProfile]);
 
   const signOut = useCallback(async () => {
+    signingOutRef.current = true;
+    setState((prev) => ({ ...prev, isLoading: true }));
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SELECTED_WORKSPACE_KEY);
+    }
     await supabase.auth.signOut();
-    setState({ user: null, employee: null, company: null, isLoading: false });
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {
-    if (state.user) {
-      await fetchProfile(state.user.id);
+    if (state.authUser) {
+      await fetchProfile(state.authUser.id);
     }
-  }, [state.user, fetchProfile]);
+  }, [state.authUser, fetchProfile]);
+
+  const switchWorkspace = useCallback(
+    async (newWorkspaceId: string) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(SELECTED_WORKSPACE_KEY, newWorkspaceId);
+      }
+      if (state.authUser) {
+        await fetchProfile(state.authUser.id);
+      }
+    },
+    [state.authUser, fetchProfile]
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
       ...state,
-      companyId: state.company?.id ?? null,
-      employeeId: state.employee?.id ?? null,
+      workspaceId: state.workspace?.id ?? null,
       userId: state.user?.id ?? null,
       signOut,
       refreshProfile,
+      switchWorkspace,
     }),
-    [state, signOut, refreshProfile]
+    [state, signOut, refreshProfile, switchWorkspace]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -148,14 +188,19 @@ export function useAuth() {
 
 export function useRequiredAuth() {
   const auth = useAuth();
-  if (!auth.userId || !auth.companyId || !auth.employeeId) {
-    throw new Error(
-      "useRequiredAuth requires authenticated user with company and employee"
-    );
+  if (auth.isLoading || !auth.userId || !auth.workspaceId) {
+    return {
+      ...auth,
+      userId: auth.userId ?? "",
+      workspaceId: auth.workspaceId ?? "",
+      isLoading: true as const,
+    } as AuthContextValue & {
+      userId: string;
+      workspaceId: string;
+    };
   }
   return auth as AuthContextValue & {
     userId: string;
-    companyId: string;
-    employeeId: string;
+    workspaceId: string;
   };
 }

@@ -100,7 +100,7 @@ export default function TaskSummary() {
 			)}
 			{tasks.slice(0, 7).map((task, index) => {
 				const aesthetic = taskAesthetics[index % taskAesthetics.length];
-				const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+				const dueDate = task.date ? new Date(task.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
 				
 				return (
 					<div

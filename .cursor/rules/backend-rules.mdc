@@ -7,8 +7,7 @@ alwaysApply: true
 
 ## Core Stack
 - Use **Supabase** for all database operations.
-- Use **Sequelize ORM** for all DB interactions.
-- Repositories must only call the Supabase client via Sequelize.
+- Repositories must only call the Supabase client.
 - No raw queries unless absolutely necessary.
 
 ---
@@ -67,3 +66,11 @@ alwaysApply: true
 - Strict typing — no `any`.
 - All async functions must use `await`.
 - Log errors internally, never expose stack traces to client.
+
+## Database Rules
+- Workspace name is displayed in the UI as "Company Table".
+
+## Security Consideration (Always follow these rules)
+- All data is scoped to the workspace.
+- No data is shared between workspaces.
+- Always ensure RLS is configured correctly for all tables. (In exceptional case where RLS is not possible prompt me properly before proceeding.)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/common/ui/card";
 import { Calendar } from "@/common/ui/calendar";
 import { Badge } from "@/common/ui/badge";
@@ -42,7 +42,7 @@ interface UpcomingDeadline {
 }
 
 export default function SmartCalendarPage() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [date, setDate] = useState<Date | undefined>(new Date());
 	const [selectedDateTasks, setSelectedDateTasks] = useState<Task[]>([]);
 	const [selectedDateMilestones, setSelectedDateMilestones] = useState<Milestone[]>([]);
@@ -90,52 +90,52 @@ export default function SmartCalendarPage() {
 		fetchDataForDate();
 	}, [date]);
 
-	// Fetch upcoming deadlines (run once on mount)
-	useEffect(() => {
-		const fetchUpcoming = async () => {
-			setLoadingUpcoming(true);
-			try {
-				const today = new Date();
-				const nextWeek = addDays(today, 7);
+	const fetchUpcoming = useCallback(async () => {
+		setLoadingUpcoming(true);
+		try {
+			const today = new Date();
+			const nextWeek = addDays(today, 7);
 
-				const [upcomingTasksData, upcomingMilestonesData] = await Promise.all([
-					getTasksByDateRange(startOfDay(today), endOfDay(nextWeek)),
-					getUpcomingActiveMilestones(10),
-				]);
+			const [upcomingTasksData, upcomingMilestonesData] = await Promise.all([
+				getTasksByDateRange(startOfDay(today), endOfDay(nextWeek)),
+				getUpcomingActiveMilestones(10),
+			]);
 
-				const combined: { [key: string]: UpcomingDeadline } = {};
+			const combined: { [key: string]: UpcomingDeadline } = {};
 
-				upcomingTasksData.forEach((task) => {
-					if (task.date) {
-						const dateStr = format(new Date(task.date), "yyyy-MM-dd");
-						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(task.date)), tasks: [], milestones: [] };
-						combined[dateStr].tasks.push(task);
-					}
-				});
+			upcomingTasksData.forEach((task) => {
+				if (task.date) {
+					const dateStr = format(new Date(task.date), "yyyy-MM-dd");
+					if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(task.date)), tasks: [], milestones: [] };
+					combined[dateStr].tasks.push(task);
+				}
+			});
 
-				upcomingMilestonesData.forEach((milestone: Milestone) => {
-					if (milestone.end_date) {
-						const dateStr = format(new Date(milestone.end_date), "yyyy-MM-dd");
-						if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(milestone.end_date)), tasks: [], milestones: [] };
-						combined[dateStr].milestones.push(milestone);
-					}
-				});
+			upcomingMilestonesData.forEach((milestone: Milestone) => {
+				if (milestone.end_date) {
+					const dateStr = format(new Date(milestone.end_date), "yyyy-MM-dd");
+					if (!combined[dateStr]) combined[dateStr] = { date: startOfDay(new Date(milestone.end_date)), tasks: [], milestones: [] };
+					combined[dateStr].milestones.push(milestone);
+				}
+			});
 
-				const sortedUpcoming = Object.values(combined)
-					.sort((a, b) => a.date.getTime() - b.date.getTime())
-					.slice(0, 5);
+			const sortedUpcoming = Object.values(combined)
+				.sort((a, b) => a.date.getTime() - b.date.getTime())
+				.slice(0, 5);
 
-				setUpcomingDeadlines(sortedUpcoming);
-				setError((prev) => (prev === "Failed to load upcoming deadlines." ? null : prev));
-			} catch (err) {
-				console.error("Error fetching upcoming deadlines:", err);
-				setError((prev) => (prev ? prev + " Failed to load upcoming deadlines." : "Failed to load upcoming deadlines."));
-			} finally {
-				setLoadingUpcoming(false);
-			}
-		};
-		fetchUpcoming();
+			setUpcomingDeadlines(sortedUpcoming);
+			setError((prev) => (prev === "Failed to load upcoming deadlines." ? null : prev));
+		} catch (err) {
+			console.error("Error fetching upcoming deadlines:", err);
+			setError((prev) => (prev ? prev + " Failed to load upcoming deadlines." : "Failed to load upcoming deadlines."));
+		} finally {
+			setLoadingUpcoming(false);
+		}
 	}, []);
+
+	useEffect(() => {
+		fetchUpcoming();
+	}, [fetchUpcoming]);
 
 	// --- Dialog Handlers ---
 	const openAddTaskDialog = () => {
@@ -153,9 +153,8 @@ export default function SmartCalendarPage() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			created_at: new Date().toISOString(),
 			tags:
 				formData.tagsString
@@ -166,13 +165,13 @@ export default function SmartCalendarPage() {
 		try {
 			await addTask(taskToAdd);
 			setIsAddTaskDialogOpen(false);
-			// Refetch tasks for the currently selected date to update the UI
 			getTasksForDate(date)
 				.then(setSelectedDateTasks)
 				.catch((err) => {
 					console.error("Error refetching tasks after add:", err);
 					setError("Failed to refresh tasks after adding.");
 				});
+			fetchUpcoming();
 		} catch (err) {
 			console.error("Failed to add task from calendar page:", err);
 			// Propagate the error to the dialog form

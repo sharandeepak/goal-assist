@@ -1,5 +1,7 @@
 import { BaseRepository } from "@/common/repository/base.repository";
 import { createClient } from "@/common/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/common/types/database.types";
 import type {
   SupabaseTimeEntry,
   SupabaseTimeEntryInsert,
@@ -8,8 +10,13 @@ import type {
 import type { TimeRepository } from "./timeRepository";
 import { AppError } from "@/common/errors/AppError";
 
-function getClient() {
-  return createClient();
+let clientInstance: SupabaseClient<Database> | null = null;
+
+function getClient(): SupabaseClient<Database> {
+  if (!clientInstance) {
+    clientInstance = createClient();
+  }
+  return clientInstance;
 }
 
 export class SupabaseTimeRepository
@@ -21,7 +28,7 @@ export class SupabaseTimeRepository
   }
 
   subscribeToEntriesByDateRange(
-    employeeId: string,
+    userId: string,
     startDay: string,
     endDay: string,
     callback: (entries: SupabaseTimeEntry[]) => void
@@ -30,7 +37,7 @@ export class SupabaseTimeRepository
       try {
         const { data, error } = await this.table
           .select("*")
-          .eq("employee_id", employeeId)
+          .eq("user_id", userId)
           .gte("day", startDay)
           .lte("day", endDay)
           .order("started_at", { ascending: false });
@@ -41,18 +48,18 @@ export class SupabaseTimeRepository
       }
     };
     fetchAndCallback();
-    return this.subscribe("*", () => fetchAndCallback(), `employee_id=eq.${employeeId}`);
+    return this.subscribe("*", () => fetchAndCallback(), `user_id=eq.${userId}`);
   }
 
   subscribeToRunningEntry(
-    employeeId: string,
+    userId: string,
     callback: (entry: SupabaseTimeEntry | null) => void
   ): () => void {
     const fetchAndCallback = async () => {
       try {
         const { data, error } = await this.table
           .select("*")
-          .eq("employee_id", employeeId)
+          .eq("user_id", userId)
           .is("ended_at", null)
           .eq("source", "timer")
           .maybeSingle();
@@ -63,18 +70,18 @@ export class SupabaseTimeRepository
       }
     };
     fetchAndCallback();
-    return this.subscribe("*", () => fetchAndCallback(), `employee_id=eq.${employeeId}`);
+    return this.subscribe("*", () => fetchAndCallback(), `user_id=eq.${userId}`);
   }
 
   async getEntriesForDateRange(
-    employeeId: string,
+    userId: string,
     startDay: string,
     endDay: string
   ): Promise<SupabaseTimeEntry[]> {
     try {
       const { data, error } = await this.table
         .select("*")
-        .eq("employee_id", employeeId)
+        .eq("user_id", userId)
         .gte("day", startDay)
         .lte("day", endDay)
         .order("started_at", { ascending: false });
@@ -88,11 +95,11 @@ export class SupabaseTimeRepository
     }
   }
 
-  async getRunningEntry(employeeId: string): Promise<SupabaseTimeEntry | null> {
+  async getRunningEntry(userId: string): Promise<SupabaseTimeEntry | null> {
     try {
       const { data, error } = await this.table
         .select("*")
-        .eq("employee_id", employeeId)
+        .eq("user_id", userId)
         .is("ended_at", null)
         .eq("source", "timer")
         .maybeSingle();
@@ -124,7 +131,7 @@ export class SupabaseTimeRepository
 
   async addEntry(entry: SupabaseTimeEntryInsert): Promise<SupabaseTimeEntry> {
     try {
-      const { data, error } = await this.table.insert(entry).select().single();
+      const { data, error } = await this.table.insert(entry as never).select().single();
       if (error) throw error;
       return data as SupabaseTimeEntry;
     } catch (error) {
@@ -138,7 +145,7 @@ export class SupabaseTimeRepository
   ): Promise<void> {
     try {
       const { data, error } = await this.table
-        .update(fields)
+        .update(fields as never)
         .eq("id", entryId)
         .select("id")
         .maybeSingle();

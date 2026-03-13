@@ -3,9 +3,8 @@ import { getSequelize } from "../config";
 
 interface StandupLogAttributes {
   id: string;
+  workspace_id: string;
   user_id: string;
-  company_id: string;
-  employee_id: string;
   log_date: string;
   completed_items: string[];
   blockers: string[];
@@ -24,9 +23,8 @@ export class StandupLog
   implements StandupLogAttributes
 {
   declare id: string;
+  declare workspace_id: string;
   declare user_id: string;
-  declare company_id: string;
-  declare employee_id: string;
   declare log_date: string;
   declare completed_items: string[];
   declare blockers: string[];
@@ -43,20 +41,15 @@ export function initStandupLogModel(): typeof StandupLog {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+      workspace_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: "workspaces", key: "id" },
+      },
       user_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: { model: "users", key: "id" },
-      },
-      company_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "companies", key: "id" },
-      },
-      employee_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "employees", key: "id" },
       },
       log_date: {
         type: DataTypes.DATEONLY,

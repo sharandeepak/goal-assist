@@ -1,7 +1,7 @@
 import { createClient } from "@/common/lib/supabase/client";
 import { AppError } from "@/common/errors/AppError";
 import { supabaseAuthRepository } from "../repository/supabaseAuthRepository";
-import type { SupabaseCompany, SupabaseEmployee } from "@/common/types";
+import type { SupabaseWorkspace, SupabaseUser, AccountInfo } from "@/common/types";
 
 const authRepo = supabaseAuthRepository;
 
@@ -9,7 +9,8 @@ export async function signUpWithEmail(
   email: string,
   password: string,
   firstName: string,
-  lastName: string
+  lastName: string,
+  workspaceName: string
 ) {
   if (!email || !password) {
     throw AppError.badRequest(
@@ -23,22 +24,39 @@ export async function signUpWithEmail(
       "Password must be at least 8 characters."
     );
   }
+  if (!workspaceName.trim()) {
+    throw AppError.badRequest(
+      "AUTH_MISSING_WORKSPACE",
+      "Workspace name is required."
+    );
+  }
 
   const supabase = createClient();
+  const redirectTo = `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3311"}/auth/callback`;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: redirectTo,
       data: {
         first_name: firstName,
         last_name: lastName,
         full_name: `${firstName} ${lastName}`.trim(),
+        workspace_name: workspaceName.trim(),
       },
     },
   });
 
   if (error) {
     throw AppError.badRequest("AUTH_SIGNUP_ERROR", error.message);
+  }
+
+  if (data.user && data.user.identities?.length === 0) {
+    throw AppError.conflict(
+      "AUTH_EMAIL_EXISTS",
+      "An account already exists with this email. Please sign in."
+    );
   }
 
   return data;
@@ -89,60 +107,96 @@ export async function signOut() {
   }
 }
 
-export async function createCompanyAndEmployee(
-  companyName: string,
-  userId: string,
+export async function createWorkspaceAndUser(
+  workspaceName: string,
+  _authId: string,
   email: string,
   firstName: string,
   lastName: string
-): Promise<{ company: SupabaseCompany; employee: SupabaseEmployee }> {
-  if (!companyName.trim()) {
+): Promise<{ workspace: Pick<SupabaseWorkspace, "id" | "name">; user: Pick<SupabaseUser, "id"> }> {
+  if (!workspaceName.trim()) {
     throw AppError.badRequest(
-      "COMPANY_NAME_REQUIRED",
-      "Company name is required."
+      "WORKSPACE_NAME_REQUIRED",
+      "Workspace name is required."
     );
   }
 
-  const company = await authRepo.createCompany({
-    name: companyName.trim(),
-    creator_id: userId,
-  });
+  const supabase = createClient();
 
-  const employee = await authRepo.createEmployee({
-    company_id: company.id,
-    user_id: userId,
-    first_name: firstName,
-    last_name: lastName || null,
-    email,
-    role: "admin",
-    status: "active",
-  });
-
-  return { company, employee };
-}
-
-export async function inviteEmployees(
-  companyId: string,
-  employees: { firstName: string; lastName: string; email: string }[]
-): Promise<SupabaseEmployee[]> {
-  const validEmployees = employees.filter(
-    (e) => e.email.trim() && e.firstName.trim()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)(
+    "create_workspace_and_user",
+    {
+      p_workspace_name: workspaceName.trim(),
+      p_email: email,
+      p_first_name: firstName,
+      p_last_name: lastName || null,
+    }
   );
 
-  if (validEmployees.length === 0) return [];
+  if (error) {
+    throw AppError.internal("WORKSPACE_CREATE_ERROR", error.message);
+  }
+  if (!data) {
+    throw AppError.internal("WORKSPACE_CREATE_ERROR", "No data returned.");
+  }
 
-  const insertData = validEmployees.map((e) => ({
-    company_id: companyId,
-    first_name: e.firstName.trim(),
-    last_name: e.lastName.trim() || null,
-    email: e.email.trim().toLowerCase(),
+  const result = data as { workspace_id: string; workspace_name: string; user_id: string };
+
+  return {
+    workspace: { id: result.workspace_id, name: result.workspace_name },
+    user: { id: result.user_id },
+  };
+}
+
+export async function inviteUsers(
+  workspaceId: string,
+  users: { firstName: string; lastName: string; email: string }[]
+): Promise<SupabaseUser[]> {
+  const validUsers = users.filter(
+    (u) => u.email.trim() && u.firstName.trim()
+  );
+
+  if (validUsers.length === 0) return [];
+
+  const insertData = validUsers.map((u) => ({
+    workspace_id: workspaceId,
+    first_name: u.firstName.trim(),
+    last_name: u.lastName.trim() || null,
+    email: u.email.trim().toLowerCase(),
     role: "member" as const,
     status: "invited" as const,
   }));
 
-  return authRepo.createEmployeesBatch(insertData);
+  return authRepo.createUsersBatch(insertData);
 }
 
-export async function getEmployeeProfile(userId: string) {
-  return authRepo.getEmployeeByUserId(userId);
+export async function getUserProfile(authId: string, workspaceId?: string) {
+  return authRepo.getUserByAuthId(authId, workspaceId);
+}
+
+export async function getAccountsByEmail(email: string): Promise<AccountInfo[]> {
+  if (!email.trim()) return [];
+
+  try {
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.rpc as any)("get_accounts_by_email", {
+      p_email: email.trim().toLowerCase(),
+    });
+
+    if (error) {
+      console.error("[getAccountsByEmail] RPC error:", error.message);
+      return [];
+    }
+
+    const rows = data as { workspace_id: string; workspace_name: string }[] | null;
+    return (rows ?? []).map((row) => ({
+      workspaceId: row.workspace_id,
+      workspaceName: row.workspace_name,
+    }));
+  } catch (err) {
+    console.error("[getAccountsByEmail] Unexpected error:", err);
+    return [];
+  }
 }

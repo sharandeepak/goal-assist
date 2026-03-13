@@ -48,7 +48,7 @@ function calculateWorkingDays(startDate: Date, endDate: Date): number {
 }
 
 export default function SmartCalendar() {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [date, setDate] = useState<Date | undefined>(new Date());
 	const [selectedDateTasks, setSelectedDateTasks] = useState<Task[]>([]);
 	const [selectedDateMilestones, setSelectedDateMilestones] = useState<Milestone[]>([]);
@@ -113,9 +113,8 @@ export default function SmartCalendar() {
 			completed: false,
 			date: dateToSave,
 			priority: formData.priority!,
+			workspace_id: workspaceId,
 			user_id: userId,
-			company_id: companyId,
-			employee_id: employeeId,
 			tags:
 				formData.tagsString
 					?.split(",")

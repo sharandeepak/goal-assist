@@ -1,11 +1,18 @@
 import { BaseRepository } from "@/common/repository/base.repository";
 import { createClient } from "@/common/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/common/types/database.types";
 import type { SupabaseStandupLog, SupabaseStandupLogInsert } from "@/common/types";
 import type { StandupRepository } from "./standupRepository";
 import { AppError } from "@/common/errors/AppError";
 
-function getClient() {
-  return createClient();
+let clientInstance: SupabaseClient<Database> | null = null;
+
+function getClient(): SupabaseClient<Database> {
+  if (!clientInstance) {
+    clientInstance = createClient();
+  }
+  return clientInstance;
 }
 
 export class SupabaseStandupRepository

@@ -3,9 +3,8 @@ import { getSequelize } from "../config";
 
 interface MilestoneAttributes {
   id: string;
+  workspace_id: string;
   user_id: string;
-  company_id: string;
-  employee_id: string;
   title: string;
   description: string | null;
   progress: number;
@@ -24,9 +23,8 @@ type MilestoneCreationAttributes = Optional<
 
 export class Milestone extends Model<MilestoneAttributes, MilestoneCreationAttributes> implements MilestoneAttributes {
   declare id: string;
+  declare workspace_id: string;
   declare user_id: string;
-  declare company_id: string;
-  declare employee_id: string;
   declare title: string;
   declare description: string | null;
   declare progress: number;
@@ -46,20 +44,15 @@ export function initMilestoneModel(): typeof Milestone {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+      workspace_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: "workspaces", key: "id" },
+      },
       user_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: { model: "users", key: "id" },
-      },
-      company_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "companies", key: "id" },
-      },
-      employee_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "employees", key: "id" },
       },
       title: {
         type: DataTypes.TEXT,

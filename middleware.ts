@@ -1,7 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/auth/signin", "/auth/signup", "/auth/callback"];
+// Routes accessible to unauthenticated users
+const AUTH_ROUTES = [
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/callback",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
+
+// Routes that should NOT redirect away even when logged in
+// (reset-password needs an active session to call updateUser)
+const ALWAYS_ACCESSIBLE_AUTH_ROUTES = ["/auth/reset-password"];
+const ONBOARDING_ROUTE = "/onboarding";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -31,30 +43,54 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
-  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  // Supabase PKCE password-reset links land on the site root with ?code=&next=
+  // Forward them to /auth/callback so the code is exchanged for a session.
+  const pkceCode = searchParams.get("code");
+  if (pkceCode && !pathname.startsWith("/auth/callback")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
 
-  if (!user && !isPublicRoute) {
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isOnboardingRoute = pathname.startsWith(ONBOARDING_ROUTE);
+
+  if (!user && !isAuthRoute && !isOnboardingRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute && pathname !== "/auth/signup") {
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("id, company_id")
-      .eq("user_id", user.id)
+  if (!user && isOnboardingRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/signin";
+    return NextResponse.redirect(url);
+  }
+
+  const isAlwaysAccessible = ALWAYS_ACCESSIBLE_AUTH_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (user && !isAlwaysAccessible && (isAuthRoute || !isOnboardingRoute)) {
+    const { data: userRecord } = await supabase
+      .from("users")
+      .select("id")
+      .eq("auth_id", user.id)
       .eq("status", "active")
       .limit(1)
       .single();
 
-    if (employee) {
+    if (isAuthRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = userRecord ? "/" : "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (!userRecord) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
   }
@@ -64,6 +100,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|target.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|target.svg|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

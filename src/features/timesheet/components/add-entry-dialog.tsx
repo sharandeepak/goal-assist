@@ -26,7 +26,7 @@ interface AddEntryDialogProps {
 }
 
 export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, editingEntry }: AddEntryDialogProps) {
-	const { userId, companyId, employeeId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [taskTitle, setTaskTitle] = useState("");
 	const [hours, setHours] = useState("");
 	const [minutes, setMinutes] = useState("");
@@ -126,8 +126,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
 							userId,
-							companyId,
-							employeeId,
+							workspaceId,
 							day: dayStr,
 							adHocTitle: taskTitle.trim(),
 							emoji: emoji || undefined,
@@ -161,8 +160,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 						const dayStr = format(selectedDay, "yyyy-MM-dd");
 						await logManualEntry({
 							userId,
-							companyId,
-							employeeId,
+							workspaceId,
 							day: dayStr,
 							adHocTitle: taskTitle.trim(),
 							emoji: emoji || undefined,

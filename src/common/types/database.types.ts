@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      companies: {
+      workspaces: {
         Row: {
           id: string;
           name: string;
@@ -29,12 +29,13 @@ export interface Database {
           creator_id?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
-      employees: {
+      users: {
         Row: {
           id: string;
-          company_id: string;
-          user_id: string | null;
+          workspace_id: string;
+          auth_id: string | null;
           first_name: string;
           last_name: string | null;
           email: string;
@@ -45,8 +46,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          company_id: string;
-          user_id?: string | null;
+          workspace_id: string;
+          auth_id?: string | null;
           first_name: string;
           last_name?: string | null;
           email: string;
@@ -56,8 +57,8 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
-          company_id?: string;
-          user_id?: string | null;
+          workspace_id?: string;
+          auth_id?: string | null;
           first_name?: string;
           last_name?: string | null;
           email?: string;
@@ -65,38 +66,21 @@ export interface Database {
           status?: "invited" | "active";
           updated_at?: string;
         };
-      };
-      users: {
-        Row: {
-          id: string;
-          email: string;
-          full_name: string | null;
-          avatar_url: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          updated_at?: string;
-        };
+        Relationships: [
+          {
+            foreignKeyName: "users_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       tasks: {
         Row: {
           id: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           title: string;
           completed: boolean;
           date: string | null;
@@ -110,9 +94,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           title: string;
           completed?: boolean;
           date?: string | null;
@@ -125,9 +108,8 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          workspace_id?: string;
           user_id?: string;
-          company_id?: string;
-          employee_id?: string;
           title?: string;
           completed?: boolean;
           date?: string | null;
@@ -138,13 +120,28 @@ export interface Database {
           milestone_id?: string | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "tasks_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tasks_milestone_id_fkey";
+            columns: ["milestone_id"];
+            isOneToOne: false;
+            referencedRelation: "milestones";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       milestones: {
         Row: {
           id: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           title: string;
           description: string | null;
           progress: number;
@@ -157,9 +154,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           title: string;
           description?: string | null;
           progress?: number;
@@ -171,9 +167,8 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          workspace_id?: string;
           user_id?: string;
-          company_id?: string;
-          employee_id?: string;
           title?: string;
           description?: string | null;
           progress?: number;
@@ -183,13 +178,21 @@ export interface Database {
           end_date?: string | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "milestones_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       satisfaction_logs: {
         Row: {
           id: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           log_date: string;
           score: number;
           notes: string | null;
@@ -197,29 +200,35 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           log_date: string;
           score: number;
           notes?: string | null;
           created_at?: string;
         };
         Update: {
+          workspace_id?: string;
           user_id?: string;
-          company_id?: string;
-          employee_id?: string;
           log_date?: string;
           score?: number;
           notes?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "satisfaction_logs_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       standup_logs: {
         Row: {
           id: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           log_date: string;
           completed_items: string[];
           blockers: string[];
@@ -229,9 +238,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           log_date: string;
           completed_items?: string[];
           blockers?: string[];
@@ -240,22 +248,29 @@ export interface Database {
           created_at?: string;
         };
         Update: {
+          workspace_id?: string;
           user_id?: string;
-          company_id?: string;
-          employee_id?: string;
           log_date?: string;
           completed_items?: string[];
           blockers?: string[];
           planned_items?: string[];
           notes?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "standup_logs_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       time_entries: {
         Row: {
           id: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           task_id: string | null;
           task_title_snapshot: string;
           emoji: string | null;
@@ -272,9 +287,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          workspace_id: string;
           user_id: string;
-          company_id: string;
-          employee_id: string;
           task_id?: string | null;
           task_title_snapshot: string;
           emoji?: string | null;
@@ -290,9 +304,8 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          workspace_id?: string;
           user_id?: string;
-          company_id?: string;
-          employee_id?: string;
           task_id?: string | null;
           task_title_snapshot?: string;
           emoji?: string | null;
@@ -306,10 +319,42 @@ export interface Database {
           day?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_accounts_by_email: {
+        Args: { p_email: string };
+        Returns: { workspace_id: string; workspace_name: string }[];
+      };
+      get_workspace_count_for_auth_user: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      create_workspace_and_user: {
+        Args: {
+          p_workspace_name: string;
+          p_email: string;
+          p_first_name: string;
+          p_last_name?: string;
+        };
+        Returns: {
+          workspace_id: string;
+          workspace_name: string;
+          user_id: string;
+        };
+      };
+    };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

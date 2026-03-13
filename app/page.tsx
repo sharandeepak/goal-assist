@@ -1,38 +1,24 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getTodaysTaskSummary } from "@/features/tasks/services/taskService";
-import { getPageMilestoneSummary } from "@/features/milestones/services/milestoneService";
-import { getSatisfactionSummary } from "@/features/satisfaction/services/satisfactionService";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowTrendUp, faPlus, faVideo, faArrowUpRightFromSquare, faEllipsis, faPlay, faStop } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 
 import SatisfactionCalendar from "@/features/satisfaction/components/satisfaction-calendar";
 import TaskSummary from "@/features/tasks/components/task-summary";
-import GlobalTimer from "@/features/timesheet/components/global-timer";
+import WorkspaceSwitcher from "@/features/workspace/components/workspace-switcher";
 
 export default function DashboardPage() {
-	const { data: summaryData, isLoading } = useQuery({
-		queryKey: ["dashboardSummary"],
-		queryFn: async () => {
-			const [tasks, milestones, satisfaction] = await Promise.all([
-				getTodaysTaskSummary(),
-				getPageMilestoneSummary(),
-				getSatisfactionSummary(),
-			]);
-			return { tasks, milestones, satisfaction };
-		},
-	});
-
 	return (
 		<div className="flex-1 space-y-6 max-w-7xl mx-auto w-full">
 			{/* Header */}
 			<header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-				<div>
-					<h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
-					<p className="text-muted-foreground font-body mt-1 text-sm">Plan, prioritize, and accomplish your tasks with ease.</p>
+				<div className="flex flex-col gap-3">
+					<WorkspaceSwitcher />
+					<div>
+						<h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
+						<p className="text-muted-foreground font-body mt-1 text-sm">Plan, prioritize, and accomplish your tasks with ease.</p>
+					</div>
 				</div>
 				<div className="flex items-center gap-3">
 					<Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5">

@@ -27,7 +27,7 @@ styles/       Tailwind style objects (exported constants, not inline)
 ```
 
 ## Key Shared Files
-- `src/common/types/index.ts` — All domain types (`SupabaseTask`, `SupabaseMilestone`, `SupabaseEmployee`, `SupabaseCompany`, `AuthContext`, etc.)
+- `src/common/types/index.ts` — All domain types (`SupabaseTask`, `SupabaseMilestone`, `SupabaseUser`, `SupabaseWorkspace`, `AuthContext`, etc.)
 - `src/common/errors/AppError.ts` — Central error class (see below)
 - `src/common/providers/auth-provider.tsx` — `useAuth()` / `useRequiredAuth()`
 - `src/common/lib/supabase/client.ts` — Browser Supabase client
@@ -49,14 +49,14 @@ throw AppError.internal("FEATURE_X_ERROR", "Friendly message.");
 
 ## Auth Pattern
 ```ts
-const { userId, companyId, employeeId } = useRequiredAuth();
-// All data is scoped to companyId via Supabase RLS policies.
+const { userId, workspaceId } = useRequiredAuth();
+// All data is scoped to workspaceId via Supabase RLS policies.
 ```
 
 ## Middleware Rules (`middleware.ts`)
 1. No session → redirect to `/auth/signin`
-2. Session but no active employee record → redirect to `/onboarding`
-3. Session + employee → allow through to app routes
+2. Session but no active user record → redirect to `/onboarding`
+3. Session + user → allow through to app routes
 
 ## Path Aliases
 `@/` maps to the project root. Use `@/common/…`, `@/features/…`, never `../../../`.

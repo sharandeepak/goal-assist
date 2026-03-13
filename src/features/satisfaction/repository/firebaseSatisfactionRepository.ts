@@ -15,11 +15,12 @@ import {
 } from "firebase/firestore";
 import type { SatisfactionLog, SatisfactionSummary } from "@/common/types";
 import type { Unsubscribe } from "@/common/repository/types";
-import type { SatisfactionRepository, SatisfactionEntry } from "./satisfactionRepository";
+import type { SatisfactionEntry } from "./satisfactionRepository";
 
 const COLLECTION = "satisfaction_logs";
 
-export class FirebaseSatisfactionRepository implements SatisfactionRepository {
+/** @deprecated Legacy Firebase implementation — not used. Supabase is the active backend. */
+export class FirebaseSatisfactionRepository {
 	subscribeToRecentLogs(
 		limitCount: number,
 		callback: (logs: SatisfactionLog[]) => void,
@@ -85,12 +86,13 @@ export class FirebaseSatisfactionRepository implements SatisfactionRepository {
 		return unsubscribe;
 	}
 
-	async addSatisfactionEntry(logData: Omit<SatisfactionLog, "id">): Promise<string> {
+	async addSatisfactionEntry(logData: Record<string, unknown>): Promise<string> {
 		const logsCollection = collection(db, COLLECTION);
+		const rawDate = logData.date ?? logData.log_date;
 		const dataToAdd = {
 			...logData,
-			date: logData.date instanceof Timestamp ? logData.date : Timestamp.fromDate(new Date(logData.date)),
-			notes: logData.notes ?? "",
+			date: rawDate instanceof Timestamp ? rawDate : Timestamp.fromDate(new Date(rawDate as string)),
+			notes: (logData.notes as string) ?? "",
 		};
 		const docRef = await addDoc(logsCollection, dataToAdd);
 		return docRef.id;
@@ -113,9 +115,10 @@ export class FirebaseSatisfactionRepository implements SatisfactionRepository {
 		);
 
 		const querySnapshot = await getDocs(q);
+		const entryDate = entryData.date;
 		const dataToSave = {
 			...entryData,
-			date: entryData.date instanceof Timestamp ? entryData.date : Timestamp.fromDate(new Date(entryData.date)),
+			date: entryDate instanceof Timestamp ? entryDate : Timestamp.fromDate(new Date(entryDate as string)),
 		};
 
 		if (!querySnapshot.empty) {

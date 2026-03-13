@@ -3,9 +3,8 @@ import { getSequelize } from "../config";
 
 interface TaskAttributes {
   id: string;
+  workspace_id: string;
   user_id: string;
-  company_id: string;
-  employee_id: string;
   title: string;
   completed: boolean;
   date: Date | null;
@@ -25,9 +24,8 @@ type TaskCreationAttributes = Optional<
 
 export class Task extends Model<TaskAttributes, TaskCreationAttributes> implements TaskAttributes {
   declare id: string;
+  declare workspace_id: string;
   declare user_id: string;
-  declare company_id: string;
-  declare employee_id: string;
   declare title: string;
   declare completed: boolean;
   declare date: Date | null;
@@ -48,20 +46,15 @@ export function initTaskModel(): typeof Task {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+      workspace_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: "workspaces", key: "id" },
+      },
       user_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: { model: "users", key: "id" },
-      },
-      company_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "companies", key: "id" },
-      },
-      employee_id: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: { model: "employees", key: "id" },
       },
       title: {
         type: DataTypes.TEXT,
