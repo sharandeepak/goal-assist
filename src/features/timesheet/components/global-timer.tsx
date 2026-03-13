@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/common/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faSquare, faClock, faSmile } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
-import EmojiPicker from "emoji-picker-react";
 import { startTimer, stopRunningTimer, subscribeToRunningEntry } from "@/features/timesheet/services/timeService";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { TimeEntry } from "@/common/types";
@@ -14,6 +14,10 @@ import { Input } from "@/common/ui/input";
 import { Label } from "@/common/ui/label";
 import { Textarea } from "@/common/ui/textarea";
 import { styles } from "../styles/GlobalTimer.styles";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
+	ssr: false,
+});
 
 export default function GlobalTimer() {
 	const { userId, workspaceId } = useRequiredAuth();
@@ -38,6 +42,20 @@ export default function GlobalTimer() {
 		return () => unsubscribe();
 	}, [userId]);
 
+	useEffect(() => {
+		if (runningEntry) return;
+		if (typeof window === "undefined") return;
+
+		const url = new URL(window.location.href);
+		if (url.searchParams.get("action") !== "start-timer") return;
+
+		setIsStartDialogOpen(true);
+
+		url.searchParams.delete("action");
+		const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+		window.history.replaceState({}, "", nextUrl);
+	}, [runningEntry]);
+
 	// Update elapsed time every second
 	useEffect(() => {
 		if (!runningEntry) {
@@ -47,7 +65,11 @@ export default function GlobalTimer() {
 
 		const interval = setInterval(() => {
 			const now = new Date();
-			const startDate = runningEntry?.created_at ? new Date(runningEntry.created_at) : null;
+			const startDate = runningEntry?.started_at
+				? new Date(runningEntry.started_at)
+				: runningEntry?.created_at
+					? new Date(runningEntry.created_at)
+					: null;
 			const elapsed = startDate ? Math.floor((now.getTime() - startDate.getTime()) / 1000) : 0;
 			setElapsedSeconds(elapsed);
 		}, 1000);

@@ -3,11 +3,11 @@
 ## 🌟 Features
 
 ### 📊 Dashboard
-- **Task Overview**: Track daily task completion with completion ratios
-- **Milestone Progress**: Monitor active milestones and progress tracking
-- **Satisfaction Metrics**: Daily mood/satisfaction scoring with trend analysis
-- **Smart Calendar**: Intelligent scheduling and deadline management
-- **Standup Summaries**: Recent progress and blocker tracking
+- **Today Focus**: Workspace-aware focus statement and quick actions (Add Task, Add Milestone, Start Timer, Log Mood)
+- **Real KPI Row**: Task completion, active milestones + nearest deadline, mood delta, and focus time
+- **Insight Panels**: Overdue tasks, upcoming milestone deadlines, and recent standup blockers/notes
+- **Execution Widgets**: Today task list with toggle completion, live timer state, and lightweight mood logging
+- **Progressive Mood Experience**: Quick mood logging by default with full mood calendar on demand
 
 ### 📝 Daily Planning
 - **Day Planner**: Organize tasks with priorities and tags
@@ -35,12 +35,18 @@
 - **Browser Notifications**: Scheduled reminders for daily logging
 - **Account Management**: Secure data deletion with confirmation
 
+## 🧱 Stack
+- **Framework**: Next.js 15 App Router + React 19 + TypeScript
+- **Database/Auth**: Supabase (PostgreSQL + RLS + SSR auth cookies)
+- **UI**: shadcn/ui + Tailwind CSS + Radix UI
+- **State & Forms**: TanStack React Query + React Hook Form + Zod
+
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ and pnpm
-- Firebase CLI
-- Firebase project with Firestore enabled
+- Node.js 18+ and npm
+- Supabase project
+- Supabase CLI (for migrations/db workflows)
 
 ## 🎯 Usage
 

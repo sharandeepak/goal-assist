@@ -27,6 +27,27 @@ export const subscribeToRecentStandups = (
   return repository.subscribeToRecentStandups(2, callback, onError);
 };
 
+export const getRecentStandups = async (
+  limit: number = 2
+): Promise<SupabaseStandupLog[]> => {
+  if (limit <= 0) {
+    throw AppError.badRequest(
+      "STANDUP_LIMIT_INVALID",
+      "Standup fetch limit must be greater than zero."
+    );
+  }
+
+  try {
+    return await repository.getRecentStandups(limit);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal(
+      "STANDUP_FETCH_RECENT_ERROR",
+      "Failed to fetch recent standup logs."
+    );
+  }
+};
+
 export const addStandupLog = async (
   logData: SupabaseStandupLogInsert
 ): Promise<SupabaseStandupLog> => {

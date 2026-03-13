@@ -7,6 +7,8 @@ export interface StandupRepository {
     onError: (error: Error) => void
   ): () => void;
 
+  getRecentStandups(limit: number): Promise<SupabaseStandupLog[]>;
+
   addStandupLog(logData: SupabaseStandupLogInsert): Promise<SupabaseStandupLog>;
 
   deleteAllStandupLogs(): Promise<void>;

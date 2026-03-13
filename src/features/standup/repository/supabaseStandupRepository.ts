@@ -47,6 +47,23 @@ export class SupabaseStandupRepository
     });
   }
 
+  async getRecentStandups(limit: number): Promise<SupabaseStandupLog[]> {
+    try {
+      const { data, error } = await this.table
+        .select("*")
+        .order("log_date", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data ?? []) as SupabaseStandupLog[];
+    } catch (error) {
+      throw AppError.internal(
+        "STANDUP_FETCH_RECENT_ERROR",
+        "Failed to fetch recent standup logs."
+      );
+    }
+  }
+
   async addStandupLog(logData: SupabaseStandupLogInsert): Promise<SupabaseStandupLog> {
     try {
       const { data, error } = await this.table
