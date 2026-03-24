@@ -20,6 +20,7 @@ interface AuthState {
   user: SupabaseUser | null;
   workspace: SupabaseWorkspace | null;
   isLoading: boolean;
+  error: string | null;
 }
 
 interface AuthContextValue extends AuthState {
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     workspace: null,
     isLoading: true,
+    error: null,
   });
 
   const signingOutRef = useRef(false);
@@ -46,61 +48,114 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = useCallback(
     async (authUserId: string) => {
-      currentAuthIdRef.current = authUserId;
+      try {
+        currentAuthIdRef.current = authUserId;
 
-      const selectedWorkspaceId =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem(SELECTED_WORKSPACE_KEY)
-          : null;
+        const selectedWorkspaceId =
+          typeof window !== "undefined"
+            ? window.localStorage.getItem(SELECTED_WORKSPACE_KEY)
+            : null;
 
-      const { data: allUsers } = await supabase
-        .from("users")
-        .select("*")
-        .eq("auth_id", authUserId)
-        .eq("status", "active");
+        const { data: allUsers, error: usersError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("auth_id", authUserId)
+          .eq("status", "active");
 
-      const users = (allUsers ?? []) as SupabaseUser[];
-      const user = selectedWorkspaceId
-        ? (users.find((u) => u.workspace_id === selectedWorkspaceId) ?? users[0])
-        : users[0];
+        if (usersError) {
+          console.error("Failed to fetch user profiles:", usersError.message);
+          setState((prev) => ({
+            ...prev,
+            user: null,
+            workspace: null,
+            isLoading: false,
+            error: "Failed to load profile.",
+          }));
+          return;
+        }
 
-      if (!user) {
+        const users = (allUsers ?? []) as SupabaseUser[];
+        const user = selectedWorkspaceId
+          ? (users.find((u) => u.workspace_id === selectedWorkspaceId) ?? users[0])
+          : users[0];
+
+        if (!user) {
+          setState((prev) => ({
+            ...prev,
+            user: null,
+            workspace: null,
+            isLoading: false,
+            error: null,
+          }));
+          return;
+        }
+
+        const { data: workspace, error: workspaceError } = await supabase
+          .from("workspaces")
+          .select("*")
+          .eq("id", user.workspace_id)
+          .maybeSingle();
+
+        if (workspaceError) {
+          console.error("Failed to fetch workspace:", workspaceError.message);
+        }
+
+        setState((prev) => ({
+          ...prev,
+          user: user as SupabaseUser,
+          workspace: (workspace as SupabaseWorkspace) ?? null,
+          isLoading: false,
+          error: workspaceError ? "Failed to load workspace." : null,
+        }));
+      } catch (err) {
+        console.error("Unexpected error in fetchProfile:", err);
         setState((prev) => ({
           ...prev,
           user: null,
           workspace: null,
           isLoading: false,
+          error: "An unexpected error occurred while loading your profile.",
         }));
-        return;
       }
-
-      const { data: workspace } = await supabase
-        .from("workspaces")
-        .select("*")
-        .eq("id", user.workspace_id)
-        .single();
-
-      setState((prev) => ({
-        ...prev,
-        user: user as SupabaseUser,
-        workspace: workspace as SupabaseWorkspace | null,
-        isLoading: false,
-      }));
     },
     [supabase]
   );
 
   useEffect(() => {
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: getUserError,
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        setState((prev) => ({ ...prev, authUser: user, isLoading: true }));
-        await fetchProfile(user.id);
-      } else {
-        setState((prev) => ({ ...prev, authUser: null, isLoading: false }));
+        if (getUserError) {
+          console.error("Failed to get auth user:", getUserError.message);
+          setState((prev) => ({
+            ...prev,
+            authUser: null,
+            isLoading: false,
+            error: null,
+          }));
+          return;
+        }
+
+        if (user) {
+          setState((prev) => ({ ...prev, authUser: user, isLoading: true, error: null }));
+          await fetchProfile(user.id);
+        } else {
+          setState((prev) => ({ ...prev, authUser: null, isLoading: false, error: null }));
+        }
+      } catch (err) {
+        console.error("Unexpected error during auth init:", err);
+        setState((prev) => ({
+          ...prev,
+          authUser: null,
+          user: null,
+          workspace: null,
+          isLoading: false,
+          error: "Failed to initialize authentication.",
+        }));
       }
     };
 
@@ -113,22 +168,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const authUser = session?.user ?? null;
 
-      if (authUser) {
-        // Skip redundant refetch on token refresh if identity hasn't changed
-        if (event === "TOKEN_REFRESHED" && authUser.id === currentAuthIdRef.current) {
-          setState((prev) => ({ ...prev, authUser }));
-          return;
+      try {
+        if (authUser) {
+          if (event === "TOKEN_REFRESHED" && authUser.id === currentAuthIdRef.current) {
+            setState((prev) => ({ ...prev, authUser }));
+            return;
+          }
+          setState((prev) => ({ ...prev, authUser, isLoading: true, error: null }));
+          await fetchProfile(authUser.id);
+        } else {
+          currentAuthIdRef.current = null;
+          setState((prev) => ({
+            ...prev,
+            authUser: null,
+            user: null,
+            workspace: null,
+            isLoading: false,
+            error: null,
+          }));
         }
-        setState((prev) => ({ ...prev, authUser, isLoading: true }));
-        await fetchProfile(authUser.id);
-      } else {
-        currentAuthIdRef.current = null;
+      } catch (err) {
+        console.error("Error in onAuthStateChange:", err);
         setState((prev) => ({
           ...prev,
-          authUser: null,
-          user: null,
-          workspace: null,
           isLoading: false,
+          error: "Failed to refresh session.",
         }));
       }
     });
