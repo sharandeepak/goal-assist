@@ -86,15 +86,21 @@ function DayPlannerContent() {
 	const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
 	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
+	const [activeTab, setActiveTab] = useState<string>("today");
+
 	const todayStart = startOfDay(new Date());
 	const todayEnd = endOfDay(new Date());
 	const tomorrowStart = startOfDay(addDays(new Date(), 1));
 	const upcomingEnd = endOfDay(addDays(new Date(), 7));
-	const allTasksStartDate = new Date(0);
-	const allTasksEndDate = new Date(new Date().setFullYear(new Date().getFullYear() + 100));
+	const allTasksStartDate = startOfDay(addDays(new Date(), -365));
+	const allTasksEndDate = endOfDay(addDays(new Date(), 365));
 
 	const searchParams = useSearchParams();
 	const initialTab = searchParams?.get("tab") || "today";
+
+	useEffect(() => {
+		if (initialTab) setActiveTab(initialTab);
+	}, [initialTab]);
 
 	useEffect(() => {
 		if (searchParams?.get("action") === "add") {
@@ -141,6 +147,7 @@ function DayPlannerContent() {
 	}, []);
 
 	useEffect(() => {
+		if (activeTab !== "all") return;
 		setLoadingAll(true);
 		const unsubscribe = subscribeToTasksByDateRange(
 			allTasksStartDate,
@@ -157,7 +164,7 @@ function DayPlannerContent() {
 			}
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [activeTab]);
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		try {
@@ -351,7 +358,7 @@ function DayPlannerContent() {
 				</Card>
 			)}
 
-			<Tabs defaultValue={initialTab} className="space-y-4">
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="today">Today</TabsTrigger>
 					<TabsTrigger value="upcoming">Upcoming (Next 7 Days)</TabsTrigger>

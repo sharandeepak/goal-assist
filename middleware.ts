@@ -73,26 +73,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  if (user && !isAlwaysAccessible && (isAuthRoute || !isOnboardingRoute)) {
-    const { data: userRecord } = await supabase
-      .from("users")
-      .select("id")
-      .eq("auth_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .single();
-
-    if (isAuthRoute) {
-      const url = request.nextUrl.clone();
-      url.pathname = userRecord ? "/" : "/onboarding";
-      return NextResponse.redirect(url);
-    }
-
-    if (!userRecord) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
+  if (user && isAuthRoute && !isAlwaysAccessible) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

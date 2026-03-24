@@ -7,8 +7,6 @@ import AppShell from "@/common/components/app-shell";
 import { ThemeProvider } from "@/common/providers/theme-provider";
 import { QueryProvider } from "@/common/providers/query-provider";
 import { AuthProvider } from "@/common/providers/auth-provider";
-import { StagewiseToolbar } from "@stagewise/toolbar-next";
-import { ReactPlugin } from "@stagewise-plugins/react";
 
 const plusJakarta = Plus_Jakarta_Sans({
 	subsets: ["latin"],
@@ -72,7 +70,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<QueryProvider>
 					<ThemeProvider attribute="class" defaultTheme="bento-sage-dark" enableSystem themes={themes}>
 						<AuthProvider>
-							<StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
 							<NavigationProgress />
 							<AppShell>{children}</AppShell>
 						</AuthProvider>

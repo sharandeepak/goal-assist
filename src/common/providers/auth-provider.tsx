@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/common/lib/supabase/client";
 import type { SupabaseUser, SupabaseWorkspace } from "@/common/types";
@@ -45,6 +46,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signingOutRef = useRef(false);
   const currentAuthIdRef = useRef<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Redirect to onboarding if authenticated but no user record
+  useEffect(() => {
+    if (
+      !state.isLoading &&
+      state.authUser &&
+      !state.user &&
+      !pathname.startsWith("/onboarding") &&
+      !pathname.startsWith("/auth")
+    ) {
+      router.replace("/onboarding");
+    }
+  }, [state.isLoading, state.authUser, state.user, pathname, router]);
 
   const fetchProfile = useCallback(
     async (authUserId: string) => {
@@ -90,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // Fetch workspace in parallel with setting user state
         const { data: workspace, error: workspaceError } = await supabase
           .from("workspaces")
           .select("*")
