@@ -29,6 +29,7 @@ export class SupabaseTimeRepository
 
   subscribeToEntriesByDateRange(
     userId: string,
+    workspaceId: string,
     startDay: string,
     endDay: string,
     callback: (entries: SupabaseTimeEntry[]) => void
@@ -38,6 +39,7 @@ export class SupabaseTimeRepository
         const { data, error } = await this.table
           .select("*")
           .eq("user_id", userId)
+          .eq("workspace_id", workspaceId)
           .gte("day", startDay)
           .lte("day", endDay)
           .order("started_at", { ascending: false });
@@ -53,6 +55,7 @@ export class SupabaseTimeRepository
 
   subscribeToRunningEntry(
     userId: string,
+    workspaceId: string,
     callback: (entry: SupabaseTimeEntry | null) => void
   ): () => void {
     const fetchAndCallback = async () => {
@@ -60,6 +63,7 @@ export class SupabaseTimeRepository
         const { data, error } = await this.table
           .select("*")
           .eq("user_id", userId)
+          .eq("workspace_id", workspaceId)
           .is("ended_at", null)
           .eq("source", "timer")
           .maybeSingle();
@@ -75,6 +79,7 @@ export class SupabaseTimeRepository
 
   async getEntriesForDateRange(
     userId: string,
+    workspaceId: string,
     startDay: string,
     endDay: string
   ): Promise<SupabaseTimeEntry[]> {
@@ -82,6 +87,7 @@ export class SupabaseTimeRepository
       const { data, error } = await this.table
         .select("*")
         .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
         .gte("day", startDay)
         .lte("day", endDay)
         .order("started_at", { ascending: false });
@@ -95,11 +101,12 @@ export class SupabaseTimeRepository
     }
   }
 
-  async getRunningEntry(userId: string): Promise<SupabaseTimeEntry | null> {
+  async getRunningEntry(userId: string, workspaceId: string): Promise<SupabaseTimeEntry | null> {
     try {
       const { data, error } = await this.table
         .select("*")
         .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
         .is("ended_at", null)
         .eq("source", "timer")
         .maybeSingle();
@@ -113,10 +120,11 @@ export class SupabaseTimeRepository
     }
   }
 
-  async getEntryById(entryId: string): Promise<SupabaseTimeEntry | null> {
+  async getEntryById(entryId: string, workspaceId: string): Promise<SupabaseTimeEntry | null> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("id", entryId)
         .maybeSingle();
       if (error) throw error;

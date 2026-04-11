@@ -3,6 +3,7 @@ import type { SupabaseTimeEntry, SupabaseTimeEntryInsert, SupabaseTimeEntryUpdat
 export interface TimeRepository {
   subscribeToEntriesByDateRange(
     userId: string,
+    workspaceId: string,
     startDay: string,
     endDay: string,
     callback: (entries: SupabaseTimeEntry[]) => void
@@ -10,6 +11,7 @@ export interface TimeRepository {
 
   subscribeToRunningEntry(
     userId: string,
+    workspaceId: string,
     callback: (entry: SupabaseTimeEntry | null) => void
   ): () => void;
 
@@ -19,13 +21,14 @@ export interface TimeRepository {
 
   deleteEntry(entryId: string): Promise<void>;
 
-  getEntryById(entryId: string): Promise<SupabaseTimeEntry | null>;
+  getEntryById(entryId: string, workspaceId: string): Promise<SupabaseTimeEntry | null>;
 
   getEntriesForDateRange(
     userId: string,
+    workspaceId: string,
     startDay: string,
     endDay: string
   ): Promise<SupabaseTimeEntry[]>;
 
-  getRunningEntry(userId: string): Promise<SupabaseTimeEntry | null>;
+  getRunningEntry(userId: string, workspaceId: string): Promise<SupabaseTimeEntry | null>;
 }

@@ -109,8 +109,10 @@ function DayPlannerContent() {
 	}, [searchParams]);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingToday(true);
 		const unsubscribe = subscribeToTasksByDateRange(
+			workspaceId,
 			todayStart,
 			todayEnd,
 			(fetchedTasks) => {
@@ -125,11 +127,13 @@ function DayPlannerContent() {
 			}
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingUpcoming(true);
 		const unsubscribe = subscribeToTasksByDateRange(
+			workspaceId,
 			tomorrowStart,
 			upcomingEnd,
 			(fetchedTasks) => {
@@ -144,12 +148,14 @@ function DayPlannerContent() {
 			}
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
 		if (activeTab !== "all") return;
+		if (!workspaceId) return;
 		setLoadingAll(true);
 		const unsubscribe = subscribeToTasksByDateRange(
+			workspaceId,
 			allTasksStartDate,
 			allTasksEndDate,
 			(fetchedTasks) => {
@@ -164,11 +170,11 @@ function DayPlannerContent() {
 			}
 		);
 		return () => unsubscribe();
-	}, [activeTab]);
+	}, [activeTab, workspaceId]);
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		try {
-			await updateTaskCompletion(taskId, !currentCompleted, undefined);
+			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
 		} catch (err) {
 			console.error("Failed to update task completion:", err);
 			setError("Failed to update task status.");
@@ -178,7 +184,7 @@ function DayPlannerContent() {
 	const handleDeleteTask = async (taskId: string) => {
 		if (!confirm("Are you sure you want to delete this task?")) return;
 		try {
-			await deleteTask(taskId, undefined);
+			await deleteTask(taskId, workspaceId, undefined);
 		} catch (err) {
 			console.error("Failed to delete task:", err);
 			setError("Failed to delete task.");

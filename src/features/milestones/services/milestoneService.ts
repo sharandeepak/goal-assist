@@ -12,18 +12,21 @@ export interface MilestoneProgressData extends SupabaseMilestone {
 }
 
 export const subscribeToMilestonesByStatus = (
+  workspaceId: string,
   status: SupabaseMilestone["status"],
   callback: (milestones: SupabaseMilestone[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return repository.subscribeToMilestonesByStatus(status, callback, onError);
+  return repository.subscribeToMilestonesByStatus(workspaceId, status, callback, onError);
 };
 
 export const subscribeToActiveMilestonesProgress = (
+  workspaceId: string,
   callback: (milestones: MilestoneProgressData[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
   return repository.subscribeToActiveMilestonesProgress(
+    workspaceId,
     (milestones) => {
       const withDaysLeft: MilestoneProgressData[] = milestones.map((m) => ({
         ...m,
@@ -35,36 +38,36 @@ export const subscribeToActiveMilestonesProgress = (
   );
 };
 
-export const getPageMilestoneSummary = async (): Promise<MilestonePageSummaryData> => {
+export const getPageMilestoneSummary = async (workspaceId: string): Promise<MilestonePageSummaryData> => {
   try {
-    return await repository.getPageMilestoneSummary();
+    return await repository.getPageMilestoneSummary(workspaceId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("MILESTONE_SUMMARY_ERROR", "Failed to fetch milestone summary.");
   }
 };
 
-export const getNextActiveMilestone = async (date: Date): Promise<SupabaseMilestone | null> => {
+export const getNextActiveMilestone = async (workspaceId: string, date: Date): Promise<SupabaseMilestone | null> => {
   try {
-    return await repository.getNextActiveMilestone(date);
+    return await repository.getNextActiveMilestone(workspaceId, date);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("MILESTONE_NEXT_ERROR", "Failed to fetch next active milestone.");
   }
 };
 
-export const getUpcomingActiveMilestones = async (count: number): Promise<SupabaseMilestone[]> => {
+export const getUpcomingActiveMilestones = async (workspaceId: string, count: number): Promise<SupabaseMilestone[]> => {
   try {
-    return await repository.getUpcomingActiveMilestones(count);
+    return await repository.getUpcomingActiveMilestones(workspaceId, count);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("MILESTONE_UPCOMING_ERROR", "Failed to fetch upcoming milestones.");
   }
 };
 
-export const getMilestonesEndingOnDate = async (date: Date): Promise<SupabaseMilestone[]> => {
+export const getMilestonesEndingOnDate = async (workspaceId: string, date: Date): Promise<SupabaseMilestone[]> => {
   try {
-    return await repository.getMilestonesEndingOnDate(date);
+    return await repository.getMilestonesEndingOnDate(workspaceId, date);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("MILESTONE_ENDING_ERROR", "Failed to fetch milestones ending on date.");
@@ -80,6 +83,9 @@ export const addMilestone = async (milestoneData: SupabaseMilestoneInsert): Prom
   }
   if (!milestoneData.status) {
     throw AppError.badRequest("MILESTONE_STATUS_REQUIRED", "Milestone status is required.");
+  }
+  if (!milestoneData.workspace_id) {
+    throw AppError.badRequest("MILESTONE_WORKSPACE_REQUIRED", "Workspace ID is required.");
   }
 
   try {
@@ -130,19 +136,19 @@ export const updateMilestone = async (
   }
 };
 
-export const updateMilestoneProgress = async (milestoneId: string): Promise<void> => {
+export const updateMilestoneProgress = async (workspaceId: string, milestoneId: string): Promise<void> => {
   if (!milestoneId) {
     return;
   }
 
   try {
-    const current = await repository.getMilestoneById(milestoneId);
+    const current = await repository.getMilestoneById(workspaceId, milestoneId);
     if (!current) {
       console.error(`Milestone ${milestoneId} not found for progress update.`);
       return;
     }
 
-    const { total, completed } = await getTaskCountsForMilestone(milestoneId);
+    const { total, completed } = await getTaskCountsForMilestone(workspaceId, milestoneId);
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     const updateData: { progress: number; status?: SupabaseMilestone["status"] } = { progress };
@@ -167,6 +173,7 @@ export const updateMilestoneProgress = async (milestoneId: string): Promise<void
 
 export const deleteMilestone = async (
   milestoneId: string,
+  workspaceId: string,
   deleteAssociatedTasks: boolean = false
 ): Promise<void> => {
   if (!milestoneId) {
@@ -175,7 +182,7 @@ export const deleteMilestone = async (
 
   try {
     if (deleteAssociatedTasks) {
-      await deleteTasksForMilestone(milestoneId);
+      await deleteTasksForMilestone(workspaceId, milestoneId);
     }
     await repository.deleteMilestone(milestoneId);
   } catch (error) {
@@ -187,16 +194,16 @@ export const deleteMilestone = async (
   }
 };
 
-export const deleteAllUserMilestones = async (): Promise<void> => {
+export const deleteAllUserMilestones = async (workspaceId: string): Promise<void> => {
   try {
-    const ids = await repository.getAllMilestoneIds();
+    const ids = await repository.getAllMilestoneIds(workspaceId);
     if (ids.length === 0) {
       return;
     }
 
     for (const milestoneId of ids) {
       try {
-        await deleteTasksForMilestone(milestoneId);
+        await deleteTasksForMilestone(workspaceId, milestoneId);
       } catch (taskError) {
         console.error(`Error deleting tasks for milestone ${milestoneId}:`, taskError);
       }

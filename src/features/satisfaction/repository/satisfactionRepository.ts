@@ -10,12 +10,14 @@ export interface SatisfactionEntry {
 
 export interface SatisfactionRepository {
   subscribeToRecentLogs(
+    workspaceId: string,
     limit: number,
     callback: (logs: SupabaseSatisfactionLog[]) => void,
     onError: (error: Error) => void
   ): Unsubscribe;
 
   subscribeToLogsForMonth(
+    workspaceId: string,
     year: number,
     month: number,
     callback: (logs: SupabaseSatisfactionLog[]) => void,
@@ -26,7 +28,7 @@ export interface SatisfactionRepository {
 
   saveSatisfactionEntry(entryData: SupabaseSatisfactionLogInsert): Promise<SupabaseSatisfactionLog>;
 
-  getSatisfactionSummary(): Promise<SatisfactionSummary>;
+  getSatisfactionSummary(workspaceId: string): Promise<SatisfactionSummary>;
 
   deleteAllSatisfactionLogs(): Promise<void>;
 }

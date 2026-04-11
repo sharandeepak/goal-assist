@@ -35,8 +35,10 @@ export default function MatrixPage() {
 
 	// Subscribe to tasks
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoading(true);
 		const unsubscribe = subscribeToMatrixTasks(
+			workspaceId,
 			dateRange,
 			(data) => {
 				setTasks(data);
@@ -54,7 +56,7 @@ export default function MatrixPage() {
 		);
 
 		return () => unsubscribe();
-	}, [dateRange, toast]);
+	}, [dateRange, toast, workspaceId]);
 
 	// Filter tasks by search query
 	const filterTasksBySearch = (taskList: Task[]): Task[] => {
@@ -80,7 +82,7 @@ export default function MatrixPage() {
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		try {
-			await updateTaskCompletion(taskId, !currentCompleted, undefined);
+			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
 			toast({
 				title: "Success",
 				description: `Task marked as ${!currentCompleted ? "completed" : "incomplete"}.`,
@@ -98,7 +100,7 @@ export default function MatrixPage() {
 	const handleDeleteTask = async (taskId: string) => {
 		if (!confirm("Are you sure you want to delete this task?")) return;
 		try {
-			await deleteTask(taskId, undefined);
+			await deleteTask(taskId, workspaceId, undefined);
 			toast({
 				title: "Success",
 				description: "Task deleted successfully.",

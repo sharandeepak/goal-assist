@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 import { settingsService } from '@/features/settings/services/settingsService';
 import { styles } from '../styles/SettingsPage.styles';
+import { useRequiredAuth } from '@/common/hooks/use-auth';
 
 // TODO: Import necessary components (e.g., for layout, theme toggle, dialogs)
 // import { ModeToggle } from './mode-toggle'; // Assuming this is the theme toggle
@@ -17,6 +18,7 @@ import { styles } from '../styles/SettingsPage.styles';
 // import { settingsService } from '../services/settingsService';
 
 const SettingsPage: React.FC = () => {
+  const { workspaceId } = useRequiredAuth();
   const [reminderEnabled, setReminderEnabled] = useState<boolean>(false);
   const [reminderTime, setReminderTime] = useState<string>('09:00'); // Default time
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
@@ -57,7 +59,7 @@ const SettingsPage: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      await settingsService.deleteAccount();
+      await settingsService.deleteAccount(workspaceId);
       alert('Account deleted successfully. All data has been cleared.');
       // TODO: Potentially redirect user to a logged-out state / home page or refresh the app
       setIsDeleteDialogOpen(false); // Close dialog on success

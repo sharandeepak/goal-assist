@@ -35,6 +35,7 @@ export default function SatisfactionCalendar() {
 	const [error, setError] = useState<string | null>(null);
 	const [playingMoodAnimation, setPlayingMoodAnimation] = useState<"happy" | "cool" | "angry" | "okay" | null>(null);
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoading(true);
 		setError(null);
 		setSatisfactionData([]);
@@ -43,6 +44,7 @@ export default function SatisfactionCalendar() {
 		const month = getMonth(currentMonth) + 1;
 
 		const unsubscribe = subscribeToSatisfactionForMonth(
+			workspaceId,
 			year,
 			month,
 			(fetchedEntries: SupabaseSatisfactionLog[]) => {
@@ -69,7 +71,7 @@ export default function SatisfactionCalendar() {
 		);
 
 		return () => unsubscribe();
-	}, [currentMonth]);
+	}, [currentMonth, workspaceId]);
 
 	const handlePreviousMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
 	const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));

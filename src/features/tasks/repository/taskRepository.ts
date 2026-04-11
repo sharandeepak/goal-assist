@@ -7,6 +7,7 @@ export interface TaskSummaryData {
 
 export interface TaskRepository {
   subscribeTasks(
+    workspaceId: string,
     startDate: Date,
     endDate: Date,
     callback: (tasks: SupabaseTask[]) => void,
@@ -14,19 +15,20 @@ export interface TaskRepository {
   ): () => void;
 
   subscribeTaskSummary(
+    workspaceId: string,
     callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
   ): () => void;
 
-  getTasksForDate(date: Date): Promise<SupabaseTask[]>;
+  getTasksForDate(workspaceId: string, date: Date): Promise<SupabaseTask[]>;
 
-  getTasksByDateRange(startDate: Date, endDate: Date): Promise<SupabaseTask[]>;
+  getTasksByDateRange(workspaceId: string, startDate: Date, endDate: Date): Promise<SupabaseTask[]>;
 
-  getTasksForMilestone(milestoneId: string): Promise<SupabaseTask[]>;
+  getTasksForMilestone(workspaceId: string, milestoneId: string): Promise<SupabaseTask[]>;
 
-  getTaskCountsForMilestone(milestoneId: string): Promise<{ total: number; completed: number }>;
+  getTaskCountsForMilestone(workspaceId: string, milestoneId: string): Promise<{ total: number; completed: number }>;
 
-  getTodaysTaskSummary(): Promise<TaskSummaryData>;
+  getTodaysTaskSummary(workspaceId: string): Promise<TaskSummaryData>;
 
   addTask(taskData: SupabaseTaskInsert): Promise<SupabaseTask>;
 

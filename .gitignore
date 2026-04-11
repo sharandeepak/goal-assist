@@ -34,3 +34,7 @@ functions/lib/
 functions/node_modules/
 
 .CLAUDE
+.kilo
+.kilocode
+.agents
+.serena

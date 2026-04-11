@@ -8,6 +8,7 @@ import { Skeleton } from "@/common/ui/skeleton"
 import { SatisfactionLog } from "@/common/types"
 import { subscribeToSatisfactionLogs } from "@/features/satisfaction/services/satisfactionService"
 import { format } from "date-fns"
+import { useRequiredAuth } from "@/common/hooks/use-auth"
 
 interface ChartData {
   day: string
@@ -15,15 +16,18 @@ interface ChartData {
 }
 
 export default function SatisfactionChart() {
+  const { workspaceId } = useRequiredAuth()
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!workspaceId) return
     setLoading(true)
     setError(null)
 
     const unsubscribe = subscribeToSatisfactionLogs(
+      workspaceId,
       (fetchedLogs) => {
         // Format data for the chart (sort ascending for the chart line)
         const formattedData = fetchedLogs
@@ -44,7 +48,7 @@ export default function SatisfactionChart() {
     )
 
     return () => unsubscribe()
-  }, [])
+  }, [workspaceId])
 
   if (loading) {
     return (
@@ -103,4 +107,3 @@ export default function SatisfactionChart() {
     </div>
   )
 }
-

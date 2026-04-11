@@ -16,7 +16,7 @@ import TimesheetLoading from "./loading";
 export type DateFilter = "today" | "week" | "month";
 
 export default function TimesheetPage() {
-	const { userId } = useRequiredAuth();
+	const { userId, workspaceId } = useRequiredAuth();
 	const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
 	const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 	const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -58,6 +58,7 @@ export default function TimesheetPage() {
 	const { start: dateRangeStart, end: dateRangeEnd } = dateRange;
 
 	useEffect(() => {
+		if (!userId || !workspaceId) return;
 		setLoading(true);
 		setError(null);
 
@@ -65,7 +66,7 @@ export default function TimesheetPage() {
 		const endDay = format(dateRangeEnd, "yyyy-MM-dd");
 
 		try {
-			const unsubscribe = subscribeToEntriesByDateRange(userId, startDay, endDay, (fetchedEntries) => {
+			const unsubscribe = subscribeToEntriesByDateRange(userId, workspaceId, startDay, endDay, (fetchedEntries) => {
 				setEntries(fetchedEntries);
 				setLoading(false);
 			});
@@ -76,7 +77,7 @@ export default function TimesheetPage() {
 			setError("Failed to load time entries. Please refresh the page.");
 			setLoading(false);
 		}
-	}, [dateRangeStart, dateRangeEnd]);
+	}, [dateRangeStart, dateRangeEnd, userId, workspaceId]);
 
 	// Auto-scroll to today when filter changes
 	useEffect(() => {
@@ -148,7 +149,7 @@ export default function TimesheetPage() {
 	const confirmDelete = async () => {
 		if (entryToDelete) {
 			try {
-				await deleteEntry(entryToDelete);
+				await deleteEntry(entryToDelete, workspaceId);
 				setEntryToDelete(null);
 				setDeleteConfirmOpen(false);
 			} catch (err) {
@@ -166,7 +167,7 @@ export default function TimesheetPage() {
 
 	const confirmDeleteAll = async () => {
 		try {
-			await Promise.all(entriesToDelete.map((id) => deleteEntry(id)));
+			await Promise.all(entriesToDelete.map((id) => deleteEntry(id, workspaceId)));
 			setEntriesToDelete([]);
 			setDeleteDayName("");
 			setDeleteAllConfirmOpen(false);

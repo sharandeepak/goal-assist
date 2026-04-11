@@ -24,6 +24,7 @@ export class SupabaseStandupRepository
   }
 
   subscribeToRecentStandups(
+    workspaceId: string,
     limit: number,
     callback: (logs: SupabaseStandupLog[]) => void,
     onError: (error: Error) => void
@@ -32,6 +33,7 @@ export class SupabaseStandupRepository
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .order("log_date", { ascending: false })
           .limit(limit);
         if (error) throw error;
@@ -47,10 +49,11 @@ export class SupabaseStandupRepository
     });
   }
 
-  async getRecentStandups(limit: number): Promise<SupabaseStandupLog[]> {
+  async getRecentStandups(workspaceId: string, limit: number): Promise<SupabaseStandupLog[]> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .order("log_date", { ascending: false })
         .limit(limit);
 

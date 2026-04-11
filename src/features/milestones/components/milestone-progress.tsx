@@ -9,17 +9,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBullseye, faClock, faTriangleExclamation, faCircleCheck, faArrowTrendUp } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/common/lib/utils";
 import { styles } from "../styles/MilestoneProgress.styles";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 export default function MilestoneProgress() {
+	const { workspaceId } = useRequiredAuth();
 	const [milestones, setMilestones] = useState<MilestoneProgressData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoading(true);
 		setError(null);
 
 		const unsubscribe = subscribeToActiveMilestonesProgress(
+			workspaceId,
 			(fetchedMilestones) => {
 				setMilestones(fetchedMilestones);
 				setLoading(false);
@@ -32,7 +36,7 @@ export default function MilestoneProgress() {
 		);
 
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	if (loading) {
 		return (

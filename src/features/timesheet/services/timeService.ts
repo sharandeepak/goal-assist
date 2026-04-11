@@ -12,18 +12,20 @@ const repo: TimeRepository = supabaseTimeRepository;
 
 export function subscribeToEntriesByDateRange(
   userId: string,
+  workspaceId: string,
   startDay: string,
   endDay: string,
   callback: (entries: SupabaseTimeEntry[]) => void
 ): () => void {
-  return repo.subscribeToEntriesByDateRange(userId, startDay, endDay, callback);
+  return repo.subscribeToEntriesByDateRange(userId, workspaceId, startDay, endDay, callback);
 }
 
 export function subscribeToRunningEntry(
   userId: string,
+  workspaceId: string,
   callback: (entry: SupabaseTimeEntry | null) => void
 ): () => void {
-  return repo.subscribeToRunningEntry(userId, callback);
+  return repo.subscribeToRunningEntry(userId, workspaceId, callback);
 }
 
 export async function startTimer(params: {
@@ -46,7 +48,7 @@ export async function startTimer(params: {
   }
 
   try {
-    await stopRunningTimer(userId);
+    await stopRunningTimer(userId, workspaceId);
 
     const now = new Date();
     const dayStr = format(now, "yyyy-MM-dd");
@@ -75,10 +77,11 @@ export async function startTimer(params: {
 }
 
 export async function stopRunningTimer(
-  userId: string
+  userId: string,
+  workspaceId: string
 ): Promise<SupabaseTimeEntry | null> {
   try {
-    const running = await repo.getRunningEntry(userId);
+    const running = await repo.getRunningEntry(userId, workspaceId);
     if (!running) return null;
 
     const now = new Date();
@@ -107,10 +110,11 @@ export async function stopRunningTimer(
 }
 
 export async function getRunningEntry(
-  userId: string
+  userId: string,
+  workspaceId: string
 ): Promise<SupabaseTimeEntry | null> {
   try {
-    return await repo.getRunningEntry(userId);
+    return await repo.getRunningEntry(userId, workspaceId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TIME_RUNNING_ENTRY_ERROR", "Failed to fetch running entry.");
@@ -204,9 +208,10 @@ export async function logManualEntry(params: {
 
 export async function updateEntry(params: {
   entryId: string;
+  workspaceId: string;
   fields: SupabaseTimeEntryUpdate;
 }): Promise<void> {
-  const { entryId, fields } = params;
+  const { entryId, workspaceId, fields } = params;
 
   if (!entryId) {
     throw AppError.badRequest("TIME_ENTRY_ID_REQUIRED", "Entry ID is required for update.");
@@ -214,7 +219,7 @@ export async function updateEntry(params: {
 
   try {
     if (fields.started_at || fields.ended_at) {
-      const entry = await repo.getEntryById(entryId);
+      const entry = await repo.getEntryById(entryId, workspaceId);
       if (!entry) {
         throw AppError.notFound("TIME_ENTRY_NOT_FOUND", "Time entry not found.");
       }
@@ -248,12 +253,16 @@ export async function updateEntry(params: {
   }
 }
 
-export async function deleteEntry(entryId: string): Promise<void> {
+export async function deleteEntry(entryId: string, workspaceId: string): Promise<void> {
   if (!entryId) {
     throw AppError.badRequest("TIME_ENTRY_ID_REQUIRED", "Entry ID is required for deletion.");
   }
 
   try {
+    const entry = await repo.getEntryById(entryId, workspaceId);
+    if (!entry) {
+      throw AppError.notFound("TIME_ENTRY_NOT_FOUND", `Time entry ${entryId} not found.`);
+    }
     await repo.deleteEntry(entryId);
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -262,10 +271,11 @@ export async function deleteEntry(entryId: string): Promise<void> {
 }
 
 export async function getEntryById(
-  entryId: string
+  entryId: string,
+  workspaceId: string
 ): Promise<SupabaseTimeEntry | null> {
   try {
-    return await repo.getEntryById(entryId);
+    return await repo.getEntryById(entryId, workspaceId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TIME_FIND_ERROR", "Failed to find time entry.");
@@ -274,11 +284,12 @@ export async function getEntryById(
 
 export async function getEntriesForDateRange(
   userId: string,
+  workspaceId: string,
   startDay: string,
   endDay: string
 ): Promise<SupabaseTimeEntry[]> {
   try {
-    return await repo.getEntriesForDateRange(userId, startDay, endDay);
+    return await repo.getEntriesForDateRange(userId, workspaceId, startDay, endDay);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal(
@@ -290,11 +301,12 @@ export async function getEntriesForDateRange(
 
 export async function getWeeklySummary(
   userId: string,
+  workspaceId: string,
   weekStart: string,
   weekEnd: string
 ) {
   try {
-    const entries = await repo.getEntriesForDateRange(userId, weekStart, weekEnd);
+    const entries = await repo.getEntriesForDateRange(userId, workspaceId, weekStart, weekEnd);
 
     const totalSeconds = entries.reduce((sum, e) => sum + e.duration_sec, 0);
     const taskBreakdown = entries.reduce(

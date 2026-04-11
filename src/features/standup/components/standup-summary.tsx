@@ -25,6 +25,7 @@ import { Textarea } from "@/common/ui/textarea";
 import { Button } from "@/common/ui/button";
 import { cn } from "@/common/lib/utils";
 import { styles } from "@/features/standup/styles/StandupSummary.styles";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 const formatRelativeDate = (dateStr: string) => {
 	const date = new Date(dateStr);
@@ -33,6 +34,7 @@ const formatRelativeDate = (dateStr: string) => {
 };
 
 export default function StandupSummary() {
+	const { workspaceId } = useRequiredAuth();
 	const [standupLogs, setStandupLogs] = useState<StandupLog[]>([]);
 	const [loadingStandups, setLoadingStandups] = useState(true);
 	const [errorStandups, setErrorStandups] = useState<string | null>(null);
@@ -46,17 +48,21 @@ export default function StandupSummary() {
 	const [isSavingNote, setIsSavingNote] = useState(false);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingStandups(true);
 		setErrorStandups(null);
 
 		const unsubscribe = subscribeToRecentStandups(
+			workspaceId,
 			(fetchedLogs) => {
 				setStandupLogs(fetchedLogs);
-				if (fetchedLogs.length > 0 && (!activeTab || !fetchedLogs.some((log) => log.id === activeTab))) {
-					setActiveTab(fetchedLogs[0].id);
-				} else if (fetchedLogs.length === 0) {
-					setActiveTab("");
-				}
+				setActiveTab((prevActiveTab) => {
+					if (fetchedLogs.length === 0) return "";
+					if (!prevActiveTab || !fetchedLogs.some((log) => log.id === prevActiveTab)) {
+						return fetchedLogs[0].id;
+					}
+					return prevActiveTab;
+				});
 				setLoadingStandups(false);
 			},
 			(err) => {
@@ -66,9 +72,10 @@ export default function StandupSummary() {
 			}
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		const fetchCompletedTasks = async () => {
 			setLoadingTasks(true);
 			setErrorTasks(null);
@@ -76,8 +83,8 @@ export default function StandupSummary() {
 				const today = new Date();
 				const yesterday = subDays(today, 1);
 				const [todayTasks, yesterdayTasks] = await Promise.all([
-					getTasksForDate(today),
-					getTasksForDate(yesterday),
+					getTasksForDate(workspaceId, today),
+					getTasksForDate(workspaceId, yesterday),
 				]);
 
 				const allTasks = [...todayTasks, ...yesterdayTasks];
@@ -91,7 +98,7 @@ export default function StandupSummary() {
 			}
 		};
 		fetchCompletedTasks();
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
 		const savedNote = localStorage.getItem("quickStandupNote");

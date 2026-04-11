@@ -17,7 +17,6 @@ import { type DashboardSnapshot, type DashboardTaskItem, getDashboardSnapshot } 
 import { saveSatisfactionEntry } from "@/features/satisfaction/services/satisfactionService";
 import { updateTaskCompletion } from "@/features/tasks/services/taskService";
 import { stopRunningTimer } from "@/features/timesheet/services/timeService";
-import WorkspaceSwitcher from "@/features/workspace/components/workspace-switcher";
 
 const LazySatisfactionCalendar = dynamic(() => import("@/features/satisfaction/components/satisfaction-calendar"), {
 	ssr: false,
@@ -104,7 +103,7 @@ export default function DashboardHome() {
 
 	const loadSnapshot = useCallback(
 		async (options?: { initial?: boolean }) => {
-			if (!userId) return;
+			if (!userId || !workspaceId) return;
 
 			if (options?.initial) {
 				setIsLoadingSnapshot(true);
@@ -115,7 +114,7 @@ export default function DashboardHome() {
 			setErrorMessage(null);
 
 			try {
-				const data = await getDashboardSnapshot(userId);
+				const data = await getDashboardSnapshot(userId, workspaceId);
 				setSnapshot(data);
 			} catch (error) {
 				if (error instanceof AppError) {
@@ -128,13 +127,13 @@ export default function DashboardHome() {
 				setIsRefreshing(false);
 			}
 		},
-		[userId],
+		[userId, workspaceId],
 	);
 
 	useEffect(() => {
-		if (isAuthLoading || !userId) return;
+		if (isAuthLoading || !userId || !workspaceId) return;
 		void loadSnapshot({ initial: true });
-	}, [isAuthLoading, loadSnapshot, userId]);
+	}, [isAuthLoading, loadSnapshot, userId, workspaceId]);
 
 	useEffect(() => {
 		const startedAt = snapshot?.execution.runningTimer?.startedAt;
@@ -189,7 +188,7 @@ export default function DashboardHome() {
 		updateTaskOptimistically(task.id, nextCompleted);
 
 		try {
-			await updateTaskCompletion(task.id, nextCompleted, task.milestoneId ?? undefined);
+			await updateTaskCompletion(task.id, nextCompleted, workspaceId, task.milestoneId ?? undefined);
 		} catch {
 			await loadSnapshot();
 			setErrorMessage("Could not update task status. Please retry.");
@@ -203,7 +202,7 @@ export default function DashboardHome() {
 
 		setIsStoppingTimer(true);
 		try {
-			await stopRunningTimer(userId);
+			await stopRunningTimer(userId, workspaceId);
 			await loadSnapshot();
 		} catch {
 			setErrorMessage("Could not stop the timer. Please retry.");
@@ -294,7 +293,6 @@ export default function DashboardHome() {
 		<div className="max-w-7xl mx-auto w-full space-y-6">
 			<header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 				<div className="space-y-3">
-					<WorkspaceSwitcher />
 					<div className="space-y-1">
 						<h1 className="text-3xl font-display font-bold text-foreground">{`Welcome back${user?.first_name ? `, ${user.first_name}` : ""}`}</h1>
 						<p className="text-sm text-muted-foreground">

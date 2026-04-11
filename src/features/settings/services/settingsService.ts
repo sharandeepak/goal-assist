@@ -66,10 +66,10 @@ class SettingsService {
     }
   }
 
-  async deleteAccount() {
+  async deleteAccount(workspaceId: string) {
     try {
       await deleteAllUserTasks();
-      await deleteAllUserMilestones();
+      await deleteAllUserMilestones(workspaceId);
       await deleteAllUserSatisfactionLogs();
       await deleteAllUserStandupLogs();
 

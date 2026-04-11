@@ -114,6 +114,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					if (editingEntry) {
 						await updateEntry({
 							entryId: editingEntry.id,
+							workspaceId,
 							fields: {
 								task_title_snapshot: taskTitle.trim(),
 								emoji: emoji || null,
@@ -149,6 +150,7 @@ export default function AddEntryDialog({ isOpen, onOpenChange, selectedDay, edit
 					if (editingEntry) {
 						await updateEntry({
 							entryId: editingEntry.id,
+							workspaceId,
 							fields: {
 								task_title_snapshot: taskTitle.trim(),
 								emoji: emoji || null,

@@ -8,18 +8,22 @@ import { Task } from "@/common/types";
 import { subscribeToTaskSummary, updateTaskCompletion } from "@/features/tasks/services/taskService";
 import Link from "next/link";
 import { styles } from "../styles/TaskSummary.styles";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 export default function TaskSummary() {
+	const { workspaceId } = useRequiredAuth();
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [toggleError, setToggleError] = useState<string | null>(null);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoading(true);
 		setError(null);
 
 		const unsubscribe = subscribeToTaskSummary(
+			workspaceId,
 			(fetchedTasks) => {
 				setTasks(fetchedTasks);
 				setLoading(false);
@@ -32,12 +36,12 @@ export default function TaskSummary() {
 		);
 
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		setToggleError(null);
 		try {
-			await updateTaskCompletion(taskId, !currentCompleted, undefined);
+			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
 		} catch (err) {
 			console.error("Failed to update task completion from summary:", err);
 			setToggleError("Failed to update task.");

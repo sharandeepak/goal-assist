@@ -211,9 +211,10 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingTasks(true);
 		setTaskError(null);
-		getTasksForMilestone(milestone.id)
+		getTasksForMilestone(workspaceId, milestone.id)
 			.then((fetchedTasks) => {
 				setTasks(fetchedTasks);
 			})
@@ -224,7 +225,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			.finally(() => {
 				setLoadingTasks(false);
 			});
-	}, [milestone.id]);
+	}, [milestone.id, workspaceId]);
 
 	const openEditMilestoneDialog = () => {
 		setEditMilestoneData({
@@ -277,7 +278,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 		try {
 			await addTask(taskToAdd);
 			setIsAddTaskDialogOpen(false);
-			getTasksForMilestone(milestone.id)
+			getTasksForMilestone(workspaceId, milestone.id)
 				.then(setTasks)
 				.catch(() => setTaskError("Failed to refresh tasks after add."));
 		} catch (err) {
@@ -304,7 +305,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			await updateTask(editingTask.id, dataToUpdate);
 			setIsEditTaskDialogOpen(false);
 			setEditingTask(null);
-			getTasksForMilestone(milestone.id)
+			getTasksForMilestone(workspaceId, milestone.id)
 				.then(setTasks)
 				.catch(() => setTaskError("Failed to refresh tasks after edit."));
 		} catch (err) {
@@ -329,7 +330,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			setTaskError(null);
 			// Optimistic update: set/clear completed_date alongside completed status
 			setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? { ...t, completed: newCompleted, completed_date: newCompleted ? now : null } : t)));
-			await updateTaskCompletion(taskId, newCompleted, milestone.id);
+			await updateTaskCompletion(taskId, newCompleted, workspaceId, milestone.id);
 		} catch (err) {
 			console.error("Failed to toggle task:", err);
 			setTaskError("Failed to update task status.");
@@ -342,11 +343,11 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 		try {
 			setTaskError(null);
 			setTasks((prevTasks) => prevTasks.filter((t) => t.id !== taskId));
-			await deleteTaskService(taskId, milestone.id);
+			await deleteTaskService(taskId, workspaceId, milestone.id);
 		} catch (err) {
 			console.error("Failed to delete task:", err);
 			setTaskError("Failed to delete task.");
-			getTasksForMilestone(milestone.id).then(setTasks);
+			getTasksForMilestone(workspaceId, milestone.id).then(setTasks);
 		}
 	};
 
@@ -563,8 +564,10 @@ function MilestonesPageContent() {
 	}, [searchParams]);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingActive(true);
 		const unsubscribe = subscribeToMilestonesByStatus(
+			workspaceId,
 			"active",
 			(data) => {
 				setActiveMilestones(data);
@@ -578,11 +581,13 @@ function MilestonesPageContent() {
 			},
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		setLoadingCompleted(true);
 		const unsubscribe = subscribeToMilestonesByStatus(
+			workspaceId,
 			"completed",
 			(data) => {
 				setCompletedMilestones(data);
@@ -595,7 +600,7 @@ function MilestonesPageContent() {
 			},
 		);
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	const handleAddMilestone = async () => {
 		if (!newMilestoneData.title || newMilestoneData.title.trim() === "") {
@@ -647,7 +652,7 @@ function MilestonesPageContent() {
 
 		try {
 			setError(null);
-			await deleteMilestone(id, deleteTasks);
+			await deleteMilestone(id, workspaceId, deleteTasks);
 		} catch (err) {
 			console.error("Failed to delete milestone:", err);
 			setError("Failed to delete the milestone.");

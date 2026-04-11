@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Skeleton } from "@/common/ui/skeleton";
 import { SatisfactionLog } from "@/common/types";
 import { format } from "date-fns";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 interface FormattedLog {
 	date: string;
@@ -15,12 +16,15 @@ interface FormattedLog {
 }
 
 export default function SatisfactionTracker() {
+	const { workspaceId } = useRequiredAuth();
 	const [satisfactionLogs, setSatisfactionLogs] = useState<FormattedLog[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		const unsubscribe = subscribeToSatisfactionLogs(
+			workspaceId,
 			(logs: SatisfactionLog[]) => {
 				const formattedLogs = logs.map((log) => {
 					return {
@@ -38,7 +42,7 @@ export default function SatisfactionTracker() {
 		);
 
 		return () => unsubscribe();
-	}, []);
+	}, [workspaceId]);
 
 	return (
 		<Card>

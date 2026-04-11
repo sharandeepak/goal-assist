@@ -5,24 +5,26 @@ import { AppError } from "@/common/errors/AppError";
 const repository = supabaseSatisfactionRepository;
 
 export const subscribeToSatisfactionLogs = (
+  workspaceId: string,
   callback: (logs: SupabaseSatisfactionLog[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return repository.subscribeToRecentLogs(7, callback, onError);
+  return repository.subscribeToRecentLogs(workspaceId, 7, callback, onError);
 };
 
 export const subscribeToSatisfactionForMonth = (
+  workspaceId: string,
   year: number,
   month: number,
   callback: (entries: SupabaseSatisfactionLog[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return repository.subscribeToLogsForMonth(year, month, callback, onError);
+  return repository.subscribeToLogsForMonth(workspaceId, year, month, callback, onError);
 };
 
-export const getSatisfactionSummary = async (): Promise<SatisfactionSummary> => {
+export const getSatisfactionSummary = async (workspaceId: string): Promise<SatisfactionSummary> => {
   try {
-    return await repository.getSatisfactionSummary();
+    return await repository.getSatisfactionSummary(workspaceId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal(
@@ -53,6 +55,12 @@ export const addSatisfactionLog = async (
       "Score must be between 1 and 10."
     );
   }
+  if (!logData.workspace_id) {
+    throw AppError.badRequest(
+      "SATISFACTION_WORKSPACE_REQUIRED",
+      "Workspace ID is required for a satisfaction log."
+    );
+  }
 
   try {
     return await repository.addSatisfactionEntry(logData);
@@ -78,6 +86,12 @@ export const saveSatisfactionEntry = async (
     throw AppError.badRequest(
       "SATISFACTION_DATE_REQUIRED",
       "Date is required for a satisfaction entry."
+    );
+  }
+  if (!entryData.workspace_id) {
+    throw AppError.badRequest(
+      "SATISFACTION_WORKSPACE_REQUIRED",
+      "Workspace ID is required for a satisfaction entry."
     );
   }
 

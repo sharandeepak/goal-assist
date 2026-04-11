@@ -18,16 +18,24 @@ function validateStandupLog(logData: SupabaseStandupLogInsert): void {
       "User ID is required for a standup log."
     );
   }
+  if (!logData.workspace_id) {
+    throw AppError.badRequest(
+      "STANDUP_WORKSPACE_REQUIRED",
+      "Workspace ID is required for a standup log."
+    );
+  }
 }
 
 export const subscribeToRecentStandups = (
+  workspaceId: string,
   callback: (logs: SupabaseStandupLog[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return repository.subscribeToRecentStandups(2, callback, onError);
+  return repository.subscribeToRecentStandups(workspaceId, 2, callback, onError);
 };
 
 export const getRecentStandups = async (
+  workspaceId: string,
   limit: number = 2
 ): Promise<SupabaseStandupLog[]> => {
   if (limit <= 0) {
@@ -38,7 +46,7 @@ export const getRecentStandups = async (
   }
 
   try {
-    return await repository.getRecentStandups(limit);
+    return await repository.getRecentStandups(workspaceId, limit);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal(

@@ -33,14 +33,14 @@ export default function GlobalTimer() {
 	const isDarkTheme = theme !== "light";
 
 	useEffect(() => {
-		if (!userId) return;
+		if (!userId || !workspaceId) return;
 
-		const unsubscribe = subscribeToRunningEntry(userId, (entry) => {
+		const unsubscribe = subscribeToRunningEntry(userId, workspaceId, (entry) => {
 			setRunningEntry(entry);
 		});
 
 		return () => unsubscribe();
-	}, [userId]);
+	}, [userId, workspaceId]);
 
 	useEffect(() => {
 		if (runningEntry) return;
@@ -118,7 +118,7 @@ export default function GlobalTimer() {
 
 		setLoading(true);
 		try {
-			await stopRunningTimer(userId);
+			await stopRunningTimer(userId, workspaceId);
 		} catch (error) {
 			console.error("Error stopping timer:", error);
 		} finally {

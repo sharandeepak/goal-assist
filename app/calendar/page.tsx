@@ -57,6 +57,7 @@ export default function SmartCalendarPage() {
 
 	// Fetch details for selected date
 	useEffect(() => {
+		if (!workspaceId) return;
 		if (!date) {
 			setSelectedDateTasks([]);
 			setSelectedDateMilestones([]);
@@ -69,7 +70,11 @@ export default function SmartCalendarPage() {
 			setLoadingDetails(true);
 			setError(null); // Clear previous errors related to date selection
 			try {
-				const [fetchedTasks, fetchedMilestones, nextMilestone] = await Promise.all([getTasksForDate(date), getMilestonesEndingOnDate(date), getNextActiveMilestone(date)]);
+				const [fetchedTasks, fetchedMilestones, nextMilestone] = await Promise.all([
+					getTasksForDate(workspaceId, date),
+					getMilestonesEndingOnDate(workspaceId, date),
+					getNextActiveMilestone(workspaceId, date),
+				]);
 				setSelectedDateTasks(fetchedTasks);
 				setSelectedDateMilestones(fetchedMilestones);
 				if (nextMilestone?.end_date) {
@@ -88,17 +93,18 @@ export default function SmartCalendarPage() {
 			}
 		};
 		fetchDataForDate();
-	}, [date]);
+	}, [date, workspaceId]);
 
 	const fetchUpcoming = useCallback(async () => {
+		if (!workspaceId) return;
 		setLoadingUpcoming(true);
 		try {
 			const today = new Date();
 			const nextWeek = addDays(today, 7);
 
 			const [upcomingTasksData, upcomingMilestonesData] = await Promise.all([
-				getTasksByDateRange(startOfDay(today), endOfDay(nextWeek)),
-				getUpcomingActiveMilestones(10),
+				getTasksByDateRange(workspaceId, startOfDay(today), endOfDay(nextWeek)),
+				getUpcomingActiveMilestones(workspaceId, 10),
 			]);
 
 			const combined: { [key: string]: UpcomingDeadline } = {};
@@ -131,7 +137,7 @@ export default function SmartCalendarPage() {
 		} finally {
 			setLoadingUpcoming(false);
 		}
-	}, []);
+	}, [workspaceId]);
 
 	useEffect(() => {
 		fetchUpcoming();
@@ -165,7 +171,7 @@ export default function SmartCalendarPage() {
 		try {
 			await addTask(taskToAdd);
 			setIsAddTaskDialogOpen(false);
-			getTasksForDate(date)
+			getTasksForDate(workspaceId, date)
 				.then(setSelectedDateTasks)
 				.catch((err) => {
 					console.error("Error refetching tasks after add:", err);

@@ -6,33 +6,34 @@ import { AppError } from "@/common/errors/AppError";
 const taskRepository = supabaseTaskRepository;
 
 export const subscribeToTaskSummary = (
+  workspaceId: string,
   callback: (tasks: SupabaseTask[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return taskRepository.subscribeTaskSummary(callback, onError);
+  return taskRepository.subscribeTaskSummary(workspaceId, callback, onError);
 };
 
-export const getTasksForDate = async (date: Date): Promise<SupabaseTask[]> => {
+export const getTasksForDate = async (workspaceId: string, date: Date): Promise<SupabaseTask[]> => {
   try {
-    return await taskRepository.getTasksForDate(date);
+    return await taskRepository.getTasksForDate(workspaceId, date);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TASK_FETCH_DATE_ERROR", "Failed to fetch tasks for the selected date.");
   }
 };
 
-export const getTasksByDateRange = async (startDate: Date, endDate: Date): Promise<SupabaseTask[]> => {
+export const getTasksByDateRange = async (workspaceId: string, startDate: Date, endDate: Date): Promise<SupabaseTask[]> => {
   try {
-    return await taskRepository.getTasksByDateRange(startDate, endDate);
+    return await taskRepository.getTasksByDateRange(workspaceId, startDate, endDate);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TASK_FETCH_RANGE_ERROR", "Failed to fetch tasks for date range.");
   }
 };
 
-export const getTodaysTaskSummary = async (): Promise<TaskSummaryData> => {
+export const getTodaysTaskSummary = async (workspaceId: string): Promise<TaskSummaryData> => {
   try {
-    return await taskRepository.getTodaysTaskSummary();
+    return await taskRepository.getTodaysTaskSummary(workspaceId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TASK_TODAY_SUMMARY_ERROR", "Failed to fetch today's task summary.");
@@ -40,24 +41,28 @@ export const getTodaysTaskSummary = async (): Promise<TaskSummaryData> => {
 };
 
 export const subscribeToTasksByDateRange = (
+  workspaceId: string,
   startDate: Date,
   endDate: Date,
   callback: (tasks: SupabaseTask[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  return taskRepository.subscribeTasks(startDate, endDate, callback, onError);
+  return taskRepository.subscribeTasks(workspaceId, startDate, endDate, callback, onError);
 };
 
 export const addTask = async (taskData: SupabaseTaskInsert): Promise<SupabaseTask> => {
   if (!taskData.title) {
     throw AppError.badRequest("TASK_TITLE_REQUIRED", "Task title is required.");
   }
+  if (!taskData.workspace_id) {
+    throw AppError.badRequest("TASK_WORKSPACE_REQUIRED", "Workspace ID is required.");
+  }
 
   try {
     const task = await taskRepository.addTask(taskData);
 
     if (taskData.milestone_id) {
-      await updateMilestoneProgress(taskData.milestone_id);
+      await updateMilestoneProgress(taskData.workspace_id, taskData.milestone_id);
     }
 
     return task;
@@ -100,13 +105,14 @@ export const updateTask = async (
 export const updateTaskCompletion = async (
   taskId: string,
   completed: boolean,
+  workspaceId: string,
   milestoneId?: string
 ): Promise<void> => {
   try {
     await taskRepository.updateTaskCompletion(taskId, completed);
 
     if (milestoneId) {
-      await updateMilestoneProgress(milestoneId);
+      await updateMilestoneProgress(workspaceId, milestoneId);
     }
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -114,12 +120,12 @@ export const updateTaskCompletion = async (
   }
 };
 
-export const deleteTask = async (taskId: string, milestoneId?: string): Promise<void> => {
+export const deleteTask = async (taskId: string, workspaceId: string, milestoneId?: string): Promise<void> => {
   try {
     await taskRepository.deleteTask(taskId);
 
     if (milestoneId) {
-      await updateMilestoneProgress(milestoneId);
+      await updateMilestoneProgress(workspaceId, milestoneId);
     }
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -127,13 +133,13 @@ export const deleteTask = async (taskId: string, milestoneId?: string): Promise<
   }
 };
 
-export const getTasksForMilestone = async (milestoneId: string): Promise<SupabaseTask[]> => {
+export const getTasksForMilestone = async (workspaceId: string, milestoneId: string): Promise<SupabaseTask[]> => {
   if (!milestoneId) {
     return [];
   }
 
   try {
-    return await taskRepository.getTasksForMilestone(milestoneId);
+    return await taskRepository.getTasksForMilestone(workspaceId, milestoneId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TASK_FETCH_MILESTONE_ERROR", "Failed to fetch tasks for milestone.");
@@ -141,6 +147,7 @@ export const getTasksForMilestone = async (milestoneId: string): Promise<Supabas
 };
 
 export const getTaskCountsForMilestone = async (
+  workspaceId: string,
   milestoneId: string
 ): Promise<{ total: number; completed: number }> => {
   if (!milestoneId) {
@@ -148,14 +155,14 @@ export const getTaskCountsForMilestone = async (
   }
 
   try {
-    return await taskRepository.getTaskCountsForMilestone(milestoneId);
+    return await taskRepository.getTaskCountsForMilestone(workspaceId, milestoneId);
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw AppError.internal("TASK_COUNT_MILESTONE_ERROR", "Failed to fetch task counts for milestone.");
   }
 };
 
-export const deleteTasksForMilestone = async (milestoneId: string): Promise<void> => {
+export const deleteTasksForMilestone = async (_workspaceId: string, milestoneId: string): Promise<void> => {
   if (!milestoneId) {
     return;
   }

@@ -58,6 +58,7 @@ export default function SmartCalendar() {
 	const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 
 	useEffect(() => {
+		if (!workspaceId) return;
 		if (!date) {
 			setSelectedDateTasks([]);
 			setSelectedDateMilestones([]);
@@ -72,9 +73,9 @@ export default function SmartCalendar() {
 
 			try {
 				const [fetchedTasks, fetchedMilestones, nextMilestone] = await Promise.all([
-					getTasksForDate(date),
-					getMilestonesEndingOnDate(date),
-					getNextActiveMilestone(date),
+					getTasksForDate(workspaceId, date),
+					getMilestonesEndingOnDate(workspaceId, date),
+					getNextActiveMilestone(workspaceId, date),
 				]);
 
 				setSelectedDateTasks(fetchedTasks);
@@ -98,7 +99,7 @@ export default function SmartCalendar() {
 		};
 
 		fetchDataForDate();
-	}, [date]);
+	}, [date, workspaceId]);
 
 	const openAddTaskDialog = () => {
 		if (!date) return;
@@ -125,7 +126,7 @@ export default function SmartCalendar() {
 			await addTask(taskToAdd);
 			setIsAddTaskDialogOpen(false);
 			if (date) {
-				getTasksForDate(date)
+				getTasksForDate(workspaceId, date)
 					.then(setSelectedDateTasks)
 					.catch((err) => console.error("Error refetching tasks after add:", err));
 			}

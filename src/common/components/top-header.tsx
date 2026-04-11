@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faEnvelope, faBell, faArrowRightFromBracket, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { ModeToggle } from "./mode-toggle";
 import GlobalTimer from "@/features/timesheet/components/global-timer";
+import WorkspaceSwitcher from "@/features/workspace/components/workspace-switcher";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/common/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/common/ui/alert-dialog";
 import { useAuth } from "@/common/hooks/use-auth";
@@ -68,6 +69,8 @@ export default function TopHeader() {
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-5 ml-auto">
+					<WorkspaceSwitcher />
+
 					<GlobalTimer />
 
 					<div className="flex items-center gap-2 border-r pr-5 border-border/50">

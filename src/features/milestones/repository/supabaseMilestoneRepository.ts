@@ -32,6 +32,7 @@ export class SupabaseMilestoneRepository
   }
 
   subscribeToMilestonesByStatus(
+    workspaceId: string,
     status: SupabaseMilestone["status"],
     callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
@@ -40,6 +41,7 @@ export class SupabaseMilestoneRepository
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .eq("status", status)
           .order("end_date", { ascending: true });
 
@@ -57,6 +59,7 @@ export class SupabaseMilestoneRepository
   }
 
   subscribeToActiveMilestonesProgress(
+    workspaceId: string,
     callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
   ): () => void {
@@ -64,6 +67,7 @@ export class SupabaseMilestoneRepository
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .eq("status", "active")
           .order("end_date", { ascending: true });
 
@@ -80,10 +84,11 @@ export class SupabaseMilestoneRepository
     });
   }
 
-  async getPageMilestoneSummary(): Promise<MilestonePageSummaryData> {
+  async getPageMilestoneSummary(workspaceId: string): Promise<MilestonePageSummaryData> {
     try {
       const { data: rows, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("status", "active")
         .order("end_date", { ascending: true });
 
@@ -126,10 +131,11 @@ export class SupabaseMilestoneRepository
     }
   }
 
-  async getNextActiveMilestone(date: Date): Promise<SupabaseMilestone | null> {
+  async getNextActiveMilestone(workspaceId: string, date: Date): Promise<SupabaseMilestone | null> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("status", "active")
         .gte("end_date", date.toISOString())
         .order("end_date", { ascending: true })
@@ -147,11 +153,13 @@ export class SupabaseMilestoneRepository
   }
 
   async getUpcomingActiveMilestones(
+    workspaceId: string,
     count: number
   ): Promise<SupabaseMilestone[]> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("status", "active")
         .order("end_date", { ascending: true })
         .limit(count);
@@ -167,11 +175,13 @@ export class SupabaseMilestoneRepository
   }
 
   async getMilestonesEndingOnDate(
+    workspaceId: string,
     date: Date
   ): Promise<SupabaseMilestone[]> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .gte("end_date", startOfDay(date).toISOString())
         .lte("end_date", endOfDay(date).toISOString());
 
@@ -186,11 +196,13 @@ export class SupabaseMilestoneRepository
   }
 
   async getMilestoneById(
+    workspaceId: string,
     milestoneId: string
   ): Promise<SupabaseMilestone | null> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("id", milestoneId)
         .maybeSingle();
 
@@ -301,9 +313,11 @@ export class SupabaseMilestoneRepository
     }
   }
 
-  async getAllMilestoneIds(): Promise<string[]> {
+  async getAllMilestoneIds(workspaceId: string): Promise<string[]> {
     try {
-      const { data, error } = await this.table.select("id");
+      const { data, error } = await this.table
+        .select("id")
+        .eq("workspace_id", workspaceId);
 
       if (error) throw error;
       return (data ?? []).map((row) => row.id);

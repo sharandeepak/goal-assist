@@ -10,12 +10,13 @@ export interface QuadrantCounts {
 
 export interface MatrixRepository {
   subscribeToTasks(
+    workspaceId: string,
     dateRange: { start: Date; end: Date } | null,
     callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
   ): () => void;
 
-  getTasks(dateRange: { start: Date; end: Date } | null): Promise<SupabaseTask[]>;
+  getTasks(workspaceId: string, dateRange: { start: Date; end: Date } | null): Promise<SupabaseTask[]>;
 
   updateTaskQuadrant(
     taskId: string,

@@ -2,12 +2,13 @@ import type { SupabaseStandupLog, SupabaseStandupLogInsert } from "@/common/type
 
 export interface StandupRepository {
   subscribeToRecentStandups(
+    workspaceId: string,
     limit: number,
     callback: (logs: SupabaseStandupLog[]) => void,
     onError: (error: Error) => void
   ): () => void;
 
-  getRecentStandups(limit: number): Promise<SupabaseStandupLog[]>;
+  getRecentStandups(workspaceId: string, limit: number): Promise<SupabaseStandupLog[]>;
 
   addStandupLog(logData: SupabaseStandupLogInsert): Promise<SupabaseStandupLog>;
 

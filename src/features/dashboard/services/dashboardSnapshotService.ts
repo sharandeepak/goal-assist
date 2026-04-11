@@ -127,12 +127,19 @@ const createTodayFocusStatement = (
 };
 
 export const getDashboardSnapshot = async (
-  userId: string
+  userId: string,
+  workspaceId: string
 ): Promise<DashboardSnapshot> => {
   if (!userId) {
     throw AppError.badRequest(
       "DASHBOARD_USER_REQUIRED",
       "User ID is required to load dashboard insights."
+    );
+  }
+  if (!workspaceId) {
+    throw AppError.badRequest(
+      "DASHBOARD_WORKSPACE_REQUIRED",
+      "Workspace ID is required to load dashboard insights."
     );
   }
 
@@ -153,12 +160,12 @@ export const getDashboardSnapshot = async (
       weekEntries,
       runningEntry,
     ] = await Promise.all([
-      getTasksByDateRange(lookbackStart, todayEnd),
-      getPageMilestoneSummary(),
-      getSatisfactionSummary(),
-      getRecentStandups(2),
-      getEntriesForDateRange(userId, weekStartKey, todayKey),
-      getRunningEntry(userId),
+      getTasksByDateRange(workspaceId, lookbackStart, todayEnd),
+      getPageMilestoneSummary(workspaceId),
+      getSatisfactionSummary(workspaceId),
+      getRecentStandups(workspaceId, 2),
+      getEntriesForDateRange(userId, workspaceId, weekStartKey, todayKey),
+      getRunningEntry(userId, workspaceId),
     ]);
 
     const todayTasks = tasksInWindow

@@ -29,6 +29,7 @@ export class SupabaseTaskRepository
   }
 
   subscribeTasks(
+    workspaceId: string,
     startDate: Date,
     endDate: Date,
     callback: (tasks: SupabaseTask[]) => void,
@@ -36,7 +37,7 @@ export class SupabaseTaskRepository
   ): () => void {
     const fetchAndCallback = async () => {
       try {
-        const tasks = await this.getTasksByDateRange(startDate, endDate);
+        const tasks = await this.getTasksByDateRange(workspaceId, startDate, endDate);
         callback(tasks);
       } catch (err) {
         onError(err instanceof Error ? err : new Error(String(err)));
@@ -50,6 +51,7 @@ export class SupabaseTaskRepository
   }
 
   subscribeTaskSummary(
+    workspaceId: string,
     callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
   ): () => void {
@@ -57,6 +59,7 @@ export class SupabaseTaskRepository
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .order("created_at", { ascending: false })
           .limit(8);
         if (error) throw AppError.internal("TASK_SUMMARY_FETCH_ERROR", error.message);
@@ -72,10 +75,11 @@ export class SupabaseTaskRepository
     });
   }
 
-  async getTasksForDate(date: Date): Promise<SupabaseTask[]> {
+  async getTasksForDate(workspaceId: string, date: Date): Promise<SupabaseTask[]> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .gte("date", startOfDay(date).toISOString())
         .lte("date", endOfDay(date).toISOString())
         .order("date", { ascending: true });
@@ -87,10 +91,11 @@ export class SupabaseTaskRepository
     }
   }
 
-  async getTasksByDateRange(startDate: Date, endDate: Date): Promise<SupabaseTask[]> {
+  async getTasksByDateRange(workspaceId: string, startDate: Date, endDate: Date): Promise<SupabaseTask[]> {
     try {
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .gte("date", startOfDay(startDate).toISOString())
         .lte("date", endOfDay(endDate).toISOString())
         .order("date", { ascending: true });
@@ -106,11 +111,12 @@ export class SupabaseTaskRepository
     }
   }
 
-  async getTasksForMilestone(milestoneId: string): Promise<SupabaseTask[]> {
+  async getTasksForMilestone(workspaceId: string, milestoneId: string): Promise<SupabaseTask[]> {
     try {
       if (!milestoneId) return [];
       const { data, error } = await this.table
         .select("*")
+        .eq("workspace_id", workspaceId)
         .eq("milestone_id", milestoneId)
         .order("date", { ascending: true });
       if (error)
@@ -126,6 +132,7 @@ export class SupabaseTaskRepository
   }
 
   async getTaskCountsForMilestone(
+    workspaceId: string,
     milestoneId: string
   ): Promise<{ total: number; completed: number }> {
     try {
@@ -134,9 +141,11 @@ export class SupabaseTaskRepository
       const [totalResult, completedResult] = await Promise.all([
         this.table
           .select("*", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId)
           .eq("milestone_id", milestoneId),
         this.table
           .select("*", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId)
           .eq("milestone_id", milestoneId)
           .eq("completed", true),
       ]);
@@ -159,7 +168,7 @@ export class SupabaseTaskRepository
     }
   }
 
-  async getTodaysTaskSummary(): Promise<TaskSummaryData> {
+  async getTodaysTaskSummary(workspaceId: string): Promise<TaskSummaryData> {
     try {
       const todayStart = startOfDay(new Date());
       const todayEnd = endOfDay(new Date());
@@ -167,10 +176,12 @@ export class SupabaseTaskRepository
       const [totalResult, completedResult] = await Promise.all([
         this.table
           .select("*", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId)
           .gte("date", todayStart.toISOString())
           .lte("date", todayEnd.toISOString()),
         this.table
           .select("*", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId)
           .gte("date", todayStart.toISOString())
           .lte("date", todayEnd.toISOString())
           .eq("completed", true),

@@ -22,13 +22,14 @@ export class SupabaseMatrixRepository extends BaseRepository<"tasks"> implements
   }
 
   subscribeToTasks(
+    workspaceId: string,
     dateRange: { start: Date; end: Date } | null,
     callback: (tasks: SupabaseTask[]) => void,
     onError: (error: Error) => void
   ): () => void {
     const fetchAndCallback = async () => {
       try {
-        const tasks = await this.getTasks(dateRange);
+        const tasks = await this.getTasks(workspaceId, dateRange);
         callback(tasks);
       } catch (err) {
         onError(err instanceof Error ? err : new Error(String(err)));
@@ -40,20 +41,24 @@ export class SupabaseMatrixRepository extends BaseRepository<"tasks"> implements
     });
   }
 
-  async getTasks(dateRange: { start: Date; end: Date } | null): Promise<SupabaseTask[]> {
+  async getTasks(workspaceId: string, dateRange: { start: Date; end: Date } | null): Promise<SupabaseTask[]> {
     try {
       if (dateRange) {
         const start = startOfDay(dateRange.start).toISOString();
         const end = endOfDay(dateRange.end).toISOString();
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .gte("date", start)
           .lte("date", end)
           .order("date", { ascending: true });
         if (error) throw AppError.internal("MATRIX_FETCH_TASKS_ERROR", "Failed to fetch matrix tasks.");
         return (data ?? []) as SupabaseTask[];
       }
-      const { data, error } = await this.table.select("*").order("date", { ascending: true });
+      const { data, error } = await this.table
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("date", { ascending: true });
       if (error) throw AppError.internal("MATRIX_FETCH_TASKS_ERROR", "Failed to fetch matrix tasks.");
       return (data ?? []) as SupabaseTask[];
     } catch (error) {

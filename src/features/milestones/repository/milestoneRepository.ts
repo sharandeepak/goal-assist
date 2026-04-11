@@ -13,29 +13,31 @@ export interface MilestonePageSummaryData {
 
 export interface MilestoneRepository {
   subscribeToMilestonesByStatus(
+    workspaceId: string,
     status: SupabaseMilestone["status"],
     callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
   ): () => void;
 
   subscribeToActiveMilestonesProgress(
+    workspaceId: string,
     callback: (milestones: SupabaseMilestone[]) => void,
     onError: (error: Error) => void
   ): () => void;
 
-  getPageMilestoneSummary(): Promise<MilestonePageSummaryData>;
+  getPageMilestoneSummary(workspaceId: string): Promise<MilestonePageSummaryData>;
 
-  getNextActiveMilestone(date: Date): Promise<SupabaseMilestone | null>;
+  getNextActiveMilestone(workspaceId: string, date: Date): Promise<SupabaseMilestone | null>;
 
-  getUpcomingActiveMilestones(count: number): Promise<SupabaseMilestone[]>;
+  getUpcomingActiveMilestones(workspaceId: string, count: number): Promise<SupabaseMilestone[]>;
 
-  getMilestonesEndingOnDate(date: Date): Promise<SupabaseMilestone[]>;
+  getMilestonesEndingOnDate(workspaceId: string, date: Date): Promise<SupabaseMilestone[]>;
 
   addMilestone(milestoneData: SupabaseMilestoneInsert): Promise<SupabaseMilestone>;
 
   updateMilestone(milestoneId: string, dataToUpdate: SupabaseMilestoneUpdate): Promise<void>;
 
-  getMilestoneById(milestoneId: string): Promise<SupabaseMilestone | null>;
+  getMilestoneById(workspaceId: string, milestoneId: string): Promise<SupabaseMilestone | null>;
 
   updateMilestoneProgress(
     milestoneId: string,
@@ -44,7 +46,7 @@ export interface MilestoneRepository {
 
   deleteMilestone(milestoneId: string): Promise<void>;
 
-  getAllMilestoneIds(): Promise<string[]>;
+  getAllMilestoneIds(workspaceId: string): Promise<string[]>;
 
   deleteAllMilestones(ids: string[]): Promise<void>;
 }

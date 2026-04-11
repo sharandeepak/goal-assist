@@ -3,6 +3,7 @@ import { createClient } from "@/common/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/common/types/database.types";
 import type { SupabaseSatisfactionLog, SupabaseSatisfactionLogInsert } from "@/common/types";
+import type { SatisfactionRepository } from "./satisfactionRepository";
 import { AppError } from "@/common/errors/AppError";
 import { format, subDays } from "date-fns";
 
@@ -17,12 +18,13 @@ function getClient(): SupabaseClient<Database> {
   return clientInstance;
 }
 
-export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction_logs"> {
+export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction_logs"> implements SatisfactionRepository {
   constructor() {
     super("satisfaction_logs", getClient);
   }
 
   subscribeToRecentLogs(
+    workspaceId: string,
     limit: number,
     callback: (logs: SupabaseSatisfactionLog[]) => void,
     onError: (error: Error) => void
@@ -31,6 +33,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .order("log_date", { ascending: false })
           .limit(limit);
         if (error) throw AppError.internal("SATISFACTION_FETCH_ERROR", error.message);
@@ -46,6 +49,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
   }
 
   subscribeToLogsForMonth(
+    workspaceId: string,
     year: number,
     month: number,
     callback: (logs: SupabaseSatisfactionLog[]) => void,
@@ -60,6 +64,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
       try {
         const { data, error } = await this.table
           .select("*")
+          .eq("workspace_id", workspaceId)
           .gte("log_date", startDate)
           .lt("log_date", endDate)
           .order("log_date", { ascending: true });
@@ -90,6 +95,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
     try {
       const { data: existing, error: findError } = await this.table
         .select("*")
+        .eq("workspace_id", logData.workspace_id)
         .eq("user_id", logData.user_id)
         .eq("log_date", logData.log_date)
         .maybeSingle();
@@ -113,7 +119,7 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
     }
   }
 
-  async getSatisfactionSummary(): Promise<{
+  async getSatisfactionSummary(workspaceId: string): Promise<{
     currentScore: number | null;
     change: number | null;
   }> {
@@ -122,8 +128,8 @@ export class SupabaseSatisfactionRepository extends BaseRepository<"satisfaction
       const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
 
       const [todayResult, yesterdayResult] = await Promise.all([
-        this.table.select("score").eq("log_date", today).maybeSingle(),
-        this.table.select("score").eq("log_date", yesterday).maybeSingle(),
+        this.table.select("score").eq("workspace_id", workspaceId).eq("log_date", today).maybeSingle(),
+        this.table.select("score").eq("workspace_id", workspaceId).eq("log_date", yesterday).maybeSingle(),
       ]);
 
       if (todayResult.error) throw AppError.internal("SATISFACTION_SUMMARY_ERROR", "Failed to fetch satisfaction summary.");

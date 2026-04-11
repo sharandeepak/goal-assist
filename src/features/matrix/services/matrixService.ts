@@ -53,11 +53,13 @@ export const bucketTasksByQuadrant = (tasks: SupabaseTask[]): MatrixTasksData =>
 };
 
 export const subscribeToMatrixTasks = (
+  workspaceId: string,
   dateRange: { start: Date; end: Date } | null,
   callback: (data: MatrixTasksData) => void,
   onError: (error: Error) => void
 ): (() => void) => {
   return repository.subscribeToTasks(
+    workspaceId,
     dateRange,
     (tasks) => {
       callback(bucketTasksByQuadrant(tasks));
@@ -84,10 +86,11 @@ export const updateTaskQuadrant = async (
 };
 
 export const getTaskCountsByQuadrant = async (
+  workspaceId: string,
   dateRange: { start: Date; end: Date } | null
 ): Promise<QuadrantCounts> => {
   try {
-    const tasks = await repository.getTasks(dateRange);
+    const tasks = await repository.getTasks(workspaceId, dateRange);
     const data = bucketTasksByQuadrant(tasks);
 
     return {
