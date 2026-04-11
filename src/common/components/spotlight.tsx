@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTerminal, faMicrophone, faCalendar, faBullseye, faChartLine, faSquareCheck, faXmark, faClock, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faTerminal, faMicrophone, faCalendar, faBullseye, faSquareCheck, faXmark, faClock, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Command as CommandPrimitive } from "cmdk";
 
@@ -77,12 +77,6 @@ export default function Spotlight() {
 											<FontAwesomeIcon icon={faBullseye} className="h-4 w-4" />
 										</div>
 										View Milestones
-									</CommandPrimitive.Item>
-									<CommandPrimitive.Item className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground cursor-pointer" onSelect={() => runCommand(() => router.push("/analytics"))}>
-										<div className="flex h-5 w-5 items-center justify-center">
-											<FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-										</div>
-										View Analytics
 									</CommandPrimitive.Item>
 									<CommandPrimitive.Item className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground cursor-pointer" onSelect={() => runCommand(() => router.push("/calendar"))}>
 										<div className="flex h-5 w-5 items-center justify-center">

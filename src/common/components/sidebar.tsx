@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/common/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHouse, faCalendarDay, faTableCellsLarge, faMicrophone, faBullseye, faClock, faCalendarDays, faGear, faCircleQuestion, faArrowRightFromBracket, faBars, faSpinner, faBuilding } from "@fortawesome/free-solid-svg-icons";
+import { faHouse, faCalendarDay, faTableCellsLarge, faMicrophone, faBullseye, faClock, faCalendarDays, faGear, faBars, faBuilding } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/common/ui/sheet";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/common/ui/alert-dialog";
-import { useAuth } from "@/common/hooks/use-auth";
 
 const mainMenu = [
 	{ name: "Dashboard", path: "/", icon: faHouse },
@@ -24,7 +21,6 @@ const mainMenu = [
 const generalMenu = [
 	{ name: "Workspaces", path: "/workspaces", icon: faBuilding },
 	{ name: "Settings", path: "/settings", icon: faGear },
-	{ name: "Help", path: "/help", icon: faCircleQuestion },
 ];
 
 function NavLinks({ routes, pathname }: { routes: any[]; pathname: string }) {
@@ -43,46 +39,6 @@ function NavLinks({ routes, pathname }: { routes: any[]; pathname: string }) {
 				);
 			})}
 		</div>
-	);
-}
-
-function LogoutButton() {
-	const { signOut } = useAuth();
-	const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-	const handleConfirmSignOut = async () => {
-		setIsLoggingOut(true);
-		try {
-			await signOut();
-			window.location.href = "/auth/signin";
-		} finally {
-			setIsLoggingOut(false);
-		}
-	};
-
-	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<button disabled={isLoggingOut} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-muted-foreground hover:bg-accent/50 hover:text-foreground w-full mt-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
-					<div className="flex items-center justify-center w-5">
-						<FontAwesomeIcon icon={isLoggingOut ? faSpinner : faArrowRightFromBracket} className={cn("text-lg text-muted-foreground/70", isLoggingOut && "animate-spin")} />
-					</div>
-					{isLoggingOut ? "Signing out…" : "Logout"}
-				</button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>Sign out</AlertDialogTitle>
-					<AlertDialogDescription>Are you sure you want to sign out? You will need to sign in again to access your workspace.</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>Cancel</AlertDialogCancel>
-					<AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-						Sign out
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
 	);
 }
 
@@ -112,23 +68,6 @@ export default function Sidebar() {
 					<div>
 						<p className="px-4 text-xs font-semibold text-muted-foreground/50 tracking-wider uppercase mb-3">General</p>
 						<NavLinks routes={generalMenu} pathname={pathname} />
-						<LogoutButton />
-					</div>
-				</div>
-
-				<div className="p-4 mt-auto">
-					<div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-5 text-primary-foreground">
-						<div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-						<div className="absolute -left-4 -bottom-4 w-24 h-24 bg-black/10 rounded-full blur-2xl pointer-events-none" />
-						<h4 className="font-semibold text-base mb-1 relative z-10">
-							Download our
-							<br />
-							Mobile App
-						</h4>
-						<p className="text-xs text-primary-foreground/80 mb-3 relative z-10">Get easy in another way</p>
-						<Button size="sm" variant="secondary" className="w-full bg-white text-primary hover:bg-white/90 relative z-10 shadow-sm">
-							Download
-						</Button>
 					</div>
 				</div>
 			</aside>
@@ -156,7 +95,6 @@ export default function Sidebar() {
 						<div>
 							<p className="px-4 text-xs font-semibold text-muted-foreground/50 tracking-wider uppercase mb-3">General</p>
 							<NavLinks routes={generalMenu} pathname={pathname} />
-							<LogoutButton />
 						</div>
 					</div>
 				</SheetContent>
