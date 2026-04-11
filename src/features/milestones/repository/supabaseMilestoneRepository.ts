@@ -342,6 +342,33 @@ export class SupabaseMilestoneRepository
       );
     }
   }
+
+  async searchMilestonesByTitle(
+    workspaceId: string,
+    query: string,
+    status?: SupabaseMilestone["status"]
+  ): Promise<SupabaseMilestone[]> {
+    try {
+      let req = this.table
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .ilike("title", `%${query}%`)
+        .order("end_date", { ascending: true });
+
+      if (status) {
+        req = req.eq("status", status);
+      }
+
+      const { data, error } = await req;
+      if (error) throw error;
+      return (data ?? []) as SupabaseMilestone[];
+    } catch (error) {
+      throw AppError.internal(
+        "MILESTONE_SEARCH_ERROR",
+        "Failed to search milestones."
+      );
+    }
+  }
 }
 
 export const supabaseMilestoneRepository = new SupabaseMilestoneRepository();

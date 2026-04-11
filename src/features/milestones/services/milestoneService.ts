@@ -194,6 +194,20 @@ export const deleteMilestone = async (
   }
 };
 
+export const searchMilestonesByTitle = async (
+  workspaceId: string,
+  query: string,
+  status?: SupabaseMilestone["status"]
+): Promise<SupabaseMilestone[]> => {
+  if (!query.trim()) return [];
+  try {
+    return await repository.searchMilestonesByTitle(workspaceId, query.trim(), status);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MILESTONE_SEARCH_ERROR", "Failed to search milestones.");
+  }
+};
+
 export const deleteAllUserMilestones = async (workspaceId: string): Promise<void> => {
   try {
     const ids = await repository.getAllMilestoneIds(workspaceId);

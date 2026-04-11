@@ -17,7 +17,7 @@ import { Skeleton } from "@/common/ui/skeleton";
 import { Checkbox } from "@/common/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/common/ui/collapsible";
 import { Milestone, Task } from "@/common/types";
-import { subscribeToMilestonesByStatus, addMilestone, deleteMilestone, updateMilestone } from "@/features/milestones/services/milestoneService";
+import { subscribeToMilestonesByStatus, addMilestone, deleteMilestone, updateMilestone, searchMilestonesByTitle } from "@/features/milestones/services/milestoneService";
 import { getTasksForMilestone, addTask, updateTaskCompletion, updateTask, deleteTask as deleteTaskService } from "@/features/tasks/services/taskService";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { startOfDay, differenceInCalendarDays, format, addDays } from "date-fns";
@@ -546,6 +546,8 @@ function MilestonesPageContent() {
 	const [addMilestoneError, setAddMilestoneError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("active");
 	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [searchResults, setSearchResults] = useState<Milestone[] | null>(null);
+	const [isSearching, setIsSearching] = useState(false);
 
 	const searchParams = useSearchParams();
 	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">>>({
@@ -601,6 +603,28 @@ function MilestonesPageContent() {
 		);
 		return () => unsubscribe();
 	}, [workspaceId]);
+
+	useEffect(() => {
+		const trimmed = searchQuery.trim();
+		if (!trimmed) {
+			setSearchResults(null);
+			setIsSearching(false);
+			return;
+		}
+		setIsSearching(true);
+		const timer = setTimeout(async () => {
+			try {
+				const results = await searchMilestonesByTitle(workspaceId, trimmed);
+				setSearchResults(results as Milestone[]);
+			} catch (err) {
+				console.error("Search failed:", err);
+				setSearchResults([]);
+			} finally {
+				setIsSearching(false);
+			}
+		}, 350);
+		return () => clearTimeout(timer);
+	}, [searchQuery, workspaceId]);
 
 	const handleAddMilestone = async () => {
 		if (!newMilestoneData.title || newMilestoneData.title.trim() === "") {
@@ -659,49 +683,70 @@ function MilestonesPageContent() {
 		}
 	};
 
+	const MilestoneCardSkeleton = () => (
+		<Card variant="elevated" className="overflow-hidden">
+			<CardHeader className="pb-4">
+				<div className="flex justify-between items-start gap-3">
+					<div className="flex-1 min-w-0 space-y-2">
+						<Skeleton className="h-5 w-3/4" />
+						<Skeleton className="h-4 w-full" />
+					</div>
+					<div className="flex gap-1 flex-shrink-0">
+						<Skeleton className="h-8 w-8 rounded-md" />
+						<Skeleton className="h-8 w-8 rounded-md" />
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-2 flex-1 rounded-full" />
+					<Skeleton className="h-4 w-10" />
+				</div>
+				<Skeleton className="h-9 w-full rounded-xl" />
+				<div className="flex gap-2">
+					<Skeleton className="h-5 w-16 rounded-full" />
+					<Skeleton className="h-5 w-20 rounded-full" />
+				</div>
+			</CardContent>
+			<CardFooter className="flex justify-between items-center border-t pt-4">
+				<Skeleton className="h-6 w-28 rounded-lg" />
+				<Skeleton className="h-6 w-28 rounded-lg" />
+			</CardFooter>
+		</Card>
+	);
+
 	const renderMilestoneList = (milestones: Milestone[], isLoading: boolean, isActiveTab: boolean) => {
-		const trimmedQuery = searchQuery.trim().toLowerCase();
-		const filteredMilestones = trimmedQuery ? milestones.filter((m) => m.title.toLowerCase().includes(trimmedQuery)) : milestones;
-		if (isLoading) {
+		const isSearchActive = searchQuery.trim().length > 0;
+		const status = isActiveTab ? "active" : "completed";
+
+		// Show shimmer while initial data loads or a DB search is in flight
+		if (isLoading || (isSearchActive && isSearching)) {
 			return (
 				<div className="space-y-4">
-					{[...Array(2)].map((_, i) => (
-						<Card key={i}>
-							<CardHeader>
-								<Skeleton className="h-6 w-3/4" />
-								<Skeleton className="h-4 w-full mt-1" />
-							</CardHeader>
-							<CardContent className="space-y-3">
-								<div className="flex items-center gap-4">
-									<Skeleton className="h-2 w-full" />
-									<Skeleton className="h-4 w-8" />
-								</div>
-								<Skeleton className="h-5 w-1/3 mt-2" />
-								<Skeleton className="h-4 w-1/2 mt-2" />
-							</CardContent>
-							<CardFooter className="flex justify-between items-center text-xs text-muted-foreground">
-								<Skeleton className="h-4 w-1/4" />
-								<Skeleton className="h-4 w-1/4" />
-							</CardFooter>
-						</Card>
+					{[...Array(3)].map((_, i) => (
+						<MilestoneCardSkeleton key={i} />
 					))}
 				</div>
 			);
 		}
-		if (filteredMilestones.length === 0) {
-			const type = isActiveTab ? "active" : "completed";
+
+		const displayList = isSearchActive
+			? (searchResults ?? []).filter((m) => m.status === status)
+			: milestones;
+
+		if (displayList.length === 0) {
 			return (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
 					<FontAwesomeIcon icon={faBullseye} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
-					<h3 className="font-medium text-lg">{trimmedQuery ? "No matching milestones" : `No ${type} milestones`}</h3>
-					{!trimmedQuery && type === "active" && <p className="text-sm text-muted-foreground">Add a new milestone to get started.</p>}
+					<h3 className="font-medium text-lg">{isSearchActive ? "No matching milestones" : `No ${status} milestones`}</h3>
+					{!isSearchActive && status === "active" && <p className="text-sm text-muted-foreground">Add a new milestone to get started.</p>}
 				</div>
 			);
 		}
 
 		return (
 			<div className="space-y-4">
-				{filteredMilestones.map((milestone) => (
+				{displayList.map((milestone) => (
 					<MilestoneCard key={milestone.id} milestone={milestone} onDelete={handleDeleteMilestoneWrapper} />
 				))}
 			</div>

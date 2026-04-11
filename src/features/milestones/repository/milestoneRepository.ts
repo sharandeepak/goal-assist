@@ -49,4 +49,10 @@ export interface MilestoneRepository {
   getAllMilestoneIds(workspaceId: string): Promise<string[]>;
 
   deleteAllMilestones(ids: string[]): Promise<void>;
+
+  searchMilestonesByTitle(
+    workspaceId: string,
+    query: string,
+    status?: SupabaseMilestone["status"]
+  ): Promise<SupabaseMilestone[]>;
 }
