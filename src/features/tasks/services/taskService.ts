@@ -22,6 +22,16 @@ export const getTasksForDate = async (workspaceId: string, date: Date): Promise<
   }
 };
 
+export const searchTasksByTitle = async (workspaceId: string, query: string): Promise<SupabaseTask[]> => {
+  if (!query.trim()) return [];
+  try {
+    return await taskRepository.searchTasksByTitle(workspaceId, query.trim());
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("TASK_SEARCH_ERROR", "Failed to search tasks.");
+  }
+};
+
 export const getTasksByDateRange = async (workspaceId: string, startDate: Date, endDate: Date): Promise<SupabaseTask[]> => {
   try {
     return await taskRepository.getTasksByDateRange(workspaceId, startDate, endDate);

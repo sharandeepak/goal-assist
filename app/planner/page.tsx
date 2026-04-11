@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/common/ui/label";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
-import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
+import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask, searchTasksByTitle } from "@/features/tasks/services/taskService";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { startOfDay, endOfDay, addDays, format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
@@ -87,6 +87,8 @@ function DayPlannerContent() {
 	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
 	const [activeTab, setActiveTab] = useState<string>("today");
+	const [searchResults, setSearchResults] = useState<Task[]>([]);
+	const [isSearchLoading, setIsSearchLoading] = useState(false);
 
 	const todayStart = startOfDay(new Date());
 	const todayEnd = endOfDay(new Date());
@@ -172,6 +174,28 @@ function DayPlannerContent() {
 		return () => unsubscribe();
 	}, [activeTab, workspaceId]);
 
+	useEffect(() => {
+		const trimmed = searchQuery.trim();
+		if (!trimmed) {
+			setSearchResults([]);
+			setIsSearchLoading(false);
+			return;
+		}
+		setIsSearchLoading(true);
+		const timer = setTimeout(async () => {
+			try {
+				const results = await searchTasksByTitle(workspaceId, trimmed);
+				setSearchResults(results);
+			} catch (err) {
+				console.error("Search failed:", err);
+				setSearchResults([]);
+			} finally {
+				setIsSearchLoading(false);
+			}
+		}, 350);
+		return () => clearTimeout(timer);
+	}, [searchQuery, workspaceId]);
+
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		try {
 			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
@@ -255,9 +279,29 @@ function DayPlannerContent() {
 		setIsEditTaskDialogOpen(true);
 	};
 
+	const renderSearchSkeletons = () => (
+		<div className="space-y-3">
+			{[...Array(5)].map((_, i) => (
+				<div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+					<div className="flex items-center space-x-3 flex-1 min-w-0">
+						<Skeleton className="h-5 w-5 rounded flex-shrink-0" />
+						<div className="flex-1 space-y-1.5 min-w-0">
+							<Skeleton className="h-4 w-2/3" />
+							<Skeleton className="h-3 w-1/4" />
+						</div>
+					</div>
+					<div className="flex items-center gap-2 flex-shrink-0">
+						<Skeleton className="h-6 w-16 rounded-md" />
+						<Skeleton className="h-6 w-24 rounded-md" />
+						<Skeleton className="h-7 w-7 rounded" />
+						<Skeleton className="h-7 w-7 rounded" />
+					</div>
+				</div>
+			))}
+		</div>
+	);
+
 	const renderTaskList = (tasks: Task[], isLoading: boolean) => {
-		const trimmedQuery = searchQuery.trim().toLowerCase();
-		const filteredTasks = trimmedQuery ? tasks.filter((t) => t.title.toLowerCase().includes(trimmedQuery)) : tasks;
 		if (isLoading) {
 			return (
 				<div className="space-y-4">
@@ -278,18 +322,18 @@ function DayPlannerContent() {
 				</div>
 			);
 		}
-		if (filteredTasks.length === 0) {
+		if (tasks.length === 0) {
 			return (
 				<div className="flex flex-col items-center justify-center py-8 text-center">
 					<FontAwesomeIcon icon={faCircleCheck} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
 					<h3 className="font-medium text-lg">No tasks</h3>
-					<p className="text-sm text-muted-foreground">{trimmedQuery ? "No matching tasks for your search." : "No tasks scheduled for this period."}</p>
+					<p className="text-sm text-muted-foreground">No tasks scheduled for this period.</p>
 				</div>
 			);
 		}
 		return (
 			<div className="space-y-4">
-				{filteredTasks.map((task) => (
+				{tasks.map((task) => (
 					<div key={task.id} className="flex items-center justify-between space-x-2 task-card p-3 rounded-lg border group">
 						<div className="flex items-center space-x-3 flex-1 min-w-0">
 							<Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id, task.completed)} aria-label={`Mark task ${task.title} as ${task.completed ? "incomplete" : "complete"}`} className="mt-1 self-start" />
@@ -364,7 +408,32 @@ function DayPlannerContent() {
 				</Card>
 			)}
 
-			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+			{searchQuery.trim() && (
+				<Card>
+					<CardHeader className="pb-3">
+						<CardTitle className="text-base">
+							Search Results
+							{!isSearchLoading && (
+								<span className="ml-2 text-sm font-normal text-muted-foreground">
+									{searchResults.length} {searchResults.length === 1 ? "task" : "tasks"} found
+								</span>
+							)}
+						</CardTitle>
+						<CardDescription>Searching across all tasks for &quot;{searchQuery.trim()}&quot;</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{isSearchLoading ? renderSearchSkeletons() : searchResults.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-8 text-center">
+								<FontAwesomeIcon icon={faCircleCheck} className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+								<h3 className="font-medium text-lg">No results</h3>
+								<p className="text-sm text-muted-foreground">No tasks match &quot;{searchQuery.trim()}&quot;</p>
+							</div>
+						) : renderTaskList(searchResults, false)}
+					</CardContent>
+				</Card>
+			)}
+
+			<Tabs value={activeTab} onValueChange={setActiveTab} className={`space-y-4 ${searchQuery.trim() ? "hidden" : ""}`}>
 				<TabsList>
 					<TabsTrigger value="today">Today</TabsTrigger>
 					<TabsTrigger value="upcoming">Upcoming (Next 7 Days)</TabsTrigger>
@@ -376,7 +445,7 @@ function DayPlannerContent() {
 							<CardTitle>Today's Tasks</CardTitle>
 							<CardDescription>Tasks scheduled for today.</CardDescription>
 						</CardHeader>
-						<CardContent>{renderTaskList(todayTasks, loadingToday)}</CardContent>
+						<CardContent className="h-[480px] overflow-y-auto">{renderTaskList(todayTasks, loadingToday)}</CardContent>
 					</Card>
 				</TabsContent>
 				<TabsContent value="upcoming" className="space-y-4">
@@ -385,7 +454,7 @@ function DayPlannerContent() {
 							<CardTitle>Upcoming Tasks</CardTitle>
 							<CardDescription>Tasks scheduled for the next 7 days (excluding today).</CardDescription>
 						</CardHeader>
-						<CardContent>{renderTaskList(upcomingTasks, loadingUpcoming)}</CardContent>
+						<CardContent className="h-[480px] overflow-y-auto">{renderTaskList(upcomingTasks, loadingUpcoming)}</CardContent>
 					</Card>
 				</TabsContent>
 				<TabsContent value="all" className="space-y-4">
@@ -394,7 +463,7 @@ function DayPlannerContent() {
 							<CardTitle>All Tasks</CardTitle>
 							<CardDescription>All your tasks, past, present, and future.</CardDescription>
 						</CardHeader>
-						<CardContent>{renderTaskList(allTasks, loadingAll)}</CardContent>
+						<CardContent className="h-[480px] overflow-y-auto">{renderTaskList(allTasks, loadingAll)}</CardContent>
 					</Card>
 				</TabsContent>
 			</Tabs>

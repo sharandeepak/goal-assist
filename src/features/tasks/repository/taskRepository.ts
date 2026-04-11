@@ -24,6 +24,8 @@ export interface TaskRepository {
 
   getTasksByDateRange(workspaceId: string, startDate: Date, endDate: Date): Promise<SupabaseTask[]>;
 
+  searchTasksByTitle(workspaceId: string, query: string): Promise<SupabaseTask[]>;
+
   getTasksForMilestone(workspaceId: string, milestoneId: string): Promise<SupabaseTask[]>;
 
   getTaskCountsForMilestone(workspaceId: string, milestoneId: string): Promise<{ total: number; completed: number }>;

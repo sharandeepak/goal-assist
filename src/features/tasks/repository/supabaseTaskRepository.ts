@@ -111,6 +111,22 @@ export class SupabaseTaskRepository
     }
   }
 
+  async searchTasksByTitle(workspaceId: string, query: string): Promise<SupabaseTask[]> {
+    try {
+      const { data, error } = await this.table
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .ilike("title", `%${query}%`)
+        .order("date", { ascending: false })
+        .limit(50);
+      if (error) throw AppError.internal("TASK_SEARCH_ERROR", error.message);
+      return (data ?? []) as SupabaseTask[];
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal("TASK_SEARCH_ERROR", "Failed to search tasks.");
+    }
+  }
+
   async getTasksForMilestone(workspaceId: string, milestoneId: string): Promise<SupabaseTask[]> {
     try {
       if (!milestoneId) return [];
