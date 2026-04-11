@@ -40,9 +40,16 @@ export default function TaskSummary() {
 
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		setToggleError(null);
+		const newCompleted = !currentCompleted;
+
+		// Optimistic update — flip immediately
+		setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: newCompleted } : t)));
+
 		try {
-			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
+			await updateTaskCompletion(taskId, newCompleted, workspaceId, undefined);
 		} catch (err) {
+			// Revert on failure
+			setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: currentCompleted } : t)));
 			console.error("Failed to update task completion from summary:", err);
 			setToggleError("Failed to update task.");
 		}

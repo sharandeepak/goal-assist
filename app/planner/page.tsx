@@ -196,10 +196,26 @@ function DayPlannerContent() {
 		return () => clearTimeout(timer);
 	}, [searchQuery, workspaceId]);
 
+	const toggleTaskInList = (list: Task[], taskId: string, completed: boolean): Task[] =>
+		list.map((t) => (t.id === taskId ? { ...t, completed } : t));
+
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
+		const newCompleted = !currentCompleted;
+
+		// Optimistic update — flip immediately in all lists
+		setTodayTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
+		setUpcomingTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
+		setAllTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
+		setSearchResults((prev) => toggleTaskInList(prev, taskId, newCompleted));
+
 		try {
-			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
+			await updateTaskCompletion(taskId, newCompleted, workspaceId, undefined);
 		} catch (err) {
+			// Revert on failure
+			setTodayTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
+			setUpcomingTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
+			setAllTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
+			setSearchResults((prev) => toggleTaskInList(prev, taskId, currentCompleted));
 			console.error("Failed to update task completion:", err);
 			setError("Failed to update task status.");
 		}
