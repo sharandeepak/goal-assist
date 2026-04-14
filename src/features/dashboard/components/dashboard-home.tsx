@@ -377,15 +377,22 @@ export default function DashboardHome() {
 
 			<section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg">Overdue tasks</CardTitle>
-						<CardDescription>Items that need immediate attention</CardDescription>
+					<CardHeader className="flex flex-row items-start justify-between gap-2">
+						<div>
+							<CardTitle className="text-lg">Overdue tasks</CardTitle>
+							<CardDescription>Items that need immediate attention</CardDescription>
+						</div>
+						{snapshot.insights.overdueTasks.length > 0 && (
+							<Link href="/planner?tab=overdue" className="text-xs text-muted-foreground hover:text-primary shrink-0 mt-0.5">
+								View all
+							</Link>
+						)}
 					</CardHeader>
 					<CardContent className="space-y-3">
 						{snapshot.insights.overdueTasks.length === 0 ? (
 							<p className="text-sm text-muted-foreground">No overdue tasks in the recent window.</p>
 						) : (
-							snapshot.insights.overdueTasks.map((task) => (
+							snapshot.insights.overdueTasks.slice(0, 3).map((task) => (
 								<div key={task.id} className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
 									<p className="text-sm font-medium">{task.title}</p>
 									<p className="text-xs text-muted-foreground mt-1">
@@ -398,9 +405,16 @@ export default function DashboardHome() {
 				</Card>
 
 				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg">Upcoming milestones</CardTitle>
-						<CardDescription>Next 3 active deadlines</CardDescription>
+					<CardHeader className="flex flex-row items-start justify-between gap-2">
+						<div>
+							<CardTitle className="text-lg">Upcoming milestones</CardTitle>
+							<CardDescription>Next 3 active deadlines</CardDescription>
+						</div>
+						{snapshot.insights.upcomingMilestones.length > 0 && (
+							<Link href="/milestones" className="text-xs text-muted-foreground hover:text-primary shrink-0 mt-0.5">
+								View all
+							</Link>
+						)}
 					</CardHeader>
 					<CardContent className="space-y-3">
 						{snapshot.insights.upcomingMilestones.length === 0 ? (

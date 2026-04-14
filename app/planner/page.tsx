@@ -75,9 +75,11 @@ function DayPlannerContent() {
 	const [todayTasks, setTodayTasks] = useState<Task[]>([]);
 	const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 	const [allTasks, setAllTasks] = useState<Task[]>([]);
+	const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
 	const [loadingToday, setLoadingToday] = useState(true);
 	const [loadingUpcoming, setLoadingUpcoming] = useState(true);
 	const [loadingAll, setLoadingAll] = useState(true);
+	const [loadingOverdue, setLoadingOverdue] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -96,6 +98,7 @@ function DayPlannerContent() {
 	const upcomingEnd = endOfDay(addDays(new Date(), 7));
 	const allTasksStartDate = startOfDay(addDays(new Date(), -365));
 	const allTasksEndDate = endOfDay(addDays(new Date(), 365));
+	const overdueEnd = startOfDay(addDays(new Date(), -1));
 
 	const searchParams = useSearchParams();
 	const initialTab = searchParams?.get("tab") || "today";
@@ -175,6 +178,31 @@ function DayPlannerContent() {
 	}, [activeTab, workspaceId]);
 
 	useEffect(() => {
+		if (activeTab !== "overdue") return;
+		if (!workspaceId) return;
+		setLoadingOverdue(true);
+		const unsubscribe = subscribeToTasksByDateRange(
+			workspaceId,
+			allTasksStartDate,
+			overdueEnd,
+			(fetchedTasks) => {
+				const incomplete = fetchedTasks
+					.filter((t) => !t.completed)
+					.sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
+				setOverdueTasks(incomplete);
+				setLoadingOverdue(false);
+				setError((prev) => (prev === "Failed to load overdue tasks." ? null : prev));
+			},
+			(err) => {
+				console.error("Error loading overdue tasks:", err);
+				setError((prev) => (prev ? prev + " Failed to load overdue tasks." : "Failed to load overdue tasks."));
+				setLoadingOverdue(false);
+			}
+		);
+		return () => unsubscribe();
+	}, [activeTab, workspaceId]);
+
+	useEffect(() => {
 		const trimmed = searchQuery.trim();
 		if (!trimmed) {
 			setSearchResults([]);
@@ -206,6 +234,7 @@ function DayPlannerContent() {
 		setTodayTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
 		setUpcomingTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
 		setAllTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
+		setOverdueTasks((prev) => toggleTaskInList(prev, taskId, newCompleted));
 		setSearchResults((prev) => toggleTaskInList(prev, taskId, newCompleted));
 
 		try {
@@ -215,6 +244,7 @@ function DayPlannerContent() {
 			setTodayTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
 			setUpcomingTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
 			setAllTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
+			setOverdueTasks((prev) => toggleTaskInList(prev, taskId, currentCompleted));
 			setSearchResults((prev) => toggleTaskInList(prev, taskId, currentCompleted));
 			console.error("Failed to update task completion:", err);
 			setError("Failed to update task status.");
@@ -376,7 +406,7 @@ function DayPlannerContent() {
 								</Badge>
 							)}
 							{task.date && (
-								<Badge variant="outline" className="w-[95px] justify-center px-1 py-0.5 text-xs">
+								<Badge variant="outline" className="whitespace-nowrap justify-center px-1.5 py-0.5 text-xs">
 									<FontAwesomeIcon icon={faCalendar} className="h-3 w-3 mr-1" />
 									{formatDate(task.date)}
 								</Badge>
@@ -454,6 +484,10 @@ function DayPlannerContent() {
 					<TabsTrigger value="today">Today</TabsTrigger>
 					<TabsTrigger value="upcoming">Upcoming (Next 7 Days)</TabsTrigger>
 					<TabsTrigger value="all">All Tasks</TabsTrigger>
+					<TabsTrigger value="overdue" className="text-destructive data-[state=active]:text-destructive">
+						<FontAwesomeIcon icon={faTriangleExclamation} className="h-3.5 w-3.5 mr-1.5" />
+						Overdue
+					</TabsTrigger>
 				</TabsList>
 				<TabsContent value="today" className="space-y-4">
 					<Card>
@@ -480,6 +514,18 @@ function DayPlannerContent() {
 							<CardDescription>All your tasks, past, present, and future.</CardDescription>
 						</CardHeader>
 						<CardContent className="h-[480px] overflow-y-auto">{renderTaskList(allTasks, loadingAll)}</CardContent>
+					</Card>
+				</TabsContent>
+				<TabsContent value="overdue" className="space-y-4">
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2 text-destructive">
+								<FontAwesomeIcon icon={faTriangleExclamation} className="h-4 w-4" />
+								Overdue Tasks
+							</CardTitle>
+							<CardDescription>Incomplete tasks with a due date in the past.</CardDescription>
+						</CardHeader>
+						<CardContent className="h-[480px] overflow-y-auto">{renderTaskList(overdueTasks, loadingOverdue)}</CardContent>
 					</Card>
 				</TabsContent>
 			</Tabs>
