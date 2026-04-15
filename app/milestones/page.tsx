@@ -16,7 +16,8 @@ import { Label } from "@/common/ui/label";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Checkbox } from "@/common/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/common/ui/collapsible";
-import { Milestone, Task } from "@/common/types";
+import { Switch } from "@/common/ui/switch";
+import { Milestone, Task, Visibility } from "@/common/types";
 import { subscribeToMilestonesByStatus, addMilestone, deleteMilestone, updateMilestone, searchMilestonesByTitle } from "@/features/milestones/services/milestoneService";
 import { getTasksForMilestone, addTask, updateTaskCompletion, updateTask, deleteTask as deleteTaskService } from "@/features/tasks/services/taskService";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
@@ -204,7 +205,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	const [taskError, setTaskError] = useState<string | null>(null);
 	const [isTasksOpen, setIsTasksOpen] = useState(false);
 	const [editMilestoneOpen, setEditMilestoneOpen] = useState(false);
-	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "start_date" | "tasks">>>({});
+	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "start_date" | "tasks">> & { visibility?: Visibility }>({});
 	const [editMilestoneError, setEditMilestoneError] = useState<string | null>(null);
 	const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 	const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
@@ -234,6 +235,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			status: milestone.status,
 			urgency: milestone.urgency,
 			end_date: milestone.end_date,
+			visibility: (milestone.visibility as Visibility) ?? "private",
 		});
 		setEditMilestoneError(null);
 		setEditMilestoneOpen(true);
@@ -401,6 +403,17 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								</Select>
 							</div>
 						</div>
+						<div className="flex items-center justify-between">
+							<div>
+								<Label htmlFor="edit-milestone-visibility">Visibility</Label>
+								<p className="text-xs text-muted-foreground">Public milestones are visible to workspace members</p>
+							</div>
+							<Switch
+								id="edit-milestone-visibility"
+								checked={editMilestoneData.visibility === "public"}
+								onCheckedChange={(checked) => setEditMilestoneData({ ...editMilestoneData, visibility: checked ? "public" : "private" })}
+							/>
+						</div>
 					</div>
 					{editMilestoneError && <p className="text-sm text-red-600 text-center -mt-2 mb-2">{editMilestoneError}</p>}
 					<SheetFooter>
@@ -550,12 +563,13 @@ function MilestonesPageContent() {
 	const [isSearching, setIsSearching] = useState(false);
 
 	const searchParams = useSearchParams();
-	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">>>({
+	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">> & { visibility?: Visibility }>({
 		title: "",
 		description: "",
 		urgency: "medium",
 		status: "active",
 		progress: 0,
+		visibility: "private",
 	});
 	const [daysToComplete, setDaysToComplete] = useState<number>(14);
 
@@ -649,6 +663,7 @@ function MilestonesPageContent() {
 			user_id: userId,
 			start_date: startDate,
 			end_date: endDate,
+			visibility: newMilestoneData.visibility ?? "private",
 		};
 
 		try {
@@ -660,6 +675,7 @@ function MilestonesPageContent() {
 				urgency: "medium",
 				status: "active",
 				progress: 0,
+				visibility: "private",
 			});
 			setDaysToComplete(14);
 			setNewMilestoneOpen(false);
@@ -802,7 +818,18 @@ function MilestonesPageContent() {
 										<Input id="milestone-days" type="number" min="1" placeholder="e.g., 14" value={daysToComplete} onChange={(e) => setDaysToComplete(Number.parseInt(e.target.value) || 1)} />
 									</div>
 								</div>
-								{error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
+								<div className="flex items-center justify-between">
+										<div>
+											<Label htmlFor="milestone-visibility">Visibility</Label>
+											<p className="text-xs text-muted-foreground">Public milestones are visible to workspace members</p>
+										</div>
+										<Switch
+											id="milestone-visibility"
+											checked={newMilestoneData.visibility === "public"}
+											onCheckedChange={(checked) => setNewMilestoneData({ ...newMilestoneData, visibility: checked ? "public" : "private" })}
+										/>
+									</div>
+									{error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
 							</div>
 							<SheetFooter className="mt-auto pt-4 border-t">
 								<Button
