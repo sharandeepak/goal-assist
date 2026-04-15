@@ -19,6 +19,10 @@ export class AppError extends Error {
     return new AppError(errorCode, message, 404);
   }
 
+  static forbidden(errorCode: string, message: string): AppError {
+    return new AppError(errorCode, message, 403);
+  }
+
   static conflict(errorCode: string, message: string): AppError {
     return new AppError(errorCode, message, 409);
   }
