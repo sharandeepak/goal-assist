@@ -14,6 +14,7 @@ const AUTH_ROUTES = [
 // (reset-password needs an active session to call updateUser)
 const ALWAYS_ACCESSIBLE_AUTH_ROUTES = ["/auth/reset-password"];
 const ONBOARDING_ROUTE = "/onboarding";
+const INVITE_ROUTES = ["/invite"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -56,6 +57,19 @@ export async function middleware(request: NextRequest) {
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
   const isOnboardingRoute = pathname.startsWith(ONBOARDING_ROUTE);
+  const isInviteRoute = INVITE_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Allow unauthenticated access to invite token pages (they handle their own auth)
+  if (
+    !user &&
+    isInviteRoute &&
+    pathname.startsWith("/invite/") &&
+    pathname !== "/invite/pending"
+  ) {
+    return supabaseResponse;
+  }
 
   if (!user && !isAuthRoute && !isOnboardingRoute) {
     const url = request.nextUrl.clone();
@@ -77,6 +91,23 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // Check if authenticated user has an active user record
+  if (user && !isAuthRoute && !isOnboardingRoute && !isInviteRoute) {
+    const { data: activeUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!activeUser) {
+      // No active user record - check for pending invites
+      const url = request.nextUrl.clone();
+      url.pathname = "/invite/pending";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
