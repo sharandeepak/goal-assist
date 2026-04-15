@@ -282,6 +282,7 @@ export function MemberTreeView({
                   updated_at: "",
                 })}
                 userRole={userRole}
+                workspaceId={workspaceId}
                 onMemberUpdated={onMemberUpdated}
               />
             )}

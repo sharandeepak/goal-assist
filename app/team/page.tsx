@@ -130,6 +130,7 @@ export default function TeamPage() {
               members={members}
               currentUserId={userId}
               userRole={userRole}
+              workspaceId={workspaceId}
               onMemberUpdated={handleMemberUpdated}
             />
           ) : (

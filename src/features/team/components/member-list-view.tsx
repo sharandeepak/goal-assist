@@ -10,6 +10,7 @@ interface MemberListViewProps {
   members: TeamMember[];
   currentUserId: string;
   userRole: UserRole;
+  workspaceId: string;
   onMemberUpdated: () => void;
 }
 
@@ -35,7 +36,7 @@ function getStatusBadgeVariant(status: string): "default" | "secondary" | "outli
   }
 }
 
-export function MemberListView({ members, currentUserId, userRole, onMemberUpdated }: MemberListViewProps) {
+export function MemberListView({ members, currentUserId, userRole, workspaceId, onMemberUpdated }: MemberListViewProps) {
   if (members.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -85,6 +86,7 @@ export function MemberListView({ members, currentUserId, userRole, onMemberUpdat
                   <MemberActionsMenu
                     member={member}
                     userRole={userRole}
+                    workspaceId={workspaceId}
                     onMemberUpdated={onMemberUpdated}
                   />
                 )}
