@@ -12,7 +12,7 @@ import { MemberTreeView } from "@/features/team/components/member-tree-view";
 import { InviteMemberDialog } from "@/features/team/components/invite-member-dialog";
 import { PendingInvitesSection } from "@/features/team/components/pending-invites-section";
 import { getTeamMembers, searchTeamMembers, getUserPermissions } from "@/features/team/services/teamService";
-import { getWorkspaceInvites } from "@/features/invite/services/inviteService";
+import { getPendingInvitesForWorkspace } from "@/features/invite/services/inviteService";
 import type { TeamMember, TeamViewMode } from "@/features/team/types";
 import type { InviteWithDetails } from "@/features/invite/types";
 import type { UserRole } from "@/common/types";
@@ -40,7 +40,7 @@ export default function TeamPage() {
           searchQuery
             ? searchTeamMembers(workspaceId, searchQuery)
             : getTeamMembers(workspaceId),
-          getWorkspaceInvites(workspaceId),
+          getPendingInvitesForWorkspace(workspaceId),
         ]);
         setMembers(membersData);
         setPendingInvites(invitesData.filter(i => i.status === "pending"));
@@ -59,7 +59,7 @@ export default function TeamPage() {
     const fetchData = async () => {
       const [membersData, invitesData] = await Promise.all([
         getTeamMembers(workspaceId),
-        getWorkspaceInvites(workspaceId),
+        getPendingInvitesForWorkspace(workspaceId),
       ]);
       setMembers(membersData);
       setPendingInvites(invitesData.filter(i => i.status === "pending"));
