@@ -41,6 +41,7 @@ export interface Database {
           email: string;
           role: "admin" | "member" | "manager";
           status: "invited" | "active";
+          manager_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -53,6 +54,7 @@ export interface Database {
           email: string;
           role?: "admin" | "member" | "manager";
           status?: "invited" | "active";
+          manager_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -64,6 +66,7 @@ export interface Database {
           email?: string;
           role?: "admin" | "member" | "manager";
           status?: "invited" | "active";
+          manager_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -89,6 +92,7 @@ export interface Database {
           urgency: "low" | "medium" | "high" | null;
           tags: string[];
           milestone_id: string | null;
+          visibility: "private" | "public";
           created_at: string;
           updated_at: string;
         };
@@ -104,6 +108,7 @@ export interface Database {
           urgency?: "low" | "medium" | "high" | null;
           tags?: string[];
           milestone_id?: string | null;
+          visibility?: "private" | "public";
           created_at?: string;
           updated_at?: string;
         };
@@ -118,6 +123,7 @@ export interface Database {
           urgency?: "low" | "medium" | "high" | null;
           tags?: string[];
           milestone_id?: string | null;
+          visibility?: "private" | "public";
           updated_at?: string;
         };
         Relationships: [
@@ -149,6 +155,7 @@ export interface Database {
           status: "planned" | "active" | "completed" | "on_hold";
           start_date: string | null;
           end_date: string | null;
+          visibility: "private" | "public";
           created_at: string;
           updated_at: string;
         };
@@ -163,6 +170,7 @@ export interface Database {
           status: "planned" | "active" | "completed" | "on_hold";
           start_date?: string | null;
           end_date?: string | null;
+          visibility?: "private" | "public";
           created_at?: string;
           updated_at?: string;
         };
@@ -176,6 +184,7 @@ export interface Database {
           status?: "planned" | "active" | "completed" | "on_hold";
           start_date?: string | null;
           end_date?: string | null;
+          visibility?: "private" | "public";
           updated_at?: string;
         };
         Relationships: [
@@ -322,6 +331,108 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "time_entries_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          token: string;
+          role: "admin" | "manager" | "member";
+          manager_id: string | null;
+          invited_by: string;
+          status: "pending" | "accepted" | "declined" | "expired";
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          token?: string;
+          role: "admin" | "manager" | "member";
+          manager_id?: string | null;
+          invited_by: string;
+          status?: "pending" | "accepted" | "declined" | "expired";
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          email?: string;
+          token?: string;
+          role?: "admin" | "manager" | "member";
+          manager_id?: string | null;
+          invited_by?: string;
+          status?: "pending" | "accepted" | "declined" | "expired";
+          expires_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_invitations_manager_id_fkey";
+            columns: ["manager_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manager_reportee_mapping: {
+        Row: {
+          manager_id: string;
+          reportee_id: string;
+          depth: number;
+          workspace_id: string;
+        };
+        Insert: {
+          manager_id: string;
+          reportee_id: string;
+          depth: number;
+          workspace_id: string;
+        };
+        Update: {
+          manager_id?: string;
+          reportee_id?: string;
+          depth?: number;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manager_reportee_mapping_manager_id_fkey";
+            columns: ["manager_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manager_reportee_mapping_reportee_id_fkey";
+            columns: ["reportee_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manager_reportee_mapping_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
             referencedRelation: "workspaces";

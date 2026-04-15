@@ -60,6 +60,29 @@ export interface AccountInfo {
   workspaceName: string;
 }
 
+// ─── Workspace Invitations ───
+
+export type SupabaseWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Row"];
+export type SupabaseWorkspaceInvitationInsert = Database["public"]["Tables"]["workspace_invitations"]["Insert"];
+export type SupabaseWorkspaceInvitationUpdate = Database["public"]["Tables"]["workspace_invitations"]["Update"];
+
+// ─── Manager Hierarchy ───
+
+export type SupabaseManagerReporteeMapping = Database["public"]["Tables"]["manager_reportee_mapping"]["Row"];
+export type SupabaseManagerReporteeMappingInsert = Database["public"]["Tables"]["manager_reportee_mapping"]["Insert"];
+
+// ─── Visibility Type ───
+
+export type Visibility = "private" | "public";
+
+// ─── Role Type ───
+
+export type UserRole = "admin" | "manager" | "member";
+
+// ─── Invitation Status ───
+
+export type InvitationStatus = "pending" | "accepted" | "declined" | "expired";
+
 // ─── Legacy type aliases (for backward compatibility with components) ───
 
 export type Task = SupabaseTask;
