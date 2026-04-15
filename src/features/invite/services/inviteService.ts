@@ -1,6 +1,7 @@
 import type { SupabaseUser, UserRole } from "@/common/types";
 import { AppError } from "@/common/errors/AppError";
 import { supabaseInviteRepository } from "../repository/supabaseInviteRepository";
+import { addManagerRelationship } from "@/features/team/services/hierarchyService";
 import type {
   CreateInviteParams,
   CreateInviteResult,
@@ -129,6 +130,16 @@ export async function acceptInviteForUser(
 
   // Accept the invite
   await acceptInvite(invitationId, invitedUser.id, authId);
+
+  // Add to manager hierarchy if user has a manager
+  if (invitedUser.manager_id) {
+    try {
+      await addManagerRelationship(invitedUser.manager_id, invitedUser.id, workspaceId);
+    } catch (error) {
+      // Log but don't fail the invite acceptance - hierarchy is secondary
+      console.error("Failed to add hierarchy relationship:", error);
+    }
+  }
 }
 
 export async function declineInvite(invitationId: string, userId: string): Promise<void> {

@@ -144,7 +144,7 @@ export function MemberActionsMenu({
     setIsManagerLoading(true);
     try {
       const managerId = selectedManagerId === "none" ? null : selectedManagerId;
-      await updateMemberManager(userRole, member.id, managerId);
+      await updateMemberManager(userRole, member.id, managerId, workspaceId);
       toast({
         title: "Manager updated",
         description:

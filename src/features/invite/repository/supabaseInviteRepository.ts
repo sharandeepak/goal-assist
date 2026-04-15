@@ -210,10 +210,10 @@ class SupabaseInviteRepository implements InviteRepository {
     }
   }
 
-  async findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string } | null> {
+  async findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string; manager_id: string | null } | null> {
     const { data } = await this.supabase
       .from("users")
-      .select("id")
+      .select("id, manager_id")
       .eq("email", email)
       .eq("workspace_id", workspaceId)
       .eq("status", "invited")

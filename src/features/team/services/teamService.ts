@@ -1,6 +1,7 @@
 import type { SupabaseUser, UserRole } from "@/common/types";
 import { AppError } from "@/common/errors/AppError";
 import { supabaseTeamRepository } from "../repository/supabaseTeamRepository";
+import { updateManagerRelationship } from "./hierarchyService";
 import type { TeamMember, TeamPermissions, UpdateMemberParams } from "../types";
 import { getPermissionsForRole } from "../types";
 
@@ -101,7 +102,8 @@ export async function updateMemberRole(
 export async function updateMemberManager(
   actorRole: UserRole,
   memberId: string,
-  managerId: string | null
+  managerId: string | null,
+  workspaceId: string
 ): Promise<void> {
   const permissions = getPermissionsForRole(actorRole);
   if (!permissions.canAssignManager) {
@@ -113,7 +115,20 @@ export async function updateMemberManager(
     throw AppError.badRequest("TEAM_SELF_MANAGER", "A member cannot be their own manager.");
   }
 
+  // Get current manager before update
+  const member = await repository.getMemberById(memberId);
+  const oldManagerId = member?.manager_id || null;
+
+  // Update user table
   await repository.updateMemberManager(memberId, managerId);
+
+  // Update hierarchy closure table
+  try {
+    await updateManagerRelationship(memberId, oldManagerId, managerId, workspaceId);
+  } catch (error) {
+    // Log but don't fail - hierarchy is secondary to user table
+    console.error("Failed to update hierarchy:", error);
+  }
 }
 
 /**
