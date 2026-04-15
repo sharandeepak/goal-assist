@@ -280,6 +280,8 @@ src/features/team/
 - Unassigned members shown in separate section
 - Pending invites shown under their assigned manager (or unassigned)
 - Click to expand/collapse branches
+- **Collapse by default**: Only top 2 levels expanded on initial load
+- **Lazy loading**: Children fetched on expand, not pre-loaded (keeps initial payload small)
 
 ---
 
