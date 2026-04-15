@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/common/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHouse, faCalendarDay, faTableCellsLarge, faMicrophone, faBullseye, faClock, faCalendarDays, faGear, faBars, faBuilding } from "@fortawesome/free-solid-svg-icons";
+import { faHouse, faCalendarDay, faTableCellsLarge, faMicrophone, faBullseye, faClock, faCalendarDays, faGear, faBars, faBuilding, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/common/ui/sheet";
 
@@ -16,6 +16,7 @@ const mainMenu = [
 	{ name: "Milestones", path: "/milestones", icon: faBullseye },
 	{ name: "Timesheet", path: "/timesheet", icon: faClock },
 	{ name: "Calendar", path: "/calendar", icon: faCalendarDays },
+	{ name: "Team", path: "/team", icon: faUsers },
 ];
 
 const generalMenu = [
