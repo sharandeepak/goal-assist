@@ -139,6 +139,18 @@ export async function declineInvite(invitationId: string, userId: string): Promi
   await inviteRepository.deleteInvitedUser(userId);
 }
 
+export async function declineInviteForUser(
+  invitationId: string,
+  email: string,
+  workspaceId: string
+): Promise<void> {
+  const invitedUser = await inviteRepository.findInvitedUserByEmail(email, workspaceId);
+  if (!invitedUser) {
+    throw AppError.notFound("INVITE_USER_NOT_FOUND", "Invited user record not found");
+  }
+  await declineInvite(invitationId, invitedUser.id);
+}
+
 export async function getPendingInvitesForEmail(email: string): Promise<InviteWithDetails[]> {
   return inviteRepository.getPendingInvitationsForEmail(email);
 }
