@@ -209,6 +209,27 @@ class SupabaseInviteRepository implements InviteRepository {
       throw AppError.internal("INVITE_CANCEL_ERROR", "Failed to cancel invitation.");
     }
   }
+
+  async findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string } | null> {
+    const { data } = await this.supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .eq("workspace_id", workspaceId)
+      .eq("status", "invited")
+      .single();
+    return data;
+  }
+
+  async updateUserName(userId: string, firstName: string, lastName: string | null): Promise<void> {
+    const { error } = await this.supabase
+      .from("users")
+      .update({ first_name: firstName, last_name: lastName })
+      .eq("id", userId);
+    if (error) {
+      throw AppError.internal("INVITE_UPDATE_NAME", "Failed to update user name");
+    }
+  }
 }
 
 export const supabaseInviteRepository = new SupabaseInviteRepository();

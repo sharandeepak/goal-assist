@@ -13,7 +13,8 @@ import {
   CardTitle,
 } from "@/common/ui/card";
 import { createClient } from "@/common/lib/supabase/client";
-import { acceptInvite } from "@/features/invite/services/inviteService";
+import { acceptInviteForUser } from "@/features/invite/services/inviteService";
+import { AppError } from "@/common/errors/AppError";
 import type { InviteWithDetails } from "@/features/invite/types";
 
 interface InviteAcceptFormProps {
@@ -46,20 +47,16 @@ export function InviteAcceptForm({
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
+        if (!user) {
+          throw AppError.badRequest("INVITE_NOT_AUTHENTICATED", "Not authenticated");
+        }
 
-        // Find the invited user record
-        const { data: invitedUser } = await supabase
-          .from("users")
-          .select("id")
-          .eq("email", invitation.email)
-          .eq("workspace_id", invitation.workspace_id)
-          .eq("status", "invited")
-          .single();
-
-        if (!invitedUser) throw new Error("User record not found");
-
-        await acceptInvite(invitation.id, invitedUser.id, user.id);
+        await acceptInviteForUser(
+          invitation.id,
+          invitation.email,
+          invitation.workspace_id,
+          user.id
+        );
         router.push("/");
       } else {
         // New signup
@@ -89,38 +86,27 @@ export function InviteAcceptForm({
         }
 
         if (!authData.user) {
-          setError("Failed to create account");
-          setIsLoading(false);
-          return;
+          throw AppError.internal("INVITE_SIGNUP_FAILED", "Failed to create account");
         }
 
-        // Find and update the invited user record
-        const { data: invitedUser } = await supabase
-          .from("users")
-          .select("id")
-          .eq("email", invitation.email)
-          .eq("workspace_id", invitation.workspace_id)
-          .eq("status", "invited")
-          .single();
-
-        if (!invitedUser) throw new Error("User record not found");
-
-        // Update user with name
-        await supabase
-          .from("users")
-          .update({
-            first_name: firstName.trim(),
-            last_name: lastName.trim() || null,
-          })
-          .eq("id", invitedUser.id);
-
-        await acceptInvite(invitation.id, invitedUser.id, authData.user.id);
+        await acceptInviteForUser(
+          invitation.id,
+          invitation.email,
+          invitation.workspace_id,
+          authData.user.id,
+          firstName.trim(),
+          lastName.trim() || undefined
+        );
         router.push("/");
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to accept invitation"
-      );
+      if (err instanceof AppError) {
+        setError(err.errorMessage);
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Failed to accept invitation"
+        );
+      }
     } finally {
       setIsLoading(false);
     }

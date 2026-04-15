@@ -108,6 +108,29 @@ export async function acceptInvite(
   await inviteRepository.updateInvitationStatus(invitationId, "accepted");
 }
 
+export async function acceptInviteForUser(
+  invitationId: string,
+  email: string,
+  workspaceId: string,
+  authId: string,
+  firstName?: string,
+  lastName?: string
+): Promise<void> {
+  // Find the invited user
+  const invitedUser = await inviteRepository.findInvitedUserByEmail(email, workspaceId);
+  if (!invitedUser) {
+    throw AppError.notFound("INVITE_USER_NOT_FOUND", "Invited user record not found");
+  }
+
+  // Update name if provided
+  if (firstName) {
+    await inviteRepository.updateUserName(invitedUser.id, firstName, lastName || null);
+  }
+
+  // Accept the invite
+  await acceptInvite(invitationId, invitedUser.id, authId);
+}
+
 export async function declineInvite(invitationId: string, userId: string): Promise<void> {
   // Mark invitation as declined
   await inviteRepository.updateInvitationStatus(invitationId, "declined");

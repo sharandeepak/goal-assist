@@ -42,4 +42,8 @@ export interface InviteRepository {
   deleteInvitedUser(userId: string): Promise<void>;
 
   cancelInvitation(invitationId: string): Promise<void>;
+
+  findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string } | null>;
+
+  updateUserName(userId: string, firstName: string, lastName: string | null): Promise<void>;
 }
