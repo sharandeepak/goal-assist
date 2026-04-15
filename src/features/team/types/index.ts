@@ -12,7 +12,7 @@ export interface TeamMember {
   lastName: string | null;
   email: string;
   role: UserRole;
-  status: "active" | "invited" | "inactive";
+  status: "active" | "invited"; // Note: "inactive" will be added when database schema is updated
   managerId: string | null;
   managerName: string | null; // Denormalized for display
   createdAt: string;
@@ -31,7 +31,7 @@ export function toTeamMember(
     lastName: user.last_name,
     email: user.email,
     role: user.role as UserRole,
-    status: user.status as "active" | "invited" | "inactive",
+    status: user.status as "active" | "invited",
     managerId: user.manager_id,
     managerName: managerName || null,
     createdAt: user.created_at,
@@ -49,7 +49,7 @@ export interface TeamTreeNode {
   lastName: string | null;
   email: string;
   role: UserRole;
-  status: "active" | "invited" | "inactive";
+  status: "active" | "invited"; // Note: "inactive" will be added when database schema is updated
   children: TeamTreeNode[];
   isExpanded: boolean;
   isLoading: boolean;

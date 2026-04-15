@@ -25,7 +25,7 @@ export interface TeamRepository {
   /**
    * Check if a member has any direct reports
    */
-  hasDirectReports(memberId: string): Promise<boolean>;
+  hasDirectReports(memberId: string, workspaceId: string): Promise<boolean>;
 
   /**
    * Update a member's role
@@ -38,9 +38,9 @@ export interface TeamRepository {
   updateMemberManager(memberId: string, managerId: string | null): Promise<void>;
 
   /**
-   * Remove a member (set status to inactive)
+   * Remove a member from the workspace
    */
-  removeMember(memberId: string): Promise<void>;
+  removeMember(memberId: string, workspaceId: string): Promise<void>;
 
   /**
    * Search members by name or email

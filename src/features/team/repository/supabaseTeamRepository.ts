@@ -17,6 +17,23 @@ function getClient(): SupabaseClient<Database> {
 }
 
 export class SupabaseTeamRepository implements TeamRepository {
+  /**
+   * Private helper to get manager names for a list of manager IDs
+   */
+  private async getManagerNameMap(managerIds: string[]): Promise<Record<string, string>> {
+    if (managerIds.length === 0) return {};
+
+    const { data: managers } = await getClient()
+      .from("users")
+      .select("id, first_name, last_name")
+      .in("id", managerIds);
+
+    return (managers || []).reduce((acc, m) => {
+      acc[m.id] = `${m.first_name} ${m.last_name || ""}`.trim();
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
   async getWorkspaceMembers(workspaceId: string): Promise<TeamMember[]> {
     try {
       // Get all users in workspace
@@ -31,21 +48,9 @@ export class SupabaseTeamRepository implements TeamRepository {
         throw AppError.internal("TEAM_LIST_ERROR", error.message);
       }
 
-      // Get manager names
+      // Get manager names using helper
       const managerIds = [...new Set(users?.filter(u => u.manager_id).map(u => u.manager_id))] as string[];
-
-      let managerMap: Record<string, string> = {};
-      if (managerIds.length > 0) {
-        const { data: managers } = await getClient()
-          .from("users")
-          .select("id, first_name, last_name")
-          .in("id", managerIds);
-
-        managerMap = (managers || []).reduce((acc, m) => {
-          acc[m.id] = `${m.first_name} ${m.last_name || ""}`.trim();
-          return acc;
-        }, {} as Record<string, string>);
-      }
+      const managerMap = await this.getManagerNameMap(managerIds);
 
       return (users || []).map(user =>
         toTeamMember(user as SupabaseUser, user.manager_id ? managerMap[user.manager_id] : null)
@@ -117,12 +122,13 @@ export class SupabaseTeamRepository implements TeamRepository {
     }
   }
 
-  async hasDirectReports(memberId: string): Promise<boolean> {
+  async hasDirectReports(memberId: string, workspaceId: string): Promise<boolean> {
     try {
       const { count, error } = await getClient()
         .from("users")
         .select("id", { count: "exact", head: true })
         .eq("manager_id", memberId)
+        .eq("workspace_id", workspaceId)
         .in("status", ["active", "invited"]);
 
       if (error) {
@@ -168,21 +174,25 @@ export class SupabaseTeamRepository implements TeamRepository {
     }
   }
 
-  async removeMember(memberId: string): Promise<void> {
+  async removeMember(memberId: string, workspaceId: string): Promise<void> {
     try {
-      // Clear manager_id for any direct reports first
-      await getClient()
+      // First clear manager_id for any direct reports (with error handling)
+      const { error: reportsError } = await getClient()
         .from("users")
         .update({ manager_id: null })
-        .eq("manager_id", memberId);
+        .eq("manager_id", memberId)
+        .eq("workspace_id", workspaceId);
 
-      // Delete the user record
-      // Note: In the future, consider soft-delete with "inactive" status
-      // once the database schema supports it
+      if (reportsError) {
+        throw AppError.internal("TEAM_REMOVE_ERROR", "Failed to update direct reports.");
+      }
+
+      // Then delete the member
       const { error } = await getClient()
         .from("users")
         .delete()
-        .eq("id", memberId);
+        .eq("id", memberId)
+        .eq("workspace_id", workspaceId);
 
       if (error) {
         throw AppError.internal("TEAM_REMOVE_ERROR", error.message);
@@ -209,21 +219,9 @@ export class SupabaseTeamRepository implements TeamRepository {
         throw AppError.internal("TEAM_SEARCH_ERROR", error.message);
       }
 
-      // Get manager names (same logic as getWorkspaceMembers)
+      // Get manager names using helper
       const managerIds = [...new Set(users?.filter(u => u.manager_id).map(u => u.manager_id))] as string[];
-
-      let managerMap: Record<string, string> = {};
-      if (managerIds.length > 0) {
-        const { data: managers } = await getClient()
-          .from("users")
-          .select("id, first_name, last_name")
-          .in("id", managerIds);
-
-        managerMap = (managers || []).reduce((acc, m) => {
-          acc[m.id] = `${m.first_name} ${m.last_name || ""}`.trim();
-          return acc;
-        }, {} as Record<string, string>);
-      }
+      const managerMap = await this.getManagerNameMap(managerIds);
 
       return (users || []).map(user =>
         toTeamMember(user as SupabaseUser, user.manager_id ? managerMap[user.manager_id] : null)
