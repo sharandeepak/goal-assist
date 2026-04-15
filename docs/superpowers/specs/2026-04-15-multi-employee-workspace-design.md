@@ -414,9 +414,13 @@ When `user.manager_id` changes from A to B:
 ### On User Removal
 
 When a user is removed from workspace:
-1. Delete all rows where `reportee_id = user.id`
-2. Delete all rows where `manager_id = user.id`
+1. Delete all rows in `manager_reportee_mapping` where `reportee_id = user.id`
+2. Delete all rows in `manager_reportee_mapping` where `manager_id = user.id`
 3. Orphaned reportees have their `manager_id` set to null
+4. User's tasks: set `visibility = 'private'` (they become invisible to workspace)
+5. User's milestones: set `visibility = 'private'`
+6. Set `users.status = 'inactive'` (soft delete, preserves audit trail)
+7. Do NOT delete tasks/milestones — data retained for potential re-invitation or export
 
 ---
 
