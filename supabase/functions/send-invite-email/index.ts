@@ -6,6 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -13,6 +22,28 @@ Deno.serve(async (req) => {
 
   try {
     const { invitationId, email, inviteLink } = await req.json();
+
+    // Validate required parameters
+    if (!invitationId || typeof invitationId !== "string") {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid invitationId" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    if (!inviteLink || typeof inviteLink !== "string" || !inviteLink.startsWith("http")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid inviteLink" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
     // Get invitation details from database
     const supabaseAdmin = createClient(
@@ -37,16 +68,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    const workspaceName = invitation.workspace.name;
-    const inviterName = `${invitation.inviter.first_name} ${invitation.inviter.last_name || ""}`.trim();
+    // Null safety for nested properties
+    const workspaceName = invitation.workspace?.name || "Workspace";
+    const inviterName = invitation.inviter
+      ? `${invitation.inviter.first_name || ""} ${invitation.inviter.last_name || ""}`.trim()
+      : "A team member";
 
-    const provider = createEmailProvider(
-      (Deno.env.get("EMAIL_PROVIDER") as ProviderType) || "resend"
-    );
+    // HTML escape all dynamic content
+    const safeInviterName = escapeHtml(inviterName || "A team member");
+    const safeWorkspaceName = escapeHtml(workspaceName);
+    const safeRole = escapeHtml(invitation.role);
+
+    // Provider type validation
+    const providerEnv = Deno.env.get("EMAIL_PROVIDER");
+    const validProviders = ["resend", "sendgrid", "smtp"];
+    const providerType: ProviderType = validProviders.includes(providerEnv || "")
+      ? (providerEnv as ProviderType)
+      : "resend";
+
+    const provider = createEmailProvider(providerType);
 
     const result = await provider.send({
       to: email,
-      subject: `You're invited to join ${workspaceName}`,
+      subject: `You're invited to join ${safeWorkspaceName}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -58,10 +102,10 @@ Deno.serve(async (req) => {
           <div style="max-width: 600px; margin: 0 auto;">
             <h1 style="color: #1a1a1a;">You're invited!</h1>
             <p style="color: #666; font-size: 16px;">
-              <strong>${inviterName}</strong> has invited you to join <strong>${workspaceName}</strong> on Goal Assist.
+              <strong>${safeInviterName}</strong> has invited you to join <strong>${safeWorkspaceName}</strong> on Goal Assist.
             </p>
             <p style="color: #666; font-size: 16px;">
-              You'll be joining as a <strong>${invitation.role}</strong>.
+              You'll be joining as a <strong>${safeRole}</strong>.
             </p>
             <a href="${inviteLink}"
                style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">
@@ -74,7 +118,7 @@ Deno.serve(async (req) => {
         </body>
         </html>
       `,
-      text: `${inviterName} has invited you to join ${workspaceName} on Goal Assist. Accept the invitation: ${inviteLink}`,
+      text: `${safeInviterName} has invited you to join ${safeWorkspaceName} on Goal Assist. Accept the invitation: ${inviteLink}`,
     });
 
     return new Response(
