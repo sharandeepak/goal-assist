@@ -56,6 +56,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				urgency: initialData.urgency,
 				date: initialData.date,
 				completed_date: initialData.completed_date,
+				visibility: (initialData as Task).visibility ?? "private",
 			});
 			setTagsString(initialData.tags?.join(", ") || "");
 		} else if (isOpen && initialData) {
@@ -64,11 +65,12 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				priority: initialData.priority || "medium",
 				urgency: initialData.urgency || (requireUrgency ? "medium" : undefined),
 				date: initialData.date || today,
+				visibility: "private",
 			});
 			setTagsString("");
 		} else if (isOpen) {
 			const today = startOfDay(new Date()).toISOString();
-			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today });
+			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today, visibility: "private" });
 			setTagsString("");
 		}
 		setError(null);
@@ -238,6 +240,22 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 						<Label htmlFor="task-form-tags">Tags (comma-separated)</Label>
 						<Input id="task-form-tags" value={tagsString} onChange={(e) => setTagsString(e.target.value)} placeholder="e.g. work, important, project-x" disabled={isSubmitting} className={styles.inputNoRing} />
 					</div>
+
+					<div className={styles.formSection}>
+						<div className="flex items-center justify-between">
+							<div>
+								<Label htmlFor="task-visibility">Visibility</Label>
+								<p className="text-xs text-muted-foreground">Public tasks are visible to workspace members</p>
+							</div>
+							<Switch
+								id="task-visibility"
+								checked={formData.visibility === "public"}
+								onCheckedChange={(checked) => handleValueChange("visibility", checked ? "public" : "private")}
+								disabled={isSubmitting}
+							/>
+						</div>
+					</div>
+
 					{(!initialData || !("title" in initialData)) && (
 						<div className={styles.addMultipleSection}>
 							<div className={styles.addMultipleLabel}>
