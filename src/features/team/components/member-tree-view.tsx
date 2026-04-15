@@ -214,7 +214,7 @@ export function MemberTreeView({
       {flatNodes.map((node) => (
         <div
           key={node.id}
-          className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors pl-${node.depth * 6 + 4}`}
+          className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
           style={{ paddingLeft: `${node.depth * 24 + 16}px` }}
         >
           {/* Expand/Collapse button */}
