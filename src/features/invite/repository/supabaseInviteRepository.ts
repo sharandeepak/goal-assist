@@ -15,21 +15,17 @@ class SupabaseInviteRepository implements InviteRepository {
   }
 
   async getInvitationByToken(token: string): Promise<InviteWithDetails | null> {
+    // Uses a SECURITY DEFINER RPC so that unauthenticated (anon) callers can
+    // look up a pending invitation by its token without being blocked by the
+    // workspace_invitations RLS policy (which requires active membership).
     const { data, error } = await this.supabase
-      .from("workspace_invitations")
-      .select(`
-        *,
-        workspace:workspaces(id, name),
-        inviter:users!workspace_invitations_invited_by_fkey(id, first_name, last_name, email)
-      `)
-      .eq("token", token)
-      .maybeSingle();
+      .rpc("get_invitation_by_token", { p_token: token });
 
     if (error) {
       throw AppError.internal("INVITE_FETCH_ERROR", "Failed to fetch invitation.");
     }
 
-    return data as InviteWithDetails | null;
+    return (data ?? null) as InviteWithDetails | null;
   }
 
   async getPendingInvitationsForEmail(email: string): Promise<InviteWithDetails[]> {

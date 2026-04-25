@@ -95,12 +95,13 @@ export async function middleware(request: NextRequest) {
 
   // Check if authenticated user has an active user record
   if (user && !isAuthRoute && !isOnboardingRoute && !isInviteRoute) {
-    const { data: activeUser } = await supabase
+    const { data: activeUsers } = await supabase
       .from("users")
       .select("id")
       .eq("auth_id", user.id)
       .eq("status", "active")
-      .maybeSingle();
+      .limit(1);
+    const activeUser = activeUsers?.[0] ?? null;
 
     if (!activeUser) {
       // No active user record - check for pending invites
