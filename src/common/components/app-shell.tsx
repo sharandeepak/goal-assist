@@ -5,7 +5,7 @@ import Sidebar from "@/common/components/sidebar";
 import TopHeader from "@/common/components/top-header";
 import Spotlight from "@/common/components/spotlight";
 
-const AUTH_ROUTES = ["/auth", "/onboarding"];
+const AUTH_ROUTES = ["/auth", "/onboarding", "/invite"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
