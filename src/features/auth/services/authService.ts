@@ -9,8 +9,7 @@ export async function signUpWithEmail(
   email: string,
   password: string,
   firstName: string,
-  lastName: string,
-  workspaceName: string
+  lastName: string
 ) {
   if (!email || !password) {
     throw AppError.badRequest(
@@ -22,12 +21,6 @@ export async function signUpWithEmail(
     throw AppError.badRequest(
       "AUTH_WEAK_PASSWORD",
       "Password must be at least 8 characters."
-    );
-  }
-  if (!workspaceName.trim()) {
-    throw AppError.badRequest(
-      "AUTH_MISSING_WORKSPACE",
-      "Workspace name is required."
     );
   }
 
@@ -43,19 +36,29 @@ export async function signUpWithEmail(
         first_name: firstName,
         last_name: lastName,
         full_name: `${firstName} ${lastName}`.trim(),
-        workspace_name: workspaceName.trim(),
       },
     },
   });
 
   if (error) {
+    const msg = error.message.toLowerCase();
+    if (
+      msg.includes("already registered") ||
+      msg.includes("already exists") ||
+      msg.includes("user already")
+    ) {
+      throw AppError.conflict(
+        "AUTH_EMAIL_EXISTS",
+        "An account already exists with this email."
+      );
+    }
     throw AppError.badRequest("AUTH_SIGNUP_ERROR", error.message);
   }
 
   if (data.user && data.user.identities?.length === 0) {
     throw AppError.conflict(
       "AUTH_EMAIL_EXISTS",
-      "An account already exists with this email. Please sign in."
+      "An account already exists with this email."
     );
   }
 

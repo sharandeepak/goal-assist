@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBullseye,
   faEye,
   faEyeSlash,
   faEnvelopeOpenText,
   faCircleCheck,
   faRotateRight,
-  faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@/common/ui/button";
@@ -23,71 +21,19 @@ import {
 } from "@/features/auth/services/authService";
 import { createClient } from "@/common/lib/supabase/client";
 import { AppError } from "@/common/errors/AppError";
+import {
+  AuthShell,
+  AuthHeroBrand,
+  AuthHeroHeading,
+  StepPill,
+  type StepState,
+} from "@/features/auth/components/AuthShell";
 
-// ─── Step Indicator ────────────────────────────────────────────────
-const steps = [
-  { number: 1, label: "Name your workspace" },
-  { number: 2, label: "Create your account" },
-  { number: 3, label: "Verify your email" },
+const signupSteps = [
+  { number: 1, label: "Create your account" },
+  { number: 2, label: "Verify your email" },
+  { number: 3, label: "Set up your workspace" },
 ];
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="mt-10 w-full max-w-[320px] space-y-3">
-      {steps.map((s) => {
-        const isActive = currentStep === s.number;
-        const isDone = currentStep > s.number;
-        return (
-          <div
-            key={s.number}
-            className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${
-              isActive
-                ? "bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg shadow-purple-500/10"
-                : isDone
-                  ? "bg-white/5 border border-white/5"
-                  : "bg-transparent border border-transparent"
-            }`}
-          >
-            <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold shrink-0 transition-all duration-300 ${
-                isActive
-                  ? "bg-white text-purple-900"
-                  : isDone
-                    ? "bg-green-400/80 text-white"
-                    : "bg-white/10 text-white/40 border border-white/10"
-              }`}
-            >
-              {isDone ? (
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                s.number
-              )}
-            </div>
-            <span
-              className={`text-sm font-medium transition-colors duration-300 ${
-                isActive ? "text-white" : isDone ? "text-white/50" : "text-white/30"
-              }`}
-            >
-              {s.label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // ─── Check Email View ───────────────────────────────────────────────
 function CheckEmailView({ email }: { email: string }) {
@@ -123,10 +69,10 @@ function CheckEmailView({ email }: { email: string }) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/30 flex items-center justify-center shadow-xl shadow-violet-200/50 dark:shadow-violet-900/30">
+        <div className="w-24 h-24 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
           <FontAwesomeIcon
             icon={faEnvelopeOpenText}
-            className="text-violet-600 dark:text-violet-400 text-4xl"
+            className="text-primary text-4xl"
           />
         </div>
         <div className="absolute -bottom-2 -right-2 w-9 h-9 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
@@ -145,12 +91,12 @@ function CheckEmailView({ email }: { email: string }) {
       </p>
 
       <p className="text-muted-foreground text-xs mb-6 max-w-[280px] leading-relaxed">
-        Click the link in the email to verify your account. Your workspace will
-        be created automatically once you verify.
+        Click the link in the email to verify your account. You&apos;ll set up
+        your workspace right after.
       </p>
 
       <a href={emailUrl} target="_blank" rel="noopener noreferrer" className="w-full">
-        <Button className="w-full h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 shadow-lg shadow-violet-500/25">
+        <Button className="w-full h-12 rounded-xl text-sm font-semibold">
           Open Email
         </Button>
       </a>
@@ -199,43 +145,31 @@ function CheckEmailView({ email }: { email: string }) {
 // ─── Signup Form ────────────────────────────────────────────────────
 function SignUpPageContent() {
   const router = useRouter();
-  // step 1 = workspace name, 2 = personal info + password, 3 = check email
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // step 1 = account details, step 2 = check email
+  const [step, setStep] = useState<1 | 2>(1);
 
-  const [workspaceName, setWorkspaceName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ReactNode>(null);
 
   // When the user verifies their email in another tab, Supabase broadcasts
   // the SIGNED_IN event — pick it up and redirect to the app.
   useEffect(() => {
-    if (step !== 3) return;
+    if (step !== 2) return;
     const supabase = createClient();
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        // Callback handles company creation automatically; just go to root.
         router.push("/");
       }
     });
     return () => subscription.unsubscribe();
   }, [step, router]);
-
-  const handleStep1Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!workspaceName.trim()) {
-      setError("Workspace name is required.");
-      return;
-    }
-    setError(null);
-    setStep(2);
-  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,23 +177,40 @@ function SignUpPageContent() {
     setIsLoading(true);
 
     try {
-      await signUpWithEmail(email, password, firstName, lastName, workspaceName);
-      setStep(3);
+      await signUpWithEmail(email, password, firstName, lastName);
+      setStep(2);
     } catch (err) {
       if (err instanceof AppError && err.errorCode === "AUTH_EMAIL_EXISTS") {
-        router.push(
-          `/auth/signin?email=${encodeURIComponent(email)}&notice=account_exists`
+        setError(
+          <span>
+            An account with this email already exists.{" "}
+            <Link
+              href={`/auth/signin?email=${encodeURIComponent(email)}`}
+              className="font-semibold underline underline-offset-2"
+            >
+              Sign in instead
+            </Link>
+          </span>
         );
         return;
       }
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      if (message.toLowerCase().includes("password")) {
+        err instanceof AppError
+          ? err.errorMessage
+          : err instanceof Error
+            ? err.message
+            : "An unexpected error occurred.";
+      const lower = message.toLowerCase();
+      if (lower.includes("password") || lower.includes("weak")) {
         setError("Password must be at least 8 characters long.");
-      } else if (message.toLowerCase().includes("email")) {
+      } else if (lower.includes("valid email") || lower.includes("invalid email")) {
         setError("Please enter a valid email address.");
+      } else if (lower.includes("rate limit") || lower.includes("too many")) {
+        setError("Too many attempts. Please wait a moment and try again.");
+      } else if (lower.includes("network") || lower.includes("fetch")) {
+        setError("Network error. Check your connection and try again.");
       } else {
-        setError("Something went wrong. Please try again.");
+        setError(message || "Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -278,113 +229,39 @@ function SignUpPageContent() {
   };
 
   return (
-    <div className="flex min-h-screen w-full">
-      {/* ── Left Panel ─────────────────────── */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] flex-col relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(167,139,250,0.3),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(192,132,252,0.15),transparent_60%)]" />
-
-        <div className="absolute top-0 left-0 right-0 h-64 opacity-40">
-          <div className="absolute top-8 left-12 w-48 h-48 bg-purple-500/30 rounded-full blur-3xl" />
-          <div className="absolute top-20 right-8 w-32 h-32 bg-fuchsia-500/20 rounded-full blur-2xl" />
-        </div>
-
-        <div className="relative z-10 flex flex-col h-full p-10">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10">
-              <FontAwesomeIcon icon={faBullseye} className="text-white text-lg" />
-            </div>
-            <span className="font-display font-bold text-xl text-white tracking-tight">
-              Goal Assist
-            </span>
+    <AuthShell
+      hero={
+        <div className="flex h-full w-full flex-col items-center justify-between gap-10">
+          <AuthHeroBrand />
+          <div className="flex w-full max-w-[400px] flex-col items-center">
+            <AuthHeroHeading
+              title="Get Started with Us"
+              subtitle="Complete these easy steps to register your account."
+            />
           </div>
-
-          <div className="flex flex-col items-center text-center my-auto">
-            <h2 className="font-display font-bold text-3xl text-white mb-3 leading-tight">
-              Get Started with Us
-            </h2>
-            <p className="text-white/60 text-base max-w-[280px] leading-relaxed">
-              Complete these easy steps to set up your workspace.
-            </p>
-            <StepIndicator currentStep={step} />
+          <div className="flex w-full max-w-[400px] flex-col gap-3">
+            {signupSteps.map((s) => {
+              const state: StepState =
+                step > s.number ? "done" : step === s.number ? "active" : "upcoming";
+              return (
+                <StepPill
+                  key={s.number}
+                  number={s.number}
+                  label={s.label}
+                  state={state}
+                />
+              );
+            })}
           </div>
-
-          <div className="mt-auto" />
         </div>
-      </div>
-
-      {/* ── Right Panel ────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
-        <div className="w-full max-w-[440px]">
-          {step === 3 ? (
+      }
+    >
+      <>
+        {step === 2 ? (
             <CheckEmailView email={email} />
-          ) : step === 1 ? (
-            /* ── Step 1: Workspace Name ── */
-            <>
-              <div className="mb-8">
-                <h1 className="font-display font-bold text-2xl text-foreground mb-2">
-                  Name your workspace
-                </h1>
-                <p className="text-muted-foreground text-sm">
-                  This is usually your team or organization name.
-                </p>
-              </div>
-
-              {error && (
-                <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleStep1Submit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="workspaceName" className="text-sm font-medium">
-                    Workspace Name
-                  </Label>
-                  <Input
-                    id="workspaceName"
-                    placeholder="e.g. Acme Corp"
-                    value={workspaceName}
-                    onChange={(e) => setWorkspaceName(e.target.value)}
-                    required
-                    autoFocus
-                    className="h-11 rounded-xl"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl text-sm font-semibold mt-2"
-                >
-                  Continue
-                </Button>
-              </form>
-
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Already have an account?{" "}
-                <Link
-                  href="/auth/signin"
-                  className="text-primary font-semibold hover:underline"
-                >
-                  Sign in
-                </Link>
-              </p>
-            </>
           ) : (
-            /* ── Step 2: Account Details ── */
+            /* ── Step 1: Account Details ── */
             <>
-              <button
-                type="button"
-                onClick={() => { setStep(1); setError(null); }}
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-              >
-                <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
-                <span className="font-medium truncate max-w-[260px]">
-                  {workspaceName}
-                </span>
-              </button>
-
               <div className="mb-8">
                 <h1 className="font-display font-bold text-2xl text-foreground mb-2">
                   Create your account
@@ -416,7 +293,7 @@ function SignUpPageContent() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-3 text-muted-foreground">
+                  <span className="bg-card px-3 text-muted-foreground">
                     Or
                   </span>
                 </div>
@@ -517,9 +394,8 @@ function SignUpPageContent() {
               </p>
             </>
           )}
-        </div>
-      </div>
-    </div>
+      </>
+    </AuthShell>
   );
 }
 
