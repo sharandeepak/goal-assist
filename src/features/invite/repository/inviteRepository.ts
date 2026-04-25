@@ -43,6 +43,10 @@ export interface InviteRepository {
 
   cancelInvitation(invitationId: string): Promise<void>;
 
+  revokeInvitationsByInviter(inviterId: string, workspaceId: string): Promise<void>;
+
+  revokeInvitationByEmail(email: string, workspaceId: string): Promise<void>;
+
   findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string; manager_id: string | null } | null>;
 
   updateUserName(userId: string, firstName: string, lastName: string | null): Promise<void>;

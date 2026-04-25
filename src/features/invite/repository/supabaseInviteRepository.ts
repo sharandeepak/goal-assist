@@ -206,6 +206,31 @@ class SupabaseInviteRepository implements InviteRepository {
     }
   }
 
+  async revokeInvitationsByInviter(inviterId: string, workspaceId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("workspace_invitations")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("invited_by", inviterId)
+      .eq("status", "pending");
+
+    if (error) {
+      throw AppError.internal("INVITE_REVOKE_ERROR", "Failed to revoke invitations for removed member.");
+    }
+  }
+
+  async revokeInvitationByEmail(email: string, workspaceId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("workspace_invitations")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("email", email.toLowerCase().trim());
+
+    if (error) {
+      throw AppError.internal("INVITE_REVOKE_ERROR", "Failed to revoke invitation for removed member.");
+    }
+  }
+
   async findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string; manager_id: string | null } | null> {
     const { data } = await this.supabase
       .from("users")

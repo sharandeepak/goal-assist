@@ -2,6 +2,7 @@ import type { SupabaseUser, UserRole } from "@/common/types";
 import { AppError } from "@/common/errors/AppError";
 import { supabaseTeamRepository } from "../repository/supabaseTeamRepository";
 import { updateManagerRelationship } from "./hierarchyService";
+import { revokeInvitesByMember, revokeInviteByEmail } from "@/features/invite/services/inviteService";
 import type { TeamMember, TeamPermissions, UpdateMemberParams } from "../types";
 import { getPermissionsForRole } from "../types";
 
@@ -150,7 +151,13 @@ export async function removeMember(
     throw AppError.badRequest("TEAM_SELF_REMOVE", "You cannot remove yourself from the workspace.");
   }
 
-  await repository.removeMember(memberId, workspaceId);
+  const member = await repository.getMemberById(memberId);
+
+  await Promise.all([
+    repository.removeMember(memberId, workspaceId),
+    revokeInvitesByMember(memberId, workspaceId),
+    ...(member?.email ? [revokeInviteByEmail(member.email, workspaceId)] : []),
+  ]);
 }
 
 /**

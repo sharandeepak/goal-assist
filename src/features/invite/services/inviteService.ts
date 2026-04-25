@@ -174,6 +174,14 @@ export async function cancelInvite(invitationId: string): Promise<void> {
   await inviteRepository.cancelInvitation(invitationId);
 }
 
+export async function revokeInvitesByMember(memberId: string, workspaceId: string): Promise<void> {
+  await inviteRepository.revokeInvitationsByInviter(memberId, workspaceId);
+}
+
+export async function revokeInviteByEmail(email: string, workspaceId: string): Promise<void> {
+  await inviteRepository.revokeInvitationByEmail(email, workspaceId);
+}
+
 export async function resendInvite(invitationId: string): Promise<string> {
   const supabase = createClient();
 
