@@ -38,3 +38,5 @@ functions/node_modules/
 .kilocode
 .agents
 .serena
+# CocoIndex Code (ccc)
+/.cocoindex_code/
