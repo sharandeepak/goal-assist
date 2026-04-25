@@ -12,6 +12,7 @@
     "db:reset": "npx supabase db reset",
     "db:status": "npx supabase migration list",
     "db:new": "npx supabase migration new",
+    "db:bootstrap": "bash scripts/bootstrap-db.sh",
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
