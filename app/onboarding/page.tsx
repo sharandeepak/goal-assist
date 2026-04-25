@@ -18,7 +18,7 @@ function OnboardingPageContent() {
   const searchParams = useSearchParams();
   const setupError = searchParams.get("error") === "setup_failed";
 
-  const { authUser } = useAuth();
+  const { authUser, refreshProfile } = useAuth();
   const [workspaceName, setWorkspaceName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +47,8 @@ function OnboardingPageContent() {
         authUser.user_metadata?.last_name || ""
       );
 
+      await refreshProfile();
       router.push("/");
-      router.refresh();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create workspace"

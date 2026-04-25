@@ -1,25 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/common/ui/button";
 import { StarCatcherGame } from "@/common/components/star-catcher-game";
 
-export default function ErrorPage({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    console.error("[ErrorBoundary]", error);
-  }, [error]);
-
+export default function NotFound() {
   return (
     <div className="h-full overflow-hidden flex items-center justify-center p-6">
       <div className="w-full max-w-md flex flex-col items-center text-center">
-        {/* Illustration area */}
+        {/* 404 heading */}
         <div className="mb-8">
+          <p className="font-mono text-5xl font-bold text-primary/20 mb-4 tracking-tight">
+            404
+          </p>
           <div className="w-16 h-16 rounded-2xl bg-muted/60 border border-border/50 flex items-center justify-center mb-6 mx-auto shadow-sm">
             <svg
               width="28"
@@ -29,7 +22,7 @@ export default function ErrorPage({
               className="text-muted-foreground"
             >
               <path
-                d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4.99c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -39,28 +32,24 @@ export default function ErrorPage({
           </div>
 
           <h1 className="font-display font-bold text-xl text-foreground mb-2">
-            Something went wrong
+            Page not found
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-[340px] mx-auto">
-            We hit an unexpected bump. Your data is safe — try refreshing the
-            page or head back home.
+            This page doesn&apos;t exist. Play a game while you find your way back.
           </p>
         </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-3 mb-10 w-full max-w-[280px]">
-          <Button
-            onClick={reset}
-            className="flex-1 h-10 rounded-xl text-sm font-semibold"
-          >
-            Try Again
+          <Button asChild className="flex-1 h-10 rounded-xl text-sm font-semibold">
+            <Link href="/">Go Home</Link>
           </Button>
           <Button
             variant="outline"
             className="flex-1 h-10 rounded-xl text-sm font-medium"
-            onClick={() => (window.location.href = "/")}
+            onClick={() => window.history.back()}
           >
-            Go Home
+            Go Back
           </Button>
         </div>
 
@@ -78,13 +67,6 @@ export default function ErrorPage({
 
         {/* Game */}
         <StarCatcherGame />
-
-        {/* Error details (collapsed) */}
-        {error?.digest && (
-          <p className="mt-8 text-[10px] text-muted-foreground/40 font-mono select-all">
-            Error ID: {error.digest}
-          </p>
-        )}
       </div>
     </div>
   );
