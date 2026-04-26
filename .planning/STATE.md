@@ -1,3 +1,12 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: Defining requirements
+last_updated: "2026-04-25T18:16:46.040Z"
+last_activity: 2026-04-15 — Milestone v1.0 started
+---
+
 # State
 
 ## Current Position

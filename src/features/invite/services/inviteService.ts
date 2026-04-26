@@ -111,32 +111,30 @@ export async function acceptInvite(
 
 export async function acceptInviteForUser(
   invitationId: string,
-  email: string,
-  workspaceId: string,
+  _email: string,
+  _workspaceId: string,
   authId: string,
   firstName?: string,
   lastName?: string
 ): Promise<void> {
-  // Find the invited user
-  const invitedUser = await inviteRepository.findInvitedUserByEmail(email, workspaceId);
-  if (!invitedUser) {
-    throw AppError.notFound("INVITE_USER_NOT_FOUND", "Invited user record not found");
-  }
+  // Atomically link auth_id, activate the user, and mark the invitation
+  // accepted — all via a SECURITY DEFINER RPC that bypasses the RLS policies
+  // which block browser-client UPDATEs when auth_id is still NULL. The RPC
+  // also returns user_id, manager_id, and workspace_id so we can run the
+  // hierarchy step without a pre-flight SELECT on users (which RLS would
+  // block until the caller is an active member of the invited workspace).
+  const { userId, managerId, workspaceId } = await inviteRepository.acceptInviteViaRpc(
+    invitationId,
+    authId,
+    firstName,
+    lastName
+  );
 
-  // Update name if provided
-  if (firstName) {
-    await inviteRepository.updateUserName(invitedUser.id, firstName, lastName || null);
-  }
-
-  // Accept the invite
-  await acceptInvite(invitationId, invitedUser.id, authId);
-
-  // Add to manager hierarchy if user has a manager
-  if (invitedUser.manager_id) {
+  if (managerId) {
     try {
-      await addManagerRelationship(invitedUser.manager_id, invitedUser.id, workspaceId);
+      await addManagerRelationship(managerId, userId, workspaceId);
     } catch (error) {
-      // Log but don't fail the invite acceptance - hierarchy is secondary
+      // Non-fatal: manager_id is already set on the users row.
       console.error("Failed to add hierarchy relationship:", error);
     }
   }

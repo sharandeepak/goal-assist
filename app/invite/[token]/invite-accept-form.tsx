@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/common/ui/button";
 import { Input } from "@/common/ui/input";
 import { Label } from "@/common/ui/label";
@@ -28,7 +27,6 @@ export function InviteAcceptForm({
   isLoggedIn,
   emailMatch,
 }: InviteAcceptFormProps) {
-  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +54,8 @@ export function InviteAcceptForm({
           invitation.workspace_id,
           user.id
         );
-        router.push("/");
+        window.location.href = "/";
+        return;
       } else {
         if (!firstName.trim()) {
           setError("First name is required");
@@ -74,25 +73,50 @@ export function InviteAcceptForm({
           password,
         });
 
-        if (authError) {
+        const userAlreadyExists =
+          authError?.message?.toLowerCase().includes("already registered") ||
+          authError?.message?.toLowerCase().includes("already exists") ||
+          authError?.message?.toLowerCase().includes("user already") ||
+          (!authError && authData.user?.identities?.length === 0);
+
+        let resolvedUserId: string | null = null;
+
+        if (userAlreadyExists) {
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email: invitation.email,
+              password,
+            });
+
+          if (signInError || !signInData.user) {
+            setError(
+              "An account already exists with this email. Please enter your existing password to join, or sign in from the login page."
+            );
+            setIsLoading(false);
+            return;
+          }
+
+          resolvedUserId = signInData.user.id;
+        } else if (authError) {
           setError(authError.message);
           setIsLoading(false);
           return;
-        }
-
-        if (!authData.user) {
+        } else if (!authData.user) {
           throw AppError.internal("INVITE_SIGNUP_FAILED", "Failed to create account");
+        } else {
+          resolvedUserId = authData.user.id;
         }
 
         await acceptInviteForUser(
           invitation.id,
           invitation.email,
           invitation.workspace_id,
-          authData.user.id,
+          resolvedUserId!,
           firstName.trim(),
           lastName.trim() || undefined
         );
-        router.push("/");
+        window.location.href = "/";
+        return;
       }
     } catch (err) {
       if (err instanceof AppError) {

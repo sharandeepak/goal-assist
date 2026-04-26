@@ -50,4 +50,11 @@ export interface InviteRepository {
   findInvitedUserByEmail(email: string, workspaceId: string): Promise<{ id: string; manager_id: string | null } | null>;
 
   updateUserName(userId: string, firstName: string, lastName: string | null): Promise<void>;
+
+  acceptInviteViaRpc(
+    invitationId: string,
+    authId: string,
+    firstName?: string,
+    lastName?: string
+  ): Promise<{ userId: string; managerId: string | null; workspaceId: string }>;
 }

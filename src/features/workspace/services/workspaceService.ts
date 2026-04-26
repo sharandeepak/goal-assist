@@ -73,3 +73,16 @@ export async function createWorkspace(
     throw AppError.internal("WORKSPACE_CREATE_ERROR", "Failed to create workspace.");
   }
 }
+
+export async function leaveWorkspace(workspaceId: string): Promise<void> {
+  if (!workspaceId) {
+    throw AppError.badRequest("WORKSPACE_ID_REQUIRED", "Workspace ID is required.");
+  }
+
+  try {
+    await repo.leaveWorkspace(workspaceId);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("WORKSPACE_LEAVE_ERROR", "Failed to leave workspace.");
+  }
+}

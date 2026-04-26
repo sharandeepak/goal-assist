@@ -14,4 +14,6 @@ export interface WorkspaceRepository {
     firstName: string,
     lastName: string
   ): Promise<SupabaseWorkspace>;
+
+  leaveWorkspace(workspaceId: string): Promise<void>;
 }

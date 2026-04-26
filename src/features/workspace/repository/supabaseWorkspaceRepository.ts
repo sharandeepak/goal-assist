@@ -126,6 +126,37 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
       throw AppError.internal("WORKSPACE_CREATE_ERROR", "Failed to create workspace.");
     }
   }
+
+  async leaveWorkspace(workspaceId: string): Promise<void> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (getClient().rpc as any)("leave_workspace", {
+        p_workspace_id: workspaceId,
+      });
+
+      if (error) {
+        throw AppError.internal("WORKSPACE_LEAVE_ERROR", error.message);
+      }
+
+      const result = data as { success: boolean; error?: string } | null;
+      if (!result?.success) {
+        const message = result?.error ?? "Failed to leave workspace.";
+        if (message.toLowerCase().includes("owner")) {
+          throw AppError.badRequest("WORKSPACE_OWNER_CANNOT_LEAVE", message);
+        }
+        if (message.toLowerCase().includes("not a member")) {
+          throw AppError.notFound("WORKSPACE_NOT_MEMBER", message);
+        }
+        if (message.toLowerCase().includes("not found")) {
+          throw AppError.notFound("WORKSPACE_NOT_FOUND", message);
+        }
+        throw AppError.internal("WORKSPACE_LEAVE_ERROR", message);
+      }
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal("WORKSPACE_LEAVE_ERROR", "Failed to leave workspace.");
+    }
+  }
 }
 
 export const supabaseWorkspaceRepository = new SupabaseWorkspaceRepository();

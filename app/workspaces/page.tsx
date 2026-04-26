@@ -11,6 +11,8 @@ import {
   faShieldHalved,
   faUserTie,
   faUser,
+  faRightFromBracket,
+  faEllipsisVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Input } from "@/common/ui/input";
@@ -21,14 +23,33 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/common/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/common/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/common/ui/dropdown-menu";
 import { useAuth } from "@/common/hooks/use-auth";
+import { useToast } from "@/common/hooks/use-toast";
 import {
   getAllWorkspacesForAuthUser,
   getWorkspaceUsers,
   getWorkspaceCount,
+  leaveWorkspace,
 } from "@/features/workspace/services/workspaceService";
 import CreateWorkspaceDialog from "@/features/workspace/components/create-workspace-dialog";
 import type { SupabaseWorkspace, SupabaseUser } from "@/common/types";
+import { AppError } from "@/common/errors/AppError";
 import { format } from "date-fns";
 
 const MAX_WORKSPACES = 5;
@@ -56,6 +77,7 @@ const ROLE_CONFIG: Record<
 
 export default function WorkspacesPage() {
   const { authUser, workspace: currentWorkspace, switchWorkspace } = useAuth();
+  const { toast } = useToast();
 
   const [workspaces, setWorkspaces] = useState<SupabaseWorkspace[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<SupabaseWorkspace | null>(null);
@@ -65,6 +87,8 @@ export default function WorkspacesPage() {
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [leaveTarget, setLeaveTarget] = useState<SupabaseWorkspace | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const fetchWorkspaces = async () => {
     if (!authUser) return;
@@ -130,7 +154,56 @@ export default function WorkspacesPage() {
 
   const isAtLimit = workspaceCount >= MAX_WORKSPACES;
 
+  const handleConfirmLeave = async () => {
+    if (!leaveTarget || !authUser) return;
+    const target = leaveTarget;
+    setIsLeaving(true);
+    try {
+      await leaveWorkspace(target.id);
+
+      const remaining = workspaces.filter((w) => w.id !== target.id);
+      setWorkspaces(remaining);
+      setWorkspaceCount((c) => Math.max(0, c - 1));
+
+      const wasActive = target.id === currentWorkspace?.id;
+      const wasSelected = target.id === selectedWorkspace?.id;
+
+      if (wasSelected) {
+        setSelectedWorkspace(remaining[0] ?? null);
+      }
+
+      toast({
+        title: "Left workspace",
+        description: `You are no longer a member of "${target.name}".`,
+      });
+
+      setLeaveTarget(null);
+
+      if (wasActive) {
+        if (remaining.length > 0) {
+          await switchWorkspace(remaining[0].id);
+          window.location.href = "/";
+        } else {
+          window.location.href = "/onboarding";
+        }
+      }
+    } catch (err) {
+      const message =
+        err instanceof AppError
+          ? err.errorMessage
+          : "Failed to leave workspace.";
+      toast({
+        title: "Couldn't leave workspace",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
   return (
+    <TooltipProvider>
     <div className="flex-1 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -142,27 +215,25 @@ export default function WorkspacesPage() {
             Manage your workspaces and team members.
           </p>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Button
-                  onClick={() => setIsCreateOpen(true)}
-                  disabled={isAtLimit}
-                  className="rounded-full px-5"
-                >
-                  <FontAwesomeIcon icon={faPlus} className="mr-2 text-sm" />
-                  Create Workspace
-                </Button>
-              </div>
-            </TooltipTrigger>
-            {isAtLimit && (
-              <TooltipContent>
-                <p>You have reached the maximum of {MAX_WORKSPACES} workspaces.</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Button
+                onClick={() => setIsCreateOpen(true)}
+                disabled={isAtLimit}
+                className="rounded-full px-5"
+              >
+                <FontAwesomeIcon icon={faPlus} className="mr-2 text-sm" />
+                Create Workspace
+              </Button>
+            </div>
+          </TooltipTrigger>
+          {isAtLimit && (
+            <TooltipContent>
+              <p>You have reached the maximum of {MAX_WORKSPACES} workspaces.</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
       </header>
 
       {/* Usage indicator */}
@@ -190,46 +261,94 @@ export default function WorkspacesPage() {
               />
             ))
           ) : (
-            workspaces.map((ws) => (
-              <button
-                key={ws.id}
-                onClick={() => {
-                  setSelectedWorkspace(ws);
-                  setSearchQuery("");
-                }}
-                className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all flex items-center gap-3 ${
-                  selectedWorkspace?.id === ws.id
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border/50 hover:border-primary/40 hover:bg-muted/40"
-                }`}
-              >
+            workspaces.map((ws) => {
+              const isOwner = ws.creator_id === authUser?.id;
+              const isSelected = selectedWorkspace?.id === ws.id;
+              return (
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
-                    selectedWorkspace?.id === ws.id
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground"
+                  key={ws.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setSelectedWorkspace(ws);
+                    setSearchQuery("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedWorkspace(ws);
+                      setSearchQuery("");
+                    }
+                  }}
+                  className={`group w-full text-left px-4 py-3.5 rounded-xl border transition-all flex items-center gap-3 cursor-pointer ${
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/50 hover:border-primary/40 hover:bg-muted/40"
                   }`}
                 >
-                  <FontAwesomeIcon icon={faBuilding} className="text-sm" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-foreground">
-                    {ws.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(ws.created_at), "MMM d, yyyy")}
-                  </p>
-                </div>
-                {ws.id === currentWorkspace?.id && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] px-1.5 py-0 h-5 shrink-0"
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
                   >
-                    Active
-                  </Badge>
-                )}
-              </button>
-            ))
+                    <FontAwesomeIcon icon={faBuilding} className="text-sm" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate text-foreground">
+                      {ws.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(ws.created_at), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  {ws.id === currentWorkspace?.id && (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 h-5 shrink-0"
+                    >
+                      Active
+                    </Badge>
+                  )}
+                  {!isOwner && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Workspace actions for ${ws.name}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <FontAwesomeIcon
+                            icon={faEllipsisVertical}
+                            className="text-sm"
+                          />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setLeaveTarget(ws);
+                          }}
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        >
+                          <FontAwesomeIcon
+                            icon={faRightFromBracket}
+                            className="mr-2 text-xs"
+                          />
+                          Leave workspace
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -364,6 +483,39 @@ export default function WorkspacesPage() {
         onCreated={fetchWorkspaces}
         disabled={isAtLimit}
       />
+
+      <AlertDialog
+        open={leaveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !isLeaving) setLeaveTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Leave &ldquo;{leaveTarget?.name}&rdquo;?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to this workspace and all of its data. An
+              admin will need to invite you again to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleConfirmLeave();
+              }}
+              disabled={isLeaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isLeaving ? "Leaving..." : "Leave workspace"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+    </TooltipProvider>
   );
 }

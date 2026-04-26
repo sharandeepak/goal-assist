@@ -166,14 +166,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Redirect to onboarding if authenticated but no user record
+  // Redirect to onboarding if authenticated but no user record.
+  // Excludes /invite — the invite-accept flow temporarily has authUser without
+  // a user record between signUp() and the accept_workspace_invitation RPC.
+  // Letting this useEffect race the RPC bumps users to /onboarding mid-flow.
   useEffect(() => {
     if (
       !state.isLoading &&
       state.authUser &&
       !state.user &&
       !pathname.startsWith("/onboarding") &&
-      !pathname.startsWith("/auth")
+      !pathname.startsWith("/auth") &&
+      !pathname.startsWith("/invite")
     ) {
       router.replace("/onboarding");
     }
