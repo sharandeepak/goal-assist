@@ -13,6 +13,7 @@ import {
   faUser,
   faRightFromBracket,
   faEllipsisVertical,
+  faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/common/ui/button";
 import { Input } from "@/common/ui/input";
@@ -48,7 +49,8 @@ import {
   leaveWorkspace,
 } from "@/features/workspace/services/workspaceService";
 import CreateWorkspaceDialog from "@/features/workspace/components/create-workspace-dialog";
-import type { SupabaseWorkspace, SupabaseUser } from "@/common/types";
+import { InviteMemberDialog } from "@/features/team/components/invite-member-dialog";
+import type { SupabaseWorkspace, SupabaseUser, UserRole } from "@/common/types";
 import { AppError } from "@/common/errors/AppError";
 import { format } from "date-fns";
 
@@ -89,6 +91,7 @@ export default function WorkspacesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [leaveTarget, setLeaveTarget] = useState<SupabaseWorkspace | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const fetchWorkspaces = async () => {
     if (!authUser) return;
@@ -153,6 +156,15 @@ export default function WorkspacesPage() {
   }, [workspaceUsers, searchQuery]);
 
   const isAtLimit = workspaceCount >= MAX_WORKSPACES;
+
+  const currentUserInSelectedWorkspace = useMemo(
+    () => workspaceUsers.find((u) => u.auth_id === authUser?.id) ?? null,
+    [workspaceUsers, authUser]
+  );
+
+  const canInviteInSelectedWorkspace =
+    currentUserInSelectedWorkspace?.role === "admin" ||
+    currentUserInSelectedWorkspace?.role === "manager";
 
   const handleConfirmLeave = async () => {
     if (!leaveTarget || !authUser) return;
@@ -393,17 +405,28 @@ export default function WorkspacesPage() {
                 )}
               </div>
 
-              {/* Search bar */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground/60">
-                  <FontAwesomeIcon icon={faMagnifyingGlass} className="text-sm" />
+              {/* Search bar + Invite button */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground/60">
+                    <FontAwesomeIcon icon={faMagnifyingGlass} className="text-sm" />
+                  </div>
+                  <Input
+                    placeholder="Search members by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-11 pl-10 rounded-xl"
+                  />
                 </div>
-                <Input
-                  placeholder="Search members by name or email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-11 pl-10 rounded-xl"
-                />
+                {canInviteInSelectedWorkspace && (
+                  <Button
+                    onClick={() => setIsInviteOpen(true)}
+                    className="rounded-full px-5 shrink-0"
+                  >
+                    <FontAwesomeIcon icon={faUserPlus} className="mr-2 text-sm" />
+                    Invite Member
+                  </Button>
+                )}
               </div>
 
               {/* User list */}
@@ -483,6 +506,20 @@ export default function WorkspacesPage() {
         onCreated={fetchWorkspaces}
         disabled={isAtLimit}
       />
+
+      {selectedWorkspace && currentUserInSelectedWorkspace && (
+        <InviteMemberDialog
+          open={isInviteOpen}
+          onOpenChange={setIsInviteOpen}
+          workspaceId={selectedWorkspace.id}
+          inviterId={currentUserInSelectedWorkspace.id}
+          inviterRole={currentUserInSelectedWorkspace.role as UserRole}
+          onInviteCreated={async () => {
+            const users = await getWorkspaceUsers(selectedWorkspace.id);
+            setWorkspaceUsers(users);
+          }}
+        />
+      )}
 
       <AlertDialog
         open={leaveTarget !== null}

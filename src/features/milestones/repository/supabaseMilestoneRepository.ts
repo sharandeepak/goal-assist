@@ -115,6 +115,7 @@ export class SupabaseMilestoneRepository
           title: m.title,
           urgency: m.urgency,
           daysLeft,
+          assigneeId: m.assignee_id ?? null,
         };
       });
 
@@ -203,6 +204,23 @@ export class SupabaseMilestoneRepository
       const { data, error } = await this.table
         .select("*")
         .eq("workspace_id", workspaceId)
+        .eq("id", milestoneId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data ?? null) as SupabaseMilestone | null;
+    } catch (error) {
+      throw AppError.internal(
+        "MILESTONE_FIND_BY_ID_ERROR",
+        "Failed to fetch milestone by ID."
+      );
+    }
+  }
+
+  async getMilestoneByIdOnly(milestoneId: string): Promise<SupabaseMilestone | null> {
+    try {
+      const { data, error } = await this.table
+        .select("*")
         .eq("id", milestoneId)
         .maybeSingle();
 

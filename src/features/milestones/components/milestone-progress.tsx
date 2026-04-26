@@ -10,6 +10,7 @@ import { faBullseye, faClock, faTriangleExclamation, faCircleCheck, faArrowTrend
 import { cn } from "@/common/lib/utils";
 import { styles } from "../styles/MilestoneProgress.styles";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 
 export default function MilestoneProgress() {
 	const { workspaceId } = useRequiredAuth();
@@ -126,6 +127,13 @@ export default function MilestoneProgress() {
 													? "Due today"
 													: `${milestone.daysLeft} day${milestone.daysLeft !== 1 ? "s" : ""} left`}
 											</span>
+											<AssigneeBadge
+												workspaceId={workspaceId}
+												assigneeId={milestone.assignee_id ?? null}
+												size="sm"
+												showName={false}
+												className="ml-2"
+											/>
 										</div>
 									)}
 								</div>

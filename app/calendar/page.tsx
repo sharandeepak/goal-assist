@@ -14,6 +14,7 @@ import { format, startOfDay, endOfDay, differenceInCalendarDays, getDay, addDays
 import { useRequiredAuth } from "@/common/hooks/use-auth";
 import { Button } from "@/common/ui/button";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 
 // Helper function to calculate working days (Mon-Fri)
 // Could be moved to a utils file if used elsewhere
@@ -162,6 +163,8 @@ export default function SmartCalendarPage() {
 			workspace_id: workspaceId,
 			user_id: userId,
 			created_at: new Date().toISOString(),
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -264,7 +267,14 @@ export default function SmartCalendarPage() {
 											{selectedDateTasks.map((task) => (
 												<div key={task.id} className="flex items-center gap-2 p-2 rounded-md border">
 													<div className={`w-2 h-2 rounded-full flex-shrink-0 ${task.completed ? "bg-green-500" : "bg-yellow-500"}`} />
-													<span className={`text-sm ${task.completed ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
+													<span className={`text-sm ${task.completed ? "line-through text-muted-foreground" : ""} flex-1 min-w-0 truncate`}>{task.title}</span>
+													<AssigneeBadge
+														workspaceId={workspaceId}
+														assigneeId={task.assignee_id ?? null}
+														size="sm"
+														showName={false}
+														className="flex-shrink-0"
+													/>
 												</div>
 											))}
 										</div>

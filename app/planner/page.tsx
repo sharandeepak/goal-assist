@@ -8,19 +8,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { Badge } from "@/common/ui/badge";
 import { Checkbox } from "@/common/ui/checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar, faCircleCheck, faClock, faPlus, faTrash, faSpinner, faPen, faFlag, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/common/ui/dialog";
-import { Label } from "@/common/ui/label";
+import { faCalendar, faCircleCheck, faPlus, faTrash, faPen, faFlag, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/common/ui/alert-dialog";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Task } from "@/common/types";
 import { subscribeToTasksByDateRange, addTask, updateTaskCompletion, deleteTask, updateTask, searchTasksByTitle } from "@/features/tasks/services/taskService";
-import { useRequiredAuth } from "@/common/hooks/use-auth";
+import { useRequiredAuth, useAuth } from "@/common/hooks/use-auth";
 import { startOfDay, endOfDay, addDays, format } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
-import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { useSearchParams } from "next/navigation";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 
 const getPriorityColor = (priority?: Task["priority"]) => {
 	switch (priority) {
@@ -60,18 +66,9 @@ const formatDate = (dateStr?: string | null): string => {
 	}
 };
 
-const formatDateForInput = (dateStr?: string | null): string => {
-	if (!dateStr) return "";
-	try {
-		const d = new Date(dateStr);
-		return isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
-	} catch {
-		return "";
-	}
-};
-
 function DayPlannerContent() {
 	const { userId, workspaceId } = useRequiredAuth();
+	const { user } = useAuth();
 	const [todayTasks, setTodayTasks] = useState<Task[]>([]);
 	const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 	const [allTasks, setAllTasks] = useState<Task[]>([]);
@@ -91,6 +88,7 @@ function DayPlannerContent() {
 	const [activeTab, setActiveTab] = useState<string>("today");
 	const [searchResults, setSearchResults] = useState<Task[]>([]);
 	const [isSearchLoading, setIsSearchLoading] = useState(false);
+	const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
 	const todayStart = startOfDay(new Date());
 	const todayEnd = endOfDay(new Date());
@@ -251,8 +249,21 @@ function DayPlannerContent() {
 		}
 	};
 
-	const handleDeleteTask = async (taskId: string) => {
-		if (!confirm("Are you sure you want to delete this task?")) return;
+	const handleDeleteTask = (taskId: string) => {
+		setDeletingTaskId(taskId);
+	};
+
+	const confirmDeleteTask = async () => {
+		if (!deletingTaskId) return;
+		const taskId = deletingTaskId;
+		setDeletingTaskId(null);
+		// Optimistically remove from all lists so the UI updates immediately
+		const removeTask = (list: Task[]) => list.filter((t) => t.id !== taskId);
+		setTodayTasks(removeTask);
+		setUpcomingTasks(removeTask);
+		setAllTasks(removeTask);
+		setOverdueTasks(removeTask);
+		setSearchResults(removeTask);
 		try {
 			await deleteTask(taskId, workspaceId, undefined);
 		} catch (err) {
@@ -273,6 +284,8 @@ function DayPlannerContent() {
 			workspace_id: workspaceId,
 			user_id: userId,
 			created_at: new Date().toISOString(),
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -298,6 +311,8 @@ function DayPlannerContent() {
 			title: formData.title!,
 			priority: formData.priority!,
 			date: dateToSave,
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -399,6 +414,12 @@ function DayPlannerContent() {
 							</div>
 						</div>
 						<div className="flex items-center gap-1.5 flex-shrink-0">
+							<AssigneeBadge
+								workspaceId={workspaceId}
+								assigneeId={task.assignee_id ?? null}
+								size="sm"
+								showName={false}
+							/>
 							{task.priority && (
 								<Badge variant="outline" className={`${getPriorityColor(task.priority)} border-current w-[70px] justify-center px-1 py-0.5 text-xs`}>
 									<FontAwesomeIcon icon={faFlag} className={`h-3 w-3 mr-1 ${getPriorityColor(task.priority)}`} />
@@ -415,10 +436,12 @@ function DayPlannerContent() {
 								<FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
 								<span className="sr-only">Edit Task</span>
 							</Button>
-							<Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
-								<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-								<span className="sr-only">Delete Task</span>
-							</Button>
+							{(task.user_id === userId || user?.role === "admin") && (
+								<Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
+									<FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+									<span className="sr-only">Delete Task</span>
+								</Button>
+							)}
 						</div>
 					</div>
 				))}
@@ -445,6 +468,19 @@ function DayPlannerContent() {
 			<TaskFormDialog isOpen={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen} onSubmit={handleAddTaskSubmit} dialogTitle="Add New Task" dialogDescription="Enter details for the new task. Priority is required." />
 
 			<TaskFormDialog isOpen={isEditTaskDialogOpen} onOpenChange={setIsEditTaskDialogOpen} onSubmit={handleUpdateTaskSubmit} initialData={editingTask} dialogTitle="Edit Task" dialogDescription={`Update details for "${editingTask?.title || "task"}". Priority is required.`} />
+
+			<AlertDialog open={!!deletingTaskId} onOpenChange={(open) => { if (!open) setDeletingTaskId(null); }}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Task</AlertDialogTitle>
+						<AlertDialogDescription>Are you sure you want to delete this task? This action cannot be undone.</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			{error && (
 				<Card className="border-destructive bg-destructive/10 mt-4">

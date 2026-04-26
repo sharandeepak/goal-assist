@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { MatrixGrid } from "@/features/matrix/components/matrix-grid";
 import { MatrixFilters } from "@/features/matrix/components/matrix-filters";
 import { Input } from "@/common/ui/input";
-import { Button } from "@/common/ui/button";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { subscribeToMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
 import { Task } from "@/common/types";
@@ -147,6 +146,8 @@ export default function MatrixPage() {
 			workspace_id: workspaceId,
 			user_id: userId,
 			created_at: new Date().toISOString(),
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -185,6 +186,8 @@ export default function MatrixPage() {
 				priority: formData.priority,
 				urgency: formData.urgency,
 				date: formData.date,
+				assignee_id: formData.assignee_id ?? null,
+				visibility: formData.visibility ?? "private",
 				tags:
 					formData.tagsString
 						?.split(",")

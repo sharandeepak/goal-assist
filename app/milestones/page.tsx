@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/common/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faCircleCheck, faClock, faPlus, faBullseye, faTrash, faTriangleExclamation, faSpinner, faListCheck, faChevronDown, faChevronRight, faPen, faFlag, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/common/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/common/ui/dialog";
 import { Label } from "@/common/ui/label";
 import { Skeleton } from "@/common/ui/skeleton";
 import { Checkbox } from "@/common/ui/checkbox";
@@ -27,6 +26,7 @@ import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/common/ui/sheet";
 import { useSearchParams } from "next/navigation";
+import { AssigneePicker } from "@/features/team/components/assignee-picker";
 
 // Helper to calculate days left
 const calculateDaysLeft = (endDate: string | null | undefined): number | undefined => {
@@ -37,21 +37,6 @@ const calculateDaysLeft = (endDate: string | null | undefined): number | undefin
 	return Math.max(0, diff);
 };
 
-// Colors for urgency badge
-const getUrgencyColor = (urgency?: string) => {
-	switch (urgency) {
-		case "high":
-			return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-		case "medium":
-			return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-		case "low":
-			return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-		case "completed":
-			return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-		default:
-			return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
-	}
-};
 
 // Format date nicely
 const formatDate = (dateStr?: string | null): string => {
@@ -75,29 +60,6 @@ const getPriorityColor = (priority?: Task["priority"]) => {
 			return "text-green-600 dark:text-green-500";
 		default:
 			return "text-muted-foreground";
-	}
-};
-const getPriorityLabel = (priority?: Task["priority"]) => {
-	switch (priority) {
-		case "high":
-			return "High";
-		case "medium":
-			return "Medium";
-		case "low":
-			return "Low";
-		default:
-			return "None";
-	}
-};
-
-// Format date for input type="date"
-const formatDateForInput = (dateStr?: string | null): string => {
-	if (!dateStr) return "";
-	try {
-		const d = new Date(dateStr);
-		return isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
-	} catch {
-		return "";
 	}
 };
 
@@ -205,7 +167,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 	const [taskError, setTaskError] = useState<string | null>(null);
 	const [isTasksOpen, setIsTasksOpen] = useState(false);
 	const [editMilestoneOpen, setEditMilestoneOpen] = useState(false);
-	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "start_date" | "tasks">> & { visibility?: Visibility }>({});
+	const [editMilestoneData, setEditMilestoneData] = useState<Partial<Omit<Milestone, "id" | "progress" | "start_date" | "tasks">> & { visibility?: Visibility; assignee_id?: string | null }>({});
 	const [editMilestoneError, setEditMilestoneError] = useState<string | null>(null);
 	const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 	const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
@@ -236,6 +198,7 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			urgency: milestone.urgency,
 			end_date: milestone.end_date,
 			visibility: (milestone.visibility as Visibility) ?? "private",
+			assignee_id: (milestone as Milestone & { assignee_id?: string | null }).assignee_id ?? null,
 		});
 		setEditMilestoneError(null);
 		setEditMilestoneOpen(true);
@@ -271,6 +234,8 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			workspace_id: workspaceId,
 			user_id: userId,
 			created_at: new Date().toISOString(),
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -297,6 +262,8 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 			title: formData.title!,
 			priority: formData.priority!,
 			date: dateToSave,
+			assignee_id: formData.assignee_id ?? null,
+			visibility: formData.visibility ?? "private",
 			tags:
 				formData.tagsString
 					?.split(",")
@@ -412,6 +379,27 @@ function MilestoneCard({ milestone, onDelete }: MilestoneCardProps) {
 								id="edit-milestone-visibility"
 								checked={editMilestoneData.visibility === "public"}
 								onCheckedChange={(checked) => setEditMilestoneData({ ...editMilestoneData, visibility: checked ? "public" : "private" })}
+							/>
+						</div>
+						{editMilestoneData.assignee_id && editMilestoneData.assignee_id !== userId && (
+							<p className="text-xs text-muted-foreground -mt-2">Shared with workspace because assignee is not you.</p>
+						)}
+						<div className="grid gap-2">
+							<Label htmlFor="edit-milestone-assignee">Assignee</Label>
+							<AssigneePicker
+								workspaceId={workspaceId}
+								value={editMilestoneData.assignee_id ?? null}
+								onAssigneeChange={(id) => {
+									setEditMilestoneData((prev) => {
+										const next = { ...prev, assignee_id: id };
+										if (id && id !== userId && prev.visibility !== "public") {
+											next.visibility = "public";
+										}
+										return next;
+									});
+								}}
+								currentUserId={userId}
+								triggerId="edit-milestone-assignee"
 							/>
 						</div>
 					</div>
@@ -556,20 +544,19 @@ function MilestonesPageContent() {
 	const [loadingCompleted, setLoadingCompleted] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [newMilestoneOpen, setNewMilestoneOpen] = useState(false);
-	const [addMilestoneError, setAddMilestoneError] = useState<string | null>(null);
-	const [activeTab, setActiveTab] = useState("active");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [searchResults, setSearchResults] = useState<Milestone[] | null>(null);
 	const [isSearching, setIsSearching] = useState(false);
 
 	const searchParams = useSearchParams();
-	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">> & { visibility?: Visibility }>({
+	const [newMilestoneData, setNewMilestoneData] = useState<Partial<Omit<Milestone, "id" | "tasks">> & { visibility?: Visibility; assignee_id?: string | null }>({
 		title: "",
 		description: "",
 		urgency: "medium",
 		status: "active",
 		progress: 0,
 		visibility: "private",
+		assignee_id: userId,
 	});
 	const [daysToComplete, setDaysToComplete] = useState<number>(14);
 
@@ -664,6 +651,7 @@ function MilestonesPageContent() {
 			start_date: startDate,
 			end_date: endDate,
 			visibility: newMilestoneData.visibility ?? "private",
+			assignee_id: newMilestoneData.assignee_id ?? userId,
 		};
 
 		try {
@@ -676,6 +664,7 @@ function MilestonesPageContent() {
 				status: "active",
 				progress: 0,
 				visibility: "private",
+				assignee_id: userId,
 			});
 			setDaysToComplete(14);
 			setNewMilestoneOpen(false);
@@ -778,7 +767,14 @@ function MilestonesPageContent() {
 				</div>
 				<div className="flex items-center gap-2 w-full sm:w-auto">
 					<Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search milestones by title..." aria-label="Search milestones by title" className="w-full sm:w-[240px] md:w-[320px]" />
-					<Sheet open={newMilestoneOpen} onOpenChange={setNewMilestoneOpen}>
+					<Sheet open={newMilestoneOpen} onOpenChange={(open) => {
+						setNewMilestoneOpen(open);
+						if (open) {
+							setNewMilestoneData((prev) => ({ ...prev, assignee_id: prev.assignee_id ?? userId }));
+						} else {
+							setNewMilestoneData((prev) => ({ ...prev, assignee_id: userId }));
+						}
+					}}>
 						<SheetTrigger asChild>
 							<Button>
 								<FontAwesomeIcon icon={faPlus} className="mr-2 h-4 w-4" />
@@ -827,6 +823,27 @@ function MilestonesPageContent() {
 											id="milestone-visibility"
 											checked={newMilestoneData.visibility === "public"}
 											onCheckedChange={(checked) => setNewMilestoneData({ ...newMilestoneData, visibility: checked ? "public" : "private" })}
+										/>
+									</div>
+									{newMilestoneData.assignee_id && newMilestoneData.assignee_id !== userId && (
+										<p className="text-xs text-muted-foreground -mt-2">Shared with workspace because assignee is not you.</p>
+									)}
+									<div className="grid gap-1.5">
+										<Label htmlFor="milestone-form-assignee">Assignee</Label>
+										<AssigneePicker
+											workspaceId={workspaceId}
+											value={newMilestoneData.assignee_id ?? null}
+											onAssigneeChange={(id) => {
+												setNewMilestoneData((prev) => {
+													const next = { ...prev, assignee_id: id };
+													if (id && id !== userId && prev.visibility !== "public") {
+														next.visibility = "public";
+													}
+													return next;
+												});
+											}}
+											currentUserId={userId}
+											triggerId="milestone-form-assignee"
 										/>
 									</div>
 									{error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}

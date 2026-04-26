@@ -5,13 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/common/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/common/ui/sheet";
 import { Button } from "@/common/ui/button";
 import { Input } from "@/common/ui/input";
 import { Label } from "@/common/ui/label";
@@ -31,8 +31,6 @@ import type { UserRole } from "@/common/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faCopy, faCheck } from "@fortawesome/free-solid-svg-icons";
 
-// ─── Zod Schema ───
-
 const inviteFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   role: z.enum(["admin", "manager", "member"]),
@@ -40,8 +38,6 @@ const inviteFormSchema = z.object({
 });
 
 type InviteFormValues = z.infer<typeof inviteFormSchema>;
-
-// ─── Props ───
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -51,8 +47,6 @@ interface InviteMemberDialogProps {
   inviterRole: UserRole;
   onInviteCreated: () => void;
 }
-
-// ─── Component ───
 
 export function InviteMemberDialog({
   open,
@@ -78,16 +72,11 @@ export function InviteMemberDialog({
     formState: { errors },
   } = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
-    defaultValues: {
-      email: "",
-      role: "member",
-      managerId: undefined,
-    },
+    defaultValues: { email: "", role: "member", managerId: undefined },
   });
 
   const selectedRole = watch("role");
 
-  // Load potential managers when dialog opens
   useEffect(() => {
     if (!open) return;
     getPotentialManagers(workspaceId)
@@ -95,7 +84,6 @@ export function InviteMemberDialog({
       .catch(() => setPotentialManagers([]));
   }, [open, workspaceId]);
 
-  // Reset form state when dialog opens/closes
   useEffect(() => {
     if (open) {
       reset({ email: "", role: "member", managerId: undefined });
@@ -108,7 +96,6 @@ export function InviteMemberDialog({
   const onSubmit = async (values: InviteFormValues) => {
     setIsSubmitting(true);
     setErrorMessage(null);
-
     try {
       const result = await createInvite({
         workspaceId,
@@ -117,14 +104,11 @@ export function InviteMemberDialog({
         managerId: values.managerId || undefined,
         invitedBy: inviterId,
       });
-
       setInviteLink(result.inviteLink);
-
       toast({
         title: "Invitation created",
         description: `An invite has been created for ${values.email}.`,
       });
-
       onInviteCreated();
     } catch (error) {
       if (error instanceof AppError) {
@@ -144,7 +128,6 @@ export function InviteMemberDialog({
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
-      // Fallback for environments without clipboard API
       toast({
         title: "Copy failed",
         description: "Please copy the link manually.",
@@ -154,26 +137,23 @@ export function InviteMemberDialog({
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
-      onOpenChange(false);
-    }
+    if (!isSubmitting) onOpenChange(false);
   };
 
   const roles: UserRole[] = ["admin", "manager", "member"];
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={handleClose}>
+      <SheetContent side="right" className="sm:max-w-[425px] flex flex-col h-full">
+        <SheetHeader>
+          <SheetTitle>Invite Team Member</SheetTitle>
+          <SheetDescription>
             Send an invitation to add a new member to your workspace.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {inviteLink ? (
-          // Success state: show invite link
-          <div className="space-y-4 py-4">
+          <div className="flex-grow min-h-0 py-4 px-1 space-y-4 overflow-y-auto">
             <p className="text-sm text-muted-foreground">
               Invitation created successfully. Share this link with the invitee:
             </p>
@@ -197,16 +177,15 @@ export function InviteMemberDialog({
                 />
               </Button>
             </div>
-            <DialogFooter>
-              <Button onClick={handleClose}>Done</Button>
-            </DialogFooter>
           </div>
         ) : (
-          // Form state
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="space-y-4 py-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col flex-grow min-h-0"
+          >
+            <div className="flex-grow min-h-0 py-4 px-1 space-y-6 overflow-y-auto">
               {/* Email */}
-              <div className="space-y-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="invite-email">Email address *</Label>
                 <Input
                   id="invite-email"
@@ -223,7 +202,7 @@ export function InviteMemberDialog({
               </div>
 
               {/* Role */}
-              <div className="space-y-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="invite-role">Role *</Label>
                 <Select
                   value={selectedRole}
@@ -260,7 +239,7 @@ export function InviteMemberDialog({
               </div>
 
               {/* Manager (optional) */}
-              <div className="space-y-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="invite-manager">Manager (optional)</Label>
                 <Select
                   value={watch("managerId") ?? "none"}
@@ -286,7 +265,6 @@ export function InviteMemberDialog({
                 </Select>
               </div>
 
-              {/* Error */}
               {errorMessage && (
                 <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
                   {errorMessage}
@@ -294,16 +272,8 @@ export function InviteMemberDialog({
               )}
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
+            <SheetFooter className="pt-4 border-t">
+              <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? (
                   <>
                     <FontAwesomeIcon
@@ -316,10 +286,18 @@ export function InviteMemberDialog({
                   "Send Invite"
                 )}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+
+        {inviteLink && (
+          <SheetFooter className="pt-4 border-t">
+            <Button onClick={handleClose} className="w-full">
+              Done
+            </Button>
+          </SheetFooter>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -39,6 +39,7 @@ export interface PageMilestoneSummary {
   title: string;
   urgency: "high" | "medium" | "low";
   daysLeft?: number;
+  assigneeId: string | null;
 }
 
 export interface SatisfactionSummary {

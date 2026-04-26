@@ -10,10 +10,12 @@ import { Label } from "@/common/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/common/ui/popover";
 import { Calendar as ShadCalendar } from "@/common/ui/calendar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar, faSpinner, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { Task } from "@/common/types";
 import { startOfDay, format } from "date-fns";
 import { Switch } from "@/common/ui/switch";
+import { AssigneePicker } from "@/features/team/components/assignee-picker";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
 
 const formatDate = (dateStr?: string | null): string => {
 	if (!dateStr) return "N/A";
@@ -41,6 +43,7 @@ export interface TaskFormDialogProps {
 }
 
 export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, dialogTitle, dialogDescription, requireUrgency = false }: TaskFormDialogProps) {
+	const { userId, workspaceId } = useRequiredAuth();
 	const [formData, setFormData] = useState<TaskFormData>({});
 	const [tagsString, setTagsString] = useState<string>("");
 	const [error, setError] = useState<string | null>(null);
@@ -56,7 +59,8 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				urgency: initialData.urgency,
 				date: initialData.date,
 				completed_date: initialData.completed_date,
-				visibility: (initialData as Task).visibility ?? "private",
+				visibility: (initialData as Task).visibility ?? "public",
+				assignee_id: (initialData as Task).assignee_id ?? null,
 			});
 			setTagsString(initialData.tags?.join(", ") || "");
 		} else if (isOpen && initialData) {
@@ -65,17 +69,18 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				priority: initialData.priority || "medium",
 				urgency: initialData.urgency || (requireUrgency ? "medium" : undefined),
 				date: initialData.date || today,
-				visibility: "private",
+				visibility: "public",
+				assignee_id: userId,
 			});
 			setTagsString("");
 		} else if (isOpen) {
 			const today = startOfDay(new Date()).toISOString();
-			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today, visibility: "private" });
+			setFormData({ priority: "medium", urgency: requireUrgency ? "medium" : undefined, date: today, visibility: "public", assignee_id: userId });
 			setTagsString("");
 		}
 		setError(null);
 		setIsSubmitting(false);
-	}, [isOpen, initialData, requireUrgency]);
+	}, [isOpen, initialData, requireUrgency, userId]);
 
 	const handleValueChange = (field: keyof Omit<TaskFormData, "tagsString">, value: unknown) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -150,7 +155,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 				return;
 			}
 			const today = startOfDay(new Date()).toISOString();
-			setFormData({ priority: "medium", date: today });
+			setFormData({ priority: "medium", date: today, assignee_id: userId });
 			setTagsString("");
 			setError(null);
 			setIsSubmitting(false);
@@ -242,18 +247,38 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit, initialData, di
 					</div>
 
 					<div className={styles.formSection}>
-						<div className="flex items-center justify-between">
-							<div>
-								<Label htmlFor="task-visibility">Visibility</Label>
-								<p className="text-xs text-muted-foreground">Public tasks are visible to workspace members</p>
-							</div>
-							<Switch
-								id="task-visibility"
-								checked={formData.visibility === "public"}
-								onCheckedChange={(checked) => handleValueChange("visibility", checked ? "public" : "private")}
-								disabled={isSubmitting}
-							/>
-						</div>
+						<Label htmlFor="task-visibility">Visibility</Label>
+						<Select value={formData.visibility || "public"} onValueChange={(value) => handleValueChange("visibility", value as Task["visibility"])} disabled={isSubmitting}>
+							<SelectTrigger id="task-visibility" className={styles.selectNoRing}>
+								<SelectValue placeholder="Select visibility" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="public">Public</SelectItem>
+								<SelectItem value="private">Private</SelectItem>
+							</SelectContent>
+						</Select>
+						{formData.assignee_id && formData.assignee_id !== userId && (
+							<p className="text-xs text-muted-foreground">Shared with workspace because assignee is not you.</p>
+						)}
+					</div>
+
+					<div className={styles.formSection}>
+						<Label htmlFor="task-form-assignee">Assignee</Label>
+						<AssigneePicker
+							workspaceId={workspaceId}
+							value={formData.assignee_id ?? null}
+							onAssigneeChange={(id) => {
+								handleValueChange("assignee_id", id);
+								// Auto-flip visibility to public when assigning to someone else
+								if (id && id !== userId && formData.visibility !== "public") {
+									handleValueChange("visibility", "public");
+								}
+							}}
+							currentUserId={userId}
+							disabled={isSubmitting}
+							triggerId="task-form-assignee"
+							triggerClassName={styles.selectNoRing}
+						/>
 					</div>
 
 					{(!initialData || !("title" in initialData)) && (

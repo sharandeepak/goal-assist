@@ -26,6 +26,8 @@ export interface TaskRepository {
 
   searchTasksByTitle(workspaceId: string, query: string): Promise<SupabaseTask[]>;
 
+  getTaskById(taskId: string): Promise<SupabaseTask | null>;
+
   getTasksForMilestone(workspaceId: string, milestoneId: string): Promise<SupabaseTask[]>;
 
   getTaskCountsForMilestone(workspaceId: string, milestoneId: string): Promise<{ total: number; completed: number }>;

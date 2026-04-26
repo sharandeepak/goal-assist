@@ -39,6 +39,8 @@ export interface MilestoneRepository {
 
   getMilestoneById(workspaceId: string, milestoneId: string): Promise<SupabaseMilestone | null>;
 
+  getMilestoneByIdOnly(milestoneId: string): Promise<SupabaseMilestone | null>;
+
   updateMilestoneProgress(
     milestoneId: string,
     data: { progress: number; status?: SupabaseMilestone["status"] }

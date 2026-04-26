@@ -10,6 +10,8 @@ import { faCalendar, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 
 interface MatrixTaskCardProps {
 	task: Task;
@@ -33,7 +35,8 @@ const formatDate = (dateStr?: string | null): string => {
 };
 
 export function MatrixTaskCard({ task, onToggleComplete, onEdit, onDelete, isOverlay = false }: MatrixTaskCardProps) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging, setActivatorNodeRef } = useSortable({
+	const { workspaceId } = useRequiredAuth();
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: task.id,
 		data: {
 			type: "task",
@@ -88,6 +91,16 @@ export function MatrixTaskCard({ task, onToggleComplete, onEdit, onDelete, isOve
 								<span>{formatDate(task.date)}</span>
 							</div>
 						)}
+
+						{/* Assignee */}
+						<div className="mt-1">
+							<AssigneeBadge
+								workspaceId={workspaceId}
+								assigneeId={task.assignee_id ?? null}
+								size="sm"
+								showName={false}
+							/>
+						</div>
 					</div>
 
 					{/* Action Buttons - group-hover must stay inline */}

@@ -3,9 +3,24 @@ import { getTaskCountsForMilestone, deleteTasksForMilestone } from "@/features/t
 import { supabaseMilestoneRepository } from "@/features/milestones/repository/supabaseMilestoneRepository";
 import type { MilestonePageSummaryData, MilestoneRepository } from "@/features/milestones/repository/milestoneRepository";
 import { calculateDaysLeft } from "@/features/milestones/utils";
+import { supabaseTeamRepository } from "@/features/team/repository/supabaseTeamRepository";
 import { AppError } from "@/common/errors/AppError";
 
 const repository: MilestoneRepository = supabaseMilestoneRepository;
+
+const validateAssigneeInWorkspace = async (
+  assigneeId: string | null | undefined,
+  workspaceId: string
+): Promise<void> => {
+  if (!assigneeId) return;
+  const member = await supabaseTeamRepository.getMemberById(assigneeId);
+  if (!member || member.workspace_id !== workspaceId || member.status !== "active") {
+    throw AppError.badRequest(
+      "MILESTONE_ASSIGNEE_INVALID",
+      "Selected assignee is not an active member of this workspace."
+    );
+  }
+};
 
 export interface MilestoneProgressData extends SupabaseMilestone {
   daysLeft?: number;
@@ -88,6 +103,13 @@ export const addMilestone = async (milestoneData: SupabaseMilestoneInsert): Prom
     throw AppError.badRequest("MILESTONE_WORKSPACE_REQUIRED", "Workspace ID is required.");
   }
 
+  if (milestoneData.assignee_id) {
+    await validateAssigneeInWorkspace(milestoneData.assignee_id, milestoneData.workspace_id);
+    if (milestoneData.assignee_id !== milestoneData.user_id) {
+      milestoneData.visibility = "public";
+    }
+  }
+
   try {
     return await repository.addMilestone(milestoneData);
   } catch (error) {
@@ -126,6 +148,17 @@ export const updateMilestone = async (
       "MILESTONE_INVALID_STATUS",
       `Invalid milestone status: ${dataToUpdate.status}`
     );
+  }
+
+  if (dataToUpdate.assignee_id !== undefined && dataToUpdate.assignee_id !== null) {
+    const existing = await repository.getMilestoneByIdOnly(milestoneId);
+    if (!existing) {
+      throw AppError.notFound("MILESTONE_NOT_FOUND", `Milestone ${milestoneId} not found.`);
+    }
+    await validateAssigneeInWorkspace(dataToUpdate.assignee_id, existing.workspace_id);
+    if (dataToUpdate.assignee_id !== existing.user_id) {
+      dataToUpdate.visibility = "public";
+    }
   }
 
   try {

@@ -93,6 +93,7 @@ export interface Database {
           tags: string[];
           milestone_id: string | null;
           visibility: "private" | "public";
+          assignee_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -109,6 +110,7 @@ export interface Database {
           tags?: string[];
           milestone_id?: string | null;
           visibility?: "private" | "public";
+          assignee_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -124,6 +126,7 @@ export interface Database {
           tags?: string[];
           milestone_id?: string | null;
           visibility?: "private" | "public";
+          assignee_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -156,6 +159,7 @@ export interface Database {
           start_date: string | null;
           end_date: string | null;
           visibility: "private" | "public";
+          assignee_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -171,6 +175,7 @@ export interface Database {
           start_date?: string | null;
           end_date?: string | null;
           visibility?: "private" | "public";
+          assignee_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -185,6 +190,7 @@ export interface Database {
           start_date?: string | null;
           end_date?: string | null;
           visibility?: "private" | "public";
+          assignee_id?: string | null;
           updated_at?: string;
         };
         Relationships: [

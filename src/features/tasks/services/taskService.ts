@@ -2,8 +2,27 @@ import type { SupabaseTask, SupabaseTaskInsert } from "@/common/types";
 import { updateMilestoneProgress } from "@/features/milestones/services/milestoneService";
 import { supabaseTaskRepository } from "../repository/supabaseTaskRepository";
 import type { TaskSummaryData } from "../repository/taskRepository";
+import { supabaseTeamRepository } from "@/features/team/repository/supabaseTeamRepository";
 import { AppError } from "@/common/errors/AppError";
 const taskRepository = supabaseTaskRepository;
+
+const validateAssigneeInWorkspace = async (
+  assigneeId: string | null | undefined,
+  workspaceId: string
+): Promise<void> => {
+  if (!assigneeId) return;
+  const member = await supabaseTeamRepository.getMemberById(assigneeId);
+  if (
+    !member ||
+    member.workspace_id !== workspaceId ||
+    member.status !== "active"
+  ) {
+    throw AppError.badRequest(
+      "TASK_ASSIGNEE_INVALID",
+      "Selected assignee is not an active member of this workspace."
+    );
+  }
+};
 
 export const subscribeToTaskSummary = (
   workspaceId: string,
@@ -69,6 +88,12 @@ export const addTask = async (taskData: SupabaseTaskInsert): Promise<SupabaseTas
   }
 
   try {
+    await validateAssigneeInWorkspace(taskData.assignee_id, taskData.workspace_id);
+
+    if (taskData.assignee_id && taskData.assignee_id !== taskData.user_id) {
+      taskData.visibility = "public";
+    }
+
     const task = await taskRepository.addTask(taskData);
 
     if (taskData.milestone_id) {
@@ -105,6 +130,17 @@ export const updateTask = async (
   }
 
   try {
+    if (dataToUpdate.assignee_id !== undefined && dataToUpdate.assignee_id !== null) {
+      const existing = await taskRepository.getTaskById(taskId);
+      if (!existing) {
+        throw AppError.notFound("TASK_NOT_FOUND", `Task ${taskId} not found.`);
+      }
+      await validateAssigneeInWorkspace(dataToUpdate.assignee_id, existing.workspace_id);
+      if (dataToUpdate.assignee_id !== existing.user_id) {
+        dataToUpdate.visibility = "public";
+      }
+    }
+
     await taskRepository.updateTask(taskId, dataToUpdate);
   } catch (error) {
     if (error instanceof AppError) throw error;

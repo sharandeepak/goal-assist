@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/common/ui/card";
 import { Skeleton } from "@/common/ui/skeleton";
 import { PageMilestoneSummary } from "@/common/types";
+import { useRequiredAuth } from "@/common/hooks/use-auth";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 import { styles } from "../styles/MilestoneSummary.styles";
 
 interface MilestoneSummaryProps {
@@ -11,6 +13,7 @@ interface MilestoneSummaryProps {
 }
 
 export default function MilestoneSummary({ initialData, isLoading }: MilestoneSummaryProps) {
+	const { workspaceId } = useRequiredAuth();
 	if (isLoading) {
 		return (
 			<Card>
@@ -38,7 +41,15 @@ export default function MilestoneSummary({ initialData, isLoading }: MilestoneSu
 					<ul className={styles.list}>
 						{initialData.map((milestone) => (
 							<li key={milestone.id} className={styles.listItem}>
-								{milestone.title}
+								<span className="flex items-center justify-between gap-2">
+									<span className="truncate">{milestone.title}</span>
+									<AssigneeBadge
+										workspaceId={workspaceId}
+										assigneeId={milestone.assigneeId}
+										size="sm"
+										showName={false}
+									/>
+								</span>
 							</li>
 						))}
 					</ul>

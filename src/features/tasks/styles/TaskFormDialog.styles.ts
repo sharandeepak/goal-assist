@@ -1,6 +1,6 @@
 export const styles = {
 	sheetContent: "sm:max-w-[425px] flex flex-col h-full",
-	formBody: "flex-grow py-4 space-y-6 overflow-y-auto",
+	formBody: "flex-grow min-h-0 py-4 px-1 space-y-6 overflow-y-auto",
 	formSection: "grid gap-1.5",
 	formGrid: "grid grid-cols-2 gap-4",
 	dateButton: "flex-1 justify-start text-left font-normal",

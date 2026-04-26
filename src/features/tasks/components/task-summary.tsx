@@ -9,6 +9,7 @@ import { subscribeToTaskSummary, updateTaskCompletion } from "@/features/tasks/s
 import Link from "next/link";
 import { styles } from "../styles/TaskSummary.styles";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
+import { AssigneeBadge } from "@/features/team/components/assignee-badge";
 
 export default function TaskSummary() {
 	const { workspaceId } = useRequiredAuth();
@@ -138,6 +139,13 @@ export default function TaskSummary() {
 								Due date: {dueDate}
 							</span>
 						</div>
+						<AssigneeBadge
+							workspaceId={workspaceId}
+							assigneeId={task.assignee_id ?? null}
+							size="sm"
+							showName={false}
+							className="flex-shrink-0"
+						/>
 					</div>
 				);
 			})}

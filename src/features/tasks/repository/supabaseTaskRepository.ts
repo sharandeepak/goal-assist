@@ -221,6 +221,22 @@ export class SupabaseTaskRepository
     }
   }
 
+  async getTaskById(taskId: string): Promise<SupabaseTask | null> {
+    try {
+      const { data, error } = await this.table
+        .select("*")
+        .eq("id", taskId)
+        .single();
+      if (error && error.code !== "PGRST116") {
+        throw AppError.internal("TASK_FETCH_ERROR", error.message);
+      }
+      return (data as SupabaseTask) ?? null;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw AppError.internal("TASK_FETCH_ERROR", "Failed to fetch task.");
+    }
+  }
+
   async addTask(taskData: SupabaseTaskInsert): Promise<SupabaseTask> {
     try {
       const { data, error } = await this.table.insert(taskData as never).select().single();
@@ -267,10 +283,8 @@ export class SupabaseTaskRepository
 
   async deleteTask(taskId: string): Promise<void> {
     try {
-      const { data, error } = await this.table.delete().eq("id", taskId).select("id");
+      const { error } = await this.table.delete().eq("id", taskId);
       if (error) throw AppError.internal("TASK_DELETE_ERROR", error.message);
-      if (!data || data.length === 0)
-        throw AppError.notFound("TASK_NOT_FOUND", `Task ${taskId} not found.`);
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw AppError.internal("TASK_DELETE_ERROR", "Failed to delete task.");
