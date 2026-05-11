@@ -40,3 +40,4 @@ functions/node_modules/
 .serena
 # CocoIndex Code (ccc)
 /.cocoindex_code/
+.lanes/
