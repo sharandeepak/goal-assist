@@ -68,6 +68,19 @@ export const subscribeToMatrixTasks = (
   );
 };
 
+export const getMatrixTasks = async (
+  workspaceId: string,
+  dateRange: { start: Date; end: Date } | null
+): Promise<MatrixTasksData> => {
+  try {
+    const tasks = await repository.getTasks(workspaceId, dateRange);
+    return bucketTasksByQuadrant(tasks);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.internal("MATRIX_FETCH_TASKS_ERROR", "Failed to fetch matrix tasks.");
+  }
+};
+
 export const updateTaskQuadrant = async (
   taskId: string,
   newPriority: "low" | "medium" | "high",

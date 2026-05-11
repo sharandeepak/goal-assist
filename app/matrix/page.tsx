@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MatrixGrid } from "@/features/matrix/components/matrix-grid";
 import { MatrixFilters } from "@/features/matrix/components/matrix-filters";
 import { Input } from "@/common/ui/input";
 import { TaskFormDialog, TaskFormData } from "@/features/tasks/components/task-form-dialog";
-import { subscribeToMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
+import { subscribeToMatrixTasks, getMatrixTasks, updateTaskQuadrant, quadrantToValues, QuadrantType, MatrixTasksData } from "@/features/matrix/services/matrixService";
 import { Task } from "@/common/types";
 import { addTask, updateTaskCompletion, deleteTask, updateTask } from "@/features/tasks/services/taskService";
 import { useRequiredAuth } from "@/common/hooks/use-auth";
@@ -31,6 +31,13 @@ export default function MatrixPage() {
 	const [prefilledPriority, setPrefilledPriority] = useState<"low" | "medium" | "high" | undefined>(undefined);
 	const [prefilledUrgency, setPrefilledUrgency] = useState<"low" | "medium" | "high" | undefined>(undefined);
 	const { toast } = useToast();
+
+	const refreshMatrixTasks = useCallback(async () => {
+		if (!workspaceId) return;
+
+		const data = await getMatrixTasks(workspaceId, dateRange);
+		setTasks(data);
+	}, [dateRange, workspaceId]);
 
 	// Subscribe to tasks
 	useEffect(() => {
@@ -82,6 +89,7 @@ export default function MatrixPage() {
 	const handleTaskToggle = async (taskId: string, currentCompleted: boolean) => {
 		try {
 			await updateTaskCompletion(taskId, !currentCompleted, workspaceId, undefined);
+			await refreshMatrixTasks();
 			toast({
 				title: "Success",
 				description: `Task marked as ${!currentCompleted ? "completed" : "incomplete"}.`,
@@ -100,6 +108,7 @@ export default function MatrixPage() {
 		if (!confirm("Are you sure you want to delete this task?")) return;
 		try {
 			await deleteTask(taskId, workspaceId, undefined);
+			await refreshMatrixTasks();
 			toast({
 				title: "Success",
 				description: "Task deleted successfully.",
@@ -117,6 +126,7 @@ export default function MatrixPage() {
 	const handleTaskMove = async (taskId: string, newPriority: "low" | "medium" | "high", newUrgency: "low" | "medium" | "high") => {
 		try {
 			await updateTaskQuadrant(taskId, newPriority, newUrgency);
+			await refreshMatrixTasks();
 			toast({
 				title: "Success",
 				description: "Task moved successfully.",
@@ -157,6 +167,7 @@ export default function MatrixPage() {
 
 		try {
 			await addTask(taskToAdd);
+			await refreshMatrixTasks();
 			setIsAddTaskDialogOpen(false);
 			toast({
 				title: "Success",
@@ -196,6 +207,7 @@ export default function MatrixPage() {
 			};
 
 			await updateTask(editingTask.id, dataToUpdate);
+			await refreshMatrixTasks();
 
 			setIsEditTaskDialogOpen(false);
 			setEditingTask(null);
